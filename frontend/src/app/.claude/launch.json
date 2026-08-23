@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "husi-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/nicop/Plataforma-HUSI/Plataforma-HUSI/frontend", "run", "start", "--", "--port", "4200"],
+      "port": 4200
+    }
+  ]
+}

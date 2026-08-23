@@ -1,1 +1,84 @@
-/* You can add global styles to this file, and also import other style files */
+/* ============================================================
+   Estilos globales - Plataforma HUSI
+   ============================================================ */
+
+:root {
+  /* Marca */
+  --husi-navy: #0b2d5c;
+  --husi-navy-deep: #071f42;
+  --husi-blue: #14508f;
+  --husi-teal: #4ad3c8;
+  --husi-teal-dark: #2bb3a8;
+
+  /* Superficies */
+  --husi-bg: #ffffff;
+  --husi-surface: #f6f9fd;
+  --husi-border: #e5ecf5;
+
+  /* Texto */
+  --husi-text: #1f2a3a;
+  --husi-muted: #6b7a90;
+  --husi-on-dark: #e8eff8;
+  --husi-on-dark-muted: #a9bcd6;
+
+  /* Tipografía */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-serif: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+
+  /* Otros */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --shadow-sm: 0 1px 2px rgba(11, 45, 92, 0.06);
+  --shadow-md: 0 10px 30px rgba(11, 45, 92, 0.08);
+  --shadow-lg: 0 24px 60px rgba(7, 31, 66, 0.25);
+  --header-height: 62px;
+  --container: 1120px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--husi-text);
+  background: var(--husi-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: 24px;
+}

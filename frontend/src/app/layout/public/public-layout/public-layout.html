@@ -1,0 +1,302 @@
+<!-- ===================== HEADER ===================== -->
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="brand" routerLink="/" aria-label="HUSI - Gestión de residentes">
+      <svg class="brand__logo" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="3" />
+        <circle cx="32" cy="20" r="6" fill="currentColor" />
+        <path
+          d="M32 28v24M23 34h18M14 30c4 8 10 12 18 12s14-4 18-12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3"
+          stroke-linecap="round" />
+      </svg>
+      <span class="brand__text">
+        <strong>HUSI</strong>
+        <small>Gestión de residentes</small>
+      </span>
+    </a>
+
+    <nav class="site-header__actions">
+      <a class="btn btn--primary" routerLink="/login">Inicia Sesión</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ===================== CONTENIDO ===================== -->
+<main class="site-main">
+  <router-outlet />
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="site-footer">
+  <svg
+    class="site-footer__wave"
+    viewBox="0 0 1440 130"
+    preserveAspectRatio="none"
+    aria-hidden="true">
+    <path
+      d="M0,72 C200,10 420,4 700,46 C960,86 1200,110 1440,44 L1440,130 L0,130 Z"
+      fill="currentColor" />
+  </svg>
+
+  <div class="site-footer__body">
+    <svg class="site-footer__watermark" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="2" />
+      <circle cx="32" cy="20" r="6" fill="currentColor" />
+      <path
+        d="M32 28v24M23 34h18M14 30c4 8 10 12 18 12s14-4 18-12"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round" />
+    </svg>
+
+    <div class="container site-footer__grid">
+      <div class="site-footer__brand">
+        <div class="footer-brand">
+          <svg class="footer-brand__logo" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="3" />
+            <circle cx="32" cy="20" r="6" fill="currentColor" />
+            <path
+              d="M32 28v24M23 34h18M14 30c4 8 10 12 18 12s14-4 18-12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round" />
+          </svg>
+          <span class="footer-brand__name">HUSI</span>
+        </div>
+
+        <ul class="footer-perks">
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 3 5 6v5.5c0 4.3 3 8.3 7 9.5 4-1.2 7-5.2 7-9.5V6l-7-3Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round" />
+              <path
+                d="m9 12 2 2 4-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+            <span>Seguridad<br />de datos</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="9" cy="9" r="3" fill="none" stroke="currentColor" stroke-width="1.6" />
+              <path
+                d="M3.5 19c.6-3 2.8-4.6 5.5-4.6S13.9 16 14.5 19"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round" />
+              <path
+                d="M16 7.2a2.8 2.8 0 0 1 0 5.6M17 14.6c2.1.4 3.5 2 3.9 4.4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round" />
+            </svg>
+            <span>Gestión<br />eficiente</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M20 12.5c0 3.3-3.6 6-8 6-1 0-2-.1-2.9-.4L4 20l1.3-3.4C4.2 15.5 3.5 14.1 3.5 12.5c0-3.3 3.6-6 8-6s8.5 2.7 8.5 6Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round" />
+            </svg>
+            <span>Comunicación<br />efectiva</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="site-footer__contact">
+        <h3 class="footer-title">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6.5 4h3l1.5 3.6-2 1.4a11 11 0 0 0 5 5l1.4-2L19 13.5v3a1.6 1.6 0 0 1-1.8 1.6C10.9 17.6 6.4 13.1 5.9 6.8A1.6 1.6 0 0 1 6.5 4Z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linejoin="round" />
+          </svg>
+          CONTACTO
+        </h3>
+
+        <ul class="contact-list">
+          <li>
+            <span class="contact-list__icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11Z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round" />
+                <circle
+                  cx="12"
+                  cy="10"
+                  r="2.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6" />
+              </svg>
+            </span>
+            <span class="contact-list__text">
+              Carrera 7 Calle 45
+              <small>Bogotá, Colombia</small>
+            </span>
+          </li>
+          <li>
+            <span class="contact-list__icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M6.5 4h3l1.5 3.6-2 1.4a11 11 0 0 0 5 5l1.4-2L19 13.5v3a1.6 1.6 0 0 1-1.8 1.6C10.9 17.6 6.4 13.1 5.9 6.8A1.6 1.6 0 0 1 6.5 4Z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span class="contact-list__text">
+              +57 601 123 4567
+              <small>Lunes a Viernes 8am - 6pm</small>
+            </span>
+          </li>
+          <li>
+            <span class="contact-list__icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect
+                  x="3.5"
+                  y="5.5"
+                  width="17"
+                  height="13"
+                  rx="2.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6" />
+                <path
+                  d="m4 7 8 5.5L20 7"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span class="contact-list__text">
+              info&#64;husi.com.co
+              <small>Respuesta en menos de 24h</small>
+            </span>
+          </li>
+          <li>
+            <span class="contact-list__icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="8.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6" />
+                <ellipse
+                  cx="12"
+                  cy="12"
+                  rx="4"
+                  ry="8.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6" />
+                <path
+                  d="M3.8 9.5h16.4M3.8 14.5h16.4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6" />
+              </svg>
+            </span>
+            <span class="contact-list__text">www.husi.com.co</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="container site-footer__bottom">
+      <p class="site-footer__legal">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect
+            x="5"
+            y="10.5"
+            width="14"
+            height="9"
+            rx="2"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6" />
+          <path
+            d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round" />
+        </svg>
+        <span>
+          &copy; 2024 <strong>HUSI - Gestión de residentes</strong>. Todos los derechos reservados.
+        </span>
+      </p>
+
+      <ul class="social">
+        <li>
+          <a href="#" aria-label="Facebook">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M13.5 21v-7h2.4l.4-3h-2.8V9.2c0-.9.3-1.5 1.6-1.5h1.3V5.1c-.3 0-1.3-.1-2.4-.1-2.3 0-3.9 1.4-3.9 4v2H7.7v3h2.4v7h3.4Z"
+                fill="currentColor" />
+            </svg>
+          </a>
+        </li>
+        <li>
+          <a href="#" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect
+                x="4"
+                y="4"
+                width="16"
+                height="16"
+                rx="5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7" />
+              <circle cx="12" cy="12" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" />
+              <circle cx="16.6" cy="7.4" r="1.1" fill="currentColor" />
+            </svg>
+          </a>
+        </li>
+        <li>
+          <a href="#" aria-label="WhatsApp">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 3.5a8.5 8.5 0 0 0-7.3 12.9L3.5 20.5l4.3-1.1A8.5 8.5 0 1 0 12 3.5Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round" />
+              <path
+                d="M9.3 8.4c.2 0 .4 0 .5.3l.7 1.7c.1.2 0 .3-.1.5l-.6.7c.7 1.3 1.6 2.1 2.9 2.7l.6-.8c.1-.2.3-.2.5-.2l1.7.7c.2.1.3.3.3.5-.1 1-.9 1.6-1.9 1.6-3 0-6.4-3.4-6.4-6.4 0-1 .7-1.8 1.6-1.9h.2Z"
+                fill="currentColor" />
+            </svg>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</footer>
