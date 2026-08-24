@@ -18,6 +18,12 @@
   --husi-surface: #f6f9fd;
   --husi-border: #e5ecf5;
 
+  /* Acciones del panel administrativo */
+  --husi-green: #0e8a78;
+  --husi-green-dark: #0a6f60;
+  --husi-red: #e01b1b;
+  --husi-red-dark: #b41414;
+
   /* Texto */
   --husi-text: #1f2a3a;
   --husi-muted: #6b7a90;
@@ -37,6 +43,7 @@
   --shadow-md: 0 10px 30px rgba(11, 45, 92, 0.08);
   --shadow-lg: 0 24px 60px rgba(7, 31, 66, 0.25);
   --header-height: 62px;
+  --sidebar-width: 224px;
   --container: 1120px;
 }
 

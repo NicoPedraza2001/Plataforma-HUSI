@@ -1,0 +1,111 @@
+<!-- ===================== ENCABEZADO ===================== -->
+<header class="page-head">
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Programas</h1>
+
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <span>Inicio</span>
+      <span class="breadcrumb__sep" aria-hidden="true">&gt;</span>
+      <span aria-current="page">Programa</span>
+    </nav>
+  </div>
+
+  <button type="button" class="btn btn--add">
+    <span class="btn__plus" aria-hidden="true">+</span>
+    Agregar Programa
+  </button>
+</header>
+
+<!-- ===================== TARJETA DEL LISTADO ===================== -->
+<section class="card">
+  <label class="search">
+    <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+      <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+    </svg>
+    <span class="sr-only">Buscar programa</span>
+    <input
+      class="search__input"
+      type="search"
+      placeholder="Buscar Programa ..."
+      [value]="termino()"
+      (input)="buscar($any($event.target).value)" />
+  </label>
+
+  <div class="table-wrap">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th class="col-no" scope="col">No</th>
+          <th scope="col">Nombre</th>
+          <th scope="col">Categoria</th>
+          <th scope="col">Asignatura</th>
+          <th class="col-acciones" scope="col">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (programa of programasPagina(); track programa.id; let i = $index) {
+          <tr>
+            <td class="col-no">{{ desde() + i + 1 }}</td>
+            <td>{{ programa.nombre }}</td>
+            <td>{{ programa.categoria }}</td>
+            <td>{{ programa.asignatura }}</td>
+            <td class="col-acciones">
+              <div class="acciones">
+                <button type="button" class="btn btn--danger" (click)="eliminar(programa)">
+                  Eliminar
+                </button>
+                <button type="button" class="btn btn--navy" (click)="editar(programa)">
+                  Editar
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="tabla__vacia" colspan="5">No hay programas cargados</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== PAGINACIÓN ===================== -->
+  <nav class="paginacion" aria-label="Paginación del listado">
+    <button
+      type="button"
+      class="pag pag--nav"
+      aria-label="Página anterior"
+      [disabled]="paginaActual() === 1"
+      (click)="irAPagina(paginaActual() - 1)">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    @for (pagina of paginas(); track pagina) {
+      <button
+        type="button"
+        class="pag pag--num"
+        [class.pag--activa]="pagina === paginaActual()"
+        [attr.aria-current]="pagina === paginaActual() ? 'page' : null"
+        (click)="irAPagina(pagina)">
+        {{ pagina }}
+      </button>
+    }
+
+    <button
+      type="button"
+      class="pag pag--nav"
+      aria-label="Página siguiente"
+      [disabled]="paginaActual() === totalPaginas()"
+      (click)="irAPagina(paginaActual() + 1)">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+  </nav>
+</section>
