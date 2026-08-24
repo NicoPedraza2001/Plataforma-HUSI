@@ -94,6 +94,31 @@
   transform: translateY(-1px);
 }
 
+.btn--ghost {
+  background: transparent;
+  color: var(--husi-navy);
+  border-color: var(--husi-border);
+}
+
+.btn--ghost:hover {
+  background: var(--husi-bg);
+  border-color: var(--husi-navy);
+  transform: translateY(-1px);
+}
+
+.btn--active {
+  padding: 10px 22px;
+  font-size: 0.86rem;
+  background: var(--husi-blue);
+  border-color: var(--husi-blue);
+  color: #fff;
+}
+
+.btn--active:hover {
+  background: var(--husi-blue);
+  color: #fff;
+}
+
 /* ===================== CONTENIDO ===================== */
 .site-main {
   flex: 1 0 auto;
@@ -342,4 +367,114 @@
   .footer-perks {
     gap: 18px;
   }
+}
+
+/* ==========================================================
+   TEMA INVERTIDO (rutas con data.theme = 'invert', p. ej. /login)
+   Header azul con contenido blanco y footer blanco con contenido azul.
+   ========================================================== */
+:host(.inverted) .site-header {
+  background: var(--husi-navy);
+  border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
+:host(.inverted) .brand__logo {
+  filter: invert(1) grayscale(1) brightness(1.9);
+  mix-blend-mode: screen;
+}
+
+:host(.inverted) .brand__text strong {
+  color: #fff;
+}
+
+:host(.inverted) .brand__text small {
+  color: var(--husi-teal);
+}
+
+:host(.inverted) .btn--ghost {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+:host(.inverted) .btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #fff;
+}
+
+:host(.inverted) .btn--primary,
+:host(.inverted) .btn--active {
+  background: #fff;
+  border-color: #fff;
+  color: var(--husi-navy);
+}
+
+:host(.inverted) .btn--primary:hover,
+:host(.inverted) .btn--active:hover {
+  background: var(--husi-surface);
+  color: var(--husi-navy);
+}
+
+/* ---------- Footer invertido ---------- */
+:host(.inverted) .site-footer {
+  margin-top: 0;
+  color: var(--husi-text);
+}
+
+/* El azul profundo detrás de la onda es el mismo con el que cierra el
+   contenido, para que la entrada al footer no tenga corte. */
+:host(.inverted) .site-footer__wave {
+  background: var(--husi-deep);
+  color: #fff;
+}
+
+:host(.inverted) .site-footer__body {
+  background: #fff;
+}
+
+:host(.inverted) .footer-brand__logo,
+:host(.inverted) .site-footer__watermark {
+  filter: none;
+  mix-blend-mode: multiply;
+}
+
+:host(.inverted) .site-footer__watermark {
+  opacity: 0.06;
+}
+
+:host(.inverted) .footer-brand__name,
+:host(.inverted) .footer-title,
+:host(.inverted) .contact-list__text,
+:host(.inverted) .site-footer__legal strong {
+  color: var(--husi-navy);
+}
+
+:host(.inverted) .footer-perks li,
+:host(.inverted) .contact-list__text small,
+:host(.inverted) .site-footer__legal,
+:host(.inverted) .site-footer__legal svg {
+  color: var(--husi-muted);
+}
+
+:host(.inverted) .footer-perks svg,
+:host(.inverted) .footer-title svg,
+:host(.inverted) .contact-list__icon svg {
+  color: var(--husi-teal-dark);
+}
+
+:host(.inverted) .contact-list__icon,
+:host(.inverted) .social a {
+  background: rgba(11, 45, 92, 0.08);
+}
+
+:host(.inverted) .social a {
+  color: var(--husi-navy);
+}
+
+:host(.inverted) .social a:hover {
+  background: var(--husi-navy);
+  color: #fff;
+}
+
+:host(.inverted) .site-footer__bottom {
+  border-top-color: var(--husi-border);
 }

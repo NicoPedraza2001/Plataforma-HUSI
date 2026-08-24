@@ -10,7 +10,14 @@
     </a>
 
     <nav class="site-header__actions">
-      <a class="btn btn--primary" routerLink="/login">Inicia Sesión</a>
+      <a
+        class="btn btn--ghost"
+        routerLink="/"
+        routerLinkActive="btn--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        >Inicio</a
+      >
+      <a class="btn btn--primary" routerLink="/login" routerLinkActive="btn--active">Inicia Sesión</a>
     </nav>
   </div>
 </header>

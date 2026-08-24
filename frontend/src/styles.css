@@ -7,6 +7,9 @@
   --husi-navy: #0b2d5c;
   --husi-navy-deep: #071f42;
   --husi-blue: #14508f;
+  /* Cierre del fondo azul de las pantallas públicas: el contenido y la franja
+     sobre la onda del footer comparten este color para que no se vea el corte. */
+  --husi-deep: #02326f;
   --husi-teal: #4ad3c8;
   --husi-teal-dark: #2bb3a8;
 

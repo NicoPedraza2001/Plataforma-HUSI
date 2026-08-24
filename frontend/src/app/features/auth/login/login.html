@@ -1,0 +1,92 @@
+<section class="login">
+  <div class="login__card">
+    <!-- Capa decorativa: vive a nivel de tarjeta para que la curva azul
+         pueda cruzar por delante del centro, como en el mockup. -->
+    <svg class="login__deco" viewBox="0 0 860 520" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="husiBlobMain" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#2e8ef2" />
+          <stop offset="0.55" stop-color="#0b57b3" />
+          <stop offset="1" stop-color="#08417f" />
+        </linearGradient>
+        <linearGradient id="husiBlobCircle" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" stop-color="#3396f7" />
+          <stop offset="1" stop-color="#0a4ea6" />
+        </linearGradient>
+      </defs>
+
+      <path
+        d="M0,0 H400 C462,55 478,140 466,215 C455,282 415,330 372,368 C325,410 285,440 220,452 C145,466 58,443 0,418 Z"
+        fill="url(#husiBlobMain)" />
+      <circle cx="395" cy="415" r="84" fill="url(#husiBlobCircle)" />
+      <circle cx="78" cy="528" r="112" fill="url(#husiBlobCircle)" />
+      <circle cx="862" cy="524" r="104" fill="url(#husiBlobCircle)" />
+    </svg>
+
+    <!-- ---------- Panel de bienvenida ---------- -->
+    <aside class="login__aside">
+      <h2 class="login__welcome-title">Bienvenido</h2>
+      <p class="login__welcome-text">
+        Inicia sesión y sé parte de este increíble grupo de profesionales durante tus rotaciones en
+        el Hospital San Ignacio
+      </p>
+    </aside>
+
+    <!-- ---------- Formulario ---------- -->
+    <div class="login__panel">
+      <form class="login__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <h1 class="login__title">Inicia Sesión</h1>
+
+        <div class="field" [class.field--error]="isInvalid('usuario')">
+          <span class="field__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="8" r="4" fill="currentColor" />
+              <path
+                d="M4.5 20.5c.9-4 3.9-6 7.5-6s6.6 2 7.5 6Z"
+                fill="currentColor"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linejoin="round" />
+            </svg>
+          </span>
+          <input
+            id="usuario"
+            type="text"
+            formControlName="usuario"
+            placeholder="Usuario"
+            autocomplete="username" />
+        </div>
+
+        <div class="field" [class.field--error]="isInvalid('contrasena')">
+          <span class="field__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="4.5" y="10.5" width="15" height="10" rx="2.4" fill="currentColor" />
+              <path
+                d="M8 10.5V8a4 4 0 0 1 8 0v2.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.6"
+                stroke-linecap="round" />
+            </svg>
+          </span>
+          <input
+            id="contrasena"
+            type="password"
+            formControlName="contrasena"
+            placeholder="Contraseña"
+            autocomplete="current-password" />
+        </div>
+
+        @if (showErrors()) {
+          <p class="login__hint" role="alert">Ingresa tu usuario y tu contraseña para continuar.</p>
+        }
+
+        <a class="login__link" href="#" (click)="$event.preventDefault()">
+          ¿Olvidaste la contraseña?
+        </a>
+
+        <button class="login__submit" type="submit">Inicia Sesión</button>
+      </form>
+    </div>
+  </div>
+</section>
