@@ -4,6 +4,7 @@ import { PublicLayout } from './layout/public/public-layout/public-layout';
 import { Login } from './features/auth/login/login';
 import { AdminLayout } from './layout/admin/admin-layout/admin-layout';
 import { ListadoProgramas } from './features/admin/programas/listado-programas/listado-programas';
+import { Historial } from './features/admin/historial/historial/historial';
 
 export const routes: Routes = [
   {
@@ -29,6 +30,10 @@ export const routes: Routes = [
       {
         path: 'programas',
         component: ListadoProgramas
+      },
+      {
+        path: 'historial',
+        component: Historial
       }
     ]
   }
