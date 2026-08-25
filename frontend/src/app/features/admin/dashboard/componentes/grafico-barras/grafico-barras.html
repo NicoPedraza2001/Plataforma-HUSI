@@ -1,0 +1,18 @@
+<ul class="barras">
+  @for (fila of filas(); track fila.etiqueta) {
+    <li class="barra" [class]="'barra--' + fila.nivel">
+      <span class="barra__etiqueta">{{ fila.etiqueta }}</span>
+
+      <span class="barra__pista">
+        <span class="barra__relleno" [style.width.%]="fila.porcentaje"></span>
+      </span>
+
+      <span class="barra__valor">
+        {{ fila.rotulo }}
+        @if (fila.detalle) {
+          <small class="barra__detalle">{{ fila.detalle }}</small>
+        }
+      </span>
+    </li>
+  }
+</ul>

@@ -31,9 +31,10 @@
 
 /* El logo es un .jpg con fondo blanco: 'multiply' funde ese fondo con el
    blanco del header y conserva el azul institucional de la marca. */
+/* El tope lo pone el header: 62px de alto menos un respiro arriba y abajo. */
 .brand__logo {
-  width: 34px;
-  height: 34px;
+  width: 50px;
+  height: 50px;
   object-fit: contain;
   mix-blend-mode: multiply;
   flex: none;
@@ -52,10 +53,29 @@
   color: var(--husi-navy);
 }
 
+/* Desarrollo de la sigla, subrayado como en el logo institucional y en una
+   sola línea. Sirve de regla entre el acrónimo y el eslogan. */
+.brand__full {
+  align-self: flex-start;
+  margin-top: 3px;
+  padding-bottom: 2px;
+  border-bottom: 1.5px solid currentColor;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--husi-navy);
+}
+
 .brand__text small {
-  font-size: 0.68rem;
+  margin-top: 3px;
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
   color: var(--husi-teal-dark);
-  font-weight: 500;
 }
 
 .site-header__actions {
@@ -187,12 +207,42 @@
   flex: none;
 }
 
+.footer-brand__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .footer-brand__name {
   font-family: var(--font-serif);
   font-size: 2.2rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+  line-height: 1.1;
   color: #fff;
+}
+
+/* Misma firma institucional que el header y la barra del admin: el desarrollo
+   de la sigla en una línea y subrayado, y debajo el eslogan. */
+.footer-brand__full {
+  margin-top: 5px;
+  padding-bottom: 3px;
+  border-bottom: 1.5px solid currentColor;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.footer-brand__slogan {
+  margin-top: 6px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--husi-teal);
 }
 
 .footer-perks {
@@ -358,6 +408,21 @@
   }
 }
 
+/* La firma completa no cabe junto a los botones en pantallas estrechas: al ir
+   en una sola línea no se encoge, así que empujaría el header a scroll
+   horizontal. Se cae a la marca corta, que es para lo que existe la sigla. */
+@media (max-width: 720px) {
+  .brand__logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .brand__full,
+  .brand__text small {
+    display: none;
+  }
+}
+
 @media (max-width: 560px) {
   .site-footer__bottom {
     flex-direction: column;
@@ -383,7 +448,8 @@
   mix-blend-mode: screen;
 }
 
-:host(.inverted) .brand__text strong {
+:host(.inverted) .brand__text strong,
+:host(.inverted) .brand__full {
   color: #fff;
 }
 
@@ -442,10 +508,15 @@
 }
 
 :host(.inverted) .footer-brand__name,
+:host(.inverted) .footer-brand__full,
 :host(.inverted) .footer-title,
 :host(.inverted) .contact-list__text,
 :host(.inverted) .site-footer__legal strong {
   color: var(--husi-navy);
+}
+
+:host(.inverted) .footer-brand__slogan {
+  color: var(--husi-teal-dark);
 }
 
 :host(.inverted) .footer-perks li,

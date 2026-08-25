@@ -1,0 +1,17 @@
+/* El encabezado, la tarjeta, los filtros, la tabla y los distintivos vienen
+   de src/styles/admin.css. Aquí solo queda lo propio de esta pantalla. */
+
+:host {
+  display: block;
+  padding: 26px 34px 44px;
+}
+
+.col-correo {
+  color: var(--husi-muted);
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 22px 18px 34px;
+  }
+}

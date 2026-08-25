@@ -1,0 +1,195 @@
+/* El encabezado, la tarjeta, los filtros, la tabla y los distintivos vienen
+   de src/styles/admin.css. Aquí solo queda lo propio del dashboard. */
+
+:host {
+  display: block;
+  padding: 26px 34px 44px;
+  background: var(--husi-surface);
+  min-height: 100%;
+}
+
+/* Los paneles van más densos que las tarjetas de los listados: hay muchos
+   por pantalla y el aire de más obliga a desplazarse. */
+:host .card {
+  padding: 18px 22px 22px;
+}
+
+:host .filtros {
+  margin-top: 18px;
+}
+
+/* ===================== INDICADORES ===================== */
+.kpis {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
+  gap: 16px;
+}
+
+.kpi {
+  padding: 14px 18px 16px;
+  border: 1px solid var(--husi-border);
+  border-left: 4px solid var(--grafico-2);
+  border-radius: var(--radius-sm);
+  background: var(--husi-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi--naranja {
+  border-left-color: var(--grafico-3);
+}
+
+.kpi--azul {
+  border-left-color: var(--grafico-1);
+}
+
+.kpi--verde {
+  border-left-color: var(--grafico-4);
+}
+
+.kpi__etiqueta {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--husi-muted);
+}
+
+/* Cifra destacada en la misma sans del resto y con dígitos proporcionales. */
+.kpi__valor {
+  margin: 6px 0 4px;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--husi-navy);
+}
+
+.kpi__detalle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: var(--husi-muted);
+}
+
+.kpi__delta {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--husi-surface);
+  font-weight: 600;
+  color: var(--husi-text);
+}
+
+/* ===================== REJILLA DE PANELES ===================== */
+.rejilla {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* Dentro de la rejilla la separación la pone el gap, no cada tarjeta. */
+:host .rejilla .card {
+  margin-top: 0;
+}
+
+.panel__titulo {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--husi-navy);
+}
+
+.panel__nota {
+  margin: 4px 0 18px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--husi-muted);
+}
+
+.panel--completo {
+  grid-column: 1 / -1;
+}
+
+/* ===================== AVISOS ===================== */
+.alertas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alerta {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+/* El nivel se lee por el texto y la cifra; la marca solo lo refuerza. */
+.alerta__marca {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--estado-critico);
+}
+
+.alerta--alerta .alerta__marca {
+  background: var(--estado-alerta);
+}
+
+.alerta--info .alerta__marca {
+  background: var(--husi-muted);
+}
+
+.alerta__texto {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  color: var(--husi-text);
+}
+
+.alerta__texto small {
+  font-size: 0.68rem;
+  color: var(--husi-muted);
+}
+
+.alerta__cantidad {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--husi-navy);
+}
+
+/* ===================== TABLA ===================== */
+.panel--tabla {
+  margin-top: 16px;
+}
+
+:host .table-wrap {
+  margin-top: 16px;
+}
+
+.col-fecha {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 1080px) {
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 22px 18px 34px;
+  }
+
+  .filtro {
+    flex: 1 1 160px;
+  }
+}

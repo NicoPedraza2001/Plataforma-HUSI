@@ -1,0 +1,40 @@
+<nav class="paginacion" aria-label="Paginación del listado">
+  <button
+    type="button"
+    class="pag pag--nav"
+    aria-label="Página anterior"
+    [disabled]="paginaActual() === 1"
+    (click)="ir(paginaActual() - 1)">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"
+        stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </button>
+
+  @for (item of items(); track $index) {
+    @if (esPagina(item)) {
+      <button
+        type="button"
+        class="pag pag--num"
+        [class.pag--activa]="item === paginaActual()"
+        [attr.aria-current]="item === paginaActual() ? 'page' : null"
+        (click)="ir(item)">
+        {{ item }}
+      </button>
+    } @else {
+      <span class="pag pag--corte" aria-hidden="true">…</span>
+    }
+  }
+
+  <button
+    type="button"
+    class="pag pag--nav"
+    aria-label="Página siguiente"
+    [disabled]="paginaActual() === totalPaginas()"
+    (click)="ir(paginaActual() + 1)">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"
+        stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </button>
+</nav>

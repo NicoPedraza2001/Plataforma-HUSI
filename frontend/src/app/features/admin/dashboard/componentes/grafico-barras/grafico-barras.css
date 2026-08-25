@@ -1,0 +1,66 @@
+/* Lista de barras horizontales. El valor va siempre rotulado al final, así que
+   el color nunca es el único canal para leer la magnitud. */
+.barras {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.barra {
+  display: grid;
+  grid-template-columns: minmax(88px, 118px) 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.barra__etiqueta {
+  font-size: 0.78rem;
+  color: var(--husi-text);
+}
+
+/* La pista es un paso claro del mismo tono del relleno. */
+.barra__pista {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: #eef3f8;
+  overflow: hidden;
+}
+
+.barra__relleno {
+  display: block;
+  height: 100%;
+  /* Extremo redondeado solo del lado del dato; el origen queda a escuadra. */
+  border-radius: 0 4px 4px 0;
+  background: var(--grafico-2);
+  transition: width 0.3s ease;
+}
+
+.barra--alerta .barra__relleno {
+  background: var(--estado-alerta, #e8871f);
+}
+
+.barra--critico .barra__relleno {
+  background: var(--estado-critico, #e01b1b);
+}
+
+.barra__valor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 44px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--husi-text);
+}
+
+.barra__detalle {
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: var(--husi-muted);
+  white-space: nowrap;
+}

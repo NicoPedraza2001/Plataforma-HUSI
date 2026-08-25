@@ -43,11 +43,34 @@
   letter-spacing: 0.06em;
 }
 
-.sidebar__brand-tag {
+/* Desarrollo de la sigla, subrayado como en el logo institucional. Va en una
+   sola línea, así que el cuerpo lo manda el ancho de la barra: por eso es
+   tan pequeño y por eso no puede partirse. */
+.sidebar__brand-full {
+  margin-top: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1.5px solid currentColor;
   font-family: var(--font-serif);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
   color: var(--husi-on-dark);
+}
+
+/* El eslogan sí puede partirse: forzarlo a una línea en 224px lo dejaría en
+   6px, ilegible. En dos líneas cabe con un cuerpo que se lee. */
+.sidebar__brand-slogan {
+  margin-top: 6px;
+  max-width: 168px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  color: var(--husi-teal);
 }
 
 /* ===================== NAVEGACIÓN ===================== */

@@ -1,0 +1,88 @@
+/* Barra apilada de parte-a-todo. Los segmentos se separan con un hueco del
+   color de la superficie, no con un borde: el borde añadiría tinta que no
+   es dato. La leyenda siempre está presente y trae el valor rotulado. */
+.apilada {
+  display: flex;
+  gap: 2px;
+  height: 26px;
+  margin-bottom: 20px;
+}
+
+.apilada__seg {
+  flex-basis: 0;
+  min-width: 4px;
+}
+
+.apilada__seg:first-child {
+  border-radius: 5px 0 0 5px;
+}
+
+.apilada__seg:last-child {
+  border-radius: 0 5px 5px 0;
+}
+
+.apilada__seg--1 {
+  background: var(--grafico-1);
+}
+
+.apilada__seg--2 {
+  background: var(--grafico-2);
+}
+
+.apilada__seg--3 {
+  background: var(--grafico-3);
+}
+
+.apilada__seg--4 {
+  background: var(--grafico-4);
+}
+
+.leyenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.leyenda__fila {
+  display: grid;
+  grid-template-columns: 11px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+}
+
+.leyenda__punto {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+
+.leyenda__punto--1 {
+  background: var(--grafico-1);
+}
+
+.leyenda__punto--2 {
+  background: var(--grafico-2);
+}
+
+.leyenda__punto--3 {
+  background: var(--grafico-3);
+}
+
+.leyenda__punto--4 {
+  background: var(--grafico-4);
+}
+
+/* El texto nunca lleva el color de la serie: la identidad la aporta el punto. */
+.leyenda__texto {
+  color: var(--husi-text);
+}
+
+.leyenda__valor {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--husi-muted);
+}

@@ -1,0 +1,123 @@
+<!-- ===================== ENCABEZADO ===================== -->
+<header class="page-head">
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Usuarios</h1>
+
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <span>Inicio</span>
+      <span class="breadcrumb__sep" aria-hidden="true">&gt;</span>
+      <span aria-current="page">Usuarios</span>
+    </nav>
+  </div>
+
+  <button type="button" class="btn btn--add" (click)="agregar()">
+    <span class="btn__plus" aria-hidden="true">+</span>
+    Agregar usuario
+  </button>
+</header>
+
+<!-- ===================== TARJETA DEL LISTADO ===================== -->
+<section class="card">
+  <div class="filtros">
+    <label class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+      <span class="sr-only">Buscar usuario por nombre o correo</span>
+      <input
+        class="search__input"
+        type="search"
+        placeholder="Buscar por nombre o correo..."
+        [value]="termino()"
+        (input)="buscar($any($event.target).value)" />
+    </label>
+
+    <label class="filtro">
+      <span class="filtro__label">Rol</span>
+      <span class="filtro__control">
+        <select
+          class="filtro__select"
+          [value]="rol()"
+          (change)="filtrarPorRol($any($event.target).value)">
+          <option value="todos">Todos</option>
+          @for (opcion of roles(); track opcion) {
+            <option [value]="opcion">{{ opcion }}</option>
+          }
+        </select>
+        <svg class="filtro__chevron" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+    </label>
+
+    <label class="filtro">
+      <span class="filtro__label">Estado</span>
+      <span class="filtro__control">
+        <select
+          class="filtro__select"
+          [value]="estado()"
+          (change)="filtrarPorEstado($any($event.target).value)">
+          <option value="todos">Todos</option>
+          <option value="activos">Activos</option>
+          <option value="inactivos">Inactivos</option>
+        </select>
+        <svg class="filtro__chevron" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+    </label>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th class="col-no" scope="col">No.</th>
+          <th scope="col">Nombre</th>
+          <th scope="col">Correo</th>
+          <th scope="col">Rol</th>
+          <th scope="col">Estado</th>
+          <th class="col-acciones" scope="col">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (usuario of usuariosPagina(); track usuario.id; let i = $index) {
+          <tr>
+            <td class="col-no">{{ desde() + i + 1 }}</td>
+            <td>{{ usuario.nombre }}</td>
+            <td class="col-correo">{{ usuario.correo }}</td>
+            <td>{{ usuario.rol }}</td>
+            <td>
+              <span class="badge" [class]="usuario.activo ? 'badge--activo' : 'badge--inactivo'">
+                {{ usuario.activo ? 'ACTIVO' : 'INACTIVO' }}
+              </span>
+            </td>
+            <td class="col-acciones">
+              <div class="acciones">
+                <button type="button" class="btn btn--navy" (click)="editar(usuario)">
+                  Editar
+                </button>
+                <button type="button" class="btn btn--green" (click)="permisos(usuario)">
+                  Permisos
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="tabla__vacia" colspan="6">No hay usuarios que coincidan con la búsqueda</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginacion
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    (cambio)="irAPagina($event)" />
+</section>

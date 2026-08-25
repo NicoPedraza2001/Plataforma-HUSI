@@ -71,41 +71,8 @@
     </table>
   </div>
 
-  <!-- ===================== PAGINACIÓN ===================== -->
-  <nav class="paginacion" aria-label="Paginación del listado">
-    <button
-      type="button"
-      class="pag pag--nav"
-      aria-label="Página anterior"
-      [disabled]="paginaActual() === 1"
-      (click)="irAPagina(paginaActual() - 1)">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
-
-    @for (pagina of paginas(); track pagina) {
-      <button
-        type="button"
-        class="pag pag--num"
-        [class.pag--activa]="pagina === paginaActual()"
-        [attr.aria-current]="pagina === paginaActual() ? 'page' : null"
-        (click)="irAPagina(pagina)">
-        {{ pagina }}
-      </button>
-    }
-
-    <button
-      type="button"
-      class="pag pag--nav"
-      aria-label="Página siguiente"
-      [disabled]="paginaActual() === totalPaginas()"
-      (click)="irAPagina(paginaActual() + 1)">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
-  </nav>
+  <app-paginacion
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    (cambio)="irAPagina($event)" />
 </section>

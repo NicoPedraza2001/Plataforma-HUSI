@@ -1,0 +1,18 @@
+<div class="apilada" role="img" [attr.aria-label]="resumen()">
+  @for (segmento of segmentos(); track segmento.etiqueta; let i = $index) {
+    <span
+      class="apilada__seg"
+      [class]="'apilada__seg--' + (i + 1)"
+      [style.flex-grow]="segmento.porcentaje"></span>
+  }
+</div>
+
+<ul class="leyenda">
+  @for (segmento of segmentos(); track segmento.etiqueta; let i = $index) {
+    <li class="leyenda__fila">
+      <span class="leyenda__punto" [class]="'leyenda__punto--' + (i + 1)" aria-hidden="true"></span>
+      <span class="leyenda__texto">{{ segmento.etiqueta }}</span>
+      <span class="leyenda__valor">{{ segmento.porcentaje }}%</span>
+    </li>
+  }
+</ul>

@@ -2,6 +2,9 @@
    Estilos globales - Plataforma HUSI
    ============================================================ */
 
+/* Superficie compartida por las pantallas de /admin. */
+@import './styles/admin.css';
+
 :root {
   /* Marca */
   --husi-navy: #0b2d5c;
@@ -23,6 +26,19 @@
   --husi-green-dark: #0a6f60;
   --husi-red: #e01b1b;
   --husi-red-dark: #b41414;
+
+  /* Paleta de gráficos. Orden fijo: el color sigue a la entidad, nunca a su
+     posición en el ranking, y no se recicla al filtrar. Validada para
+     protanopia y deuteranopia sobre fondo blanco. */
+  --grafico-1: #1a5ea6;
+  --grafico-2: #12a89a;
+  --grafico-3: #eda100;
+  --grafico-4: #5cc98d;
+
+  /* Estados reservados: nunca se usan como color de serie. */
+  --estado-ok: #17b26a;
+  --estado-alerta: #e8871f;
+  --estado-critico: #e01b1b;
 
   /* Texto */
   --husi-text: #1f2a3a;

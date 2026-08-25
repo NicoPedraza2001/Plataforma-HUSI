@@ -1,0 +1,122 @@
+/* Serie única de área + línea. Las guías son hairlines sólidas y recesivas;
+   el valor se lee en el rótulo del extremo, en las marcas del eje y al pasar
+   el puntero, nunca solo por el color. */
+.tendencia {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  grid-template-rows: 132px auto;
+  column-gap: 8px;
+}
+
+.tendencia__ejes {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--husi-muted);
+}
+
+.tendencia__marca {
+  transform: translateY(-50%);
+}
+
+.tendencia__marca:first-child {
+  transform: none;
+}
+
+.tendencia__marca:last-child {
+  transform: translateY(-100%);
+}
+
+.tendencia__lienzo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.tendencia__guia {
+  height: 1px;
+  background: var(--husi-border);
+}
+
+.tendencia__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.tendencia__area {
+  fill: var(--grafico-1);
+  opacity: 0.1;
+}
+
+.tendencia__linea {
+  fill: none;
+  stroke: var(--grafico-1);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Anillo del color de la superficie para que el punto se lea sobre la línea. */
+.tendencia__punto {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--grafico-1);
+  box-shadow: 0 0 0 2px var(--husi-bg);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.tendencia__punto--activo {
+  background: var(--husi-navy);
+}
+
+.tendencia__globo {
+  position: absolute;
+  top: -6px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: var(--husi-navy);
+  color: #fff;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+
+.tendencia__zonas {
+  position: absolute;
+  inset: -6px 0;
+  display: flex;
+}
+
+.tendencia__zona {
+  flex: 1;
+  min-width: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tendencia__zona:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
+.tendencia__meses {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.68rem;
+  color: var(--husi-muted);
+}

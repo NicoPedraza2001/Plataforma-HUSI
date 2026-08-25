@@ -1,4 +1,5 @@
 import { Component, computed, signal } from '@angular/core';
+import { Paginacion } from '../../../../shared/paginacion/paginacion';
 
 /** Fila del listado de programas académicos. */
 export interface Programa {
@@ -27,7 +28,7 @@ const PROGRAMAS_DEMO: readonly Programa[] = [
 
 @Component({
   selector: 'app-listado-programas',
-  imports: [],
+  imports: [Paginacion],
   templateUrl: './listado-programas.html',
   styleUrl: './listado-programas.css',
 })
@@ -53,10 +54,6 @@ export class ListadoProgramas {
 
   protected readonly totalPaginas = computed(() =>
     Math.max(1, Math.ceil(this.filtrados().length / TAMANO_PAGINA)),
-  );
-
-  protected readonly paginas = computed(() =>
-    Array.from({ length: this.totalPaginas() }, (_, indice) => indice + 1),
   );
 
   /** Índice de la primera fila de la página actual, base para la columna "No". */

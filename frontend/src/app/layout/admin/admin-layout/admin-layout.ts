@@ -34,6 +34,8 @@ export class AdminLayout {
         { label: 'Dashboard', link: '/admin/dashboard' },
         { label: 'Residentes', link: '/admin/residentes' },
         { label: 'Programa', link: '/admin/programas' },
+        { label: 'Doctores', link: '/admin/doctores' },
+        { label: 'Universidad', link: '/admin/universidades' },
         { label: 'Servicios', link: '/admin/servicios' },
       ],
     },

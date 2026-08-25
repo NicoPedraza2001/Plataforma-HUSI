@@ -4,6 +4,8 @@ import { PublicLayout } from './layout/public/public-layout/public-layout';
 import { Login } from './features/auth/login/login';
 import { AdminLayout } from './layout/admin/admin-layout/admin-layout';
 import { ListadoProgramas } from './features/admin/programas/listado-programas/listado-programas';
+import { ListadoUsuarios } from './features/admin/usuarios/listado-usuarios/listado-usuarios';
+import { PanelDashboard } from './features/admin/dashboard/panel-dashboard/panel-dashboard';
 
 export const routes: Routes = [
   {
@@ -27,8 +29,16 @@ export const routes: Routes = [
     component: AdminLayout,
     children: [
       {
+        path: 'dashboard',
+        component: PanelDashboard
+      },
+      {
         path: 'programas',
         component: ListadoProgramas
+      },
+      {
+        path: 'usuarios',
+        component: ListadoUsuarios
       }
     ]
   }

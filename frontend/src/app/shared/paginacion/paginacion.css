@@ -1,0 +1,63 @@
+:host {
+  display: block;
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 26px;
+}
+
+.pag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--husi-border);
+  border-radius: 8px;
+  background: var(--husi-bg);
+  color: var(--husi-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.pag--num {
+  color: var(--husi-text);
+}
+
+.pag:hover:not(:disabled) {
+  border-color: var(--husi-navy);
+  color: var(--husi-navy);
+}
+
+.pag:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pag svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pag--activa,
+.pag--activa:hover:not(:disabled) {
+  border-color: var(--husi-navy);
+  background: var(--husi-navy);
+  color: #fff;
+}
+
+/* El corte marca el salto sin ofrecer nada que pulsar. */
+.pag--corte {
+  border-color: transparent;
+  background: transparent;
+  cursor: default;
+}

@@ -1,0 +1,367 @@
+/* ============================================================
+   Superficie común del panel administrativo
+   ------------------------------------------------------------
+   Todo lo que comparten las pantallas de /admin vive aquí: el
+   encabezado, la tarjeta, los filtros, la tabla y los botones.
+   Cada componente conserva solo lo que es suyo (sus KPIs, sus
+   anchos de columna, el padding de :host).
+
+   Al ser estilos globales alcanzan el interior de los componentes
+   sin necesidad de ::ng-deep: la encapsulación emulada solo marca
+   los selectores del propio componente, no los de esta hoja.
+   ============================================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===================== ENCABEZADO ===================== */
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--husi-border);
+}
+
+.page-head__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.page-head__title {
+  font-family: var(--font-serif);
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--husi-navy);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--husi-muted);
+}
+
+.breadcrumb__sep {
+  color: var(--husi-border);
+}
+
+/* ===================== BOTONES ===================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.btn--add {
+  padding: 13px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  background: var(--husi-green);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn__plus {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+/* Botones de fila: mismo tamaño, distinta intención. */
+.btn--navy,
+.btn--green,
+.btn--danger {
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+}
+
+.btn--navy {
+  background: var(--husi-navy);
+}
+
+.btn--navy:hover {
+  background: var(--husi-blue);
+}
+
+.btn--green {
+  background: var(--husi-green);
+}
+
+.btn--danger {
+  background: var(--husi-red);
+}
+
+.btn--danger:hover {
+  background: var(--husi-red-dark);
+}
+
+.btn--add:hover,
+.btn--green:hover {
+  background: var(--husi-green-dark);
+}
+
+.btn--add:hover {
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn--add:disabled:hover {
+  background: var(--husi-green);
+  transform: none;
+}
+
+/* ===================== TARJETA ===================== */
+.card {
+  margin-top: 24px;
+  padding: 22px 24px 26px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-md);
+  background: var(--husi-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===================== FILTROS ===================== */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 260px;
+}
+
+.search__icon {
+  position: absolute;
+  left: 14px;
+  color: var(--husi-muted);
+  pointer-events: none;
+}
+
+.filtro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 1 180px;
+}
+
+.filtro__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--husi-muted);
+}
+
+.filtro__control {
+  position: relative;
+  display: block;
+}
+
+.search__input,
+.filtro__select {
+  width: 100%;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  color: var(--husi-text);
+  background: var(--husi-bg);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.search__input {
+  padding: 12px 16px 12px 42px;
+  font-size: 0.9rem;
+}
+
+.search__input::placeholder {
+  color: var(--husi-muted);
+}
+
+.filtro__select {
+  padding: 12px 38px 12px 14px;
+  font-size: 0.88rem;
+  appearance: none;
+  cursor: pointer;
+}
+
+.filtro__chevron {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: var(--husi-muted);
+  pointer-events: none;
+}
+
+.search__input:focus,
+.filtro__select:focus {
+  outline: none;
+  border-color: var(--husi-teal-dark);
+  box-shadow: 0 0 0 3px rgba(43, 179, 168, 0.15);
+}
+
+.search__icon,
+.filtro__chevron {
+  width: 18px;
+  height: 18px;
+}
+
+/* ===================== TABLA ===================== */
+.table-wrap {
+  margin-top: 22px;
+  overflow-x: auto;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.86rem;
+}
+
+.tabla thead th {
+  padding: 12px 14px;
+  font-family: var(--font-serif);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--husi-navy);
+  text-align: center;
+  background: #e8f0f9;
+  white-space: nowrap;
+}
+
+.tabla thead th:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.tabla thead th:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.tabla tbody td {
+  padding: 10px 14px;
+  text-align: center;
+  color: var(--husi-text);
+  border-bottom: 1px solid #f2f6fb;
+}
+
+/* La primera columna es la que se lee de corrido al bajar por la tabla. */
+.tabla thead th:first-child,
+.tabla tbody td:first-child {
+  text-align: left;
+}
+
+/* Las acciones se alinean contra el borde derecho, y el encabezado las sigue. */
+.tabla thead th.col-acciones {
+  text-align: right;
+}
+
+.tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tabla tbody tr:hover td {
+  background: var(--husi-surface);
+}
+
+.col-no {
+  width: 60px;
+}
+
+.col-acciones {
+  width: 200px;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tabla__vacia {
+  padding-block: 42px !important;
+  text-align: center !important;
+  color: var(--husi-muted);
+  font-size: 0.9rem;
+}
+
+.tabla tbody tr:hover .tabla__vacia {
+  background: transparent;
+}
+
+/* ===================== DISTINTIVOS DE ESTADO ===================== */
+/* El color base es neutro a propósito: un estado sin modificador se ve
+   como "sin clasificar" y no se disfraza de estado válido. */
+.badge {
+  display: inline-block;
+  min-width: 92px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--husi-muted);
+}
+
+.badge--activo,
+.badge--confirmada {
+  background: var(--estado-ok);
+}
+
+.badge--inactivo {
+  background: var(--husi-red);
+}
+
+/* Azul: es información, no un resultado. El verde queda reservado para
+   lo que ya quedó en firme y el ámbar para lo que falta gestionar. */
+.badge--proxima {
+  background: var(--grafico-1);
+}
+
+.badge--pendiente {
+  background: var(--estado-alerta);
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 720px) {
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn--add {
+    align-self: flex-start;
+  }
+}

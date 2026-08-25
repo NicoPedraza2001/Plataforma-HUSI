@@ -1,0 +1,51 @@
+<div class="tendencia">
+  <div class="tendencia__ejes" aria-hidden="true">
+    @for (marca of marcas(); track $index) {
+      <span class="tendencia__marca">{{ marca }}</span>
+    }
+  </div>
+
+  <div class="tendencia__lienzo">
+    @for (marca of marcas(); track $index) {
+      <span class="tendencia__guia"></span>
+    }
+
+    <svg class="tendencia__svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <path class="tendencia__area" [attr.d]="area()" />
+      <path class="tendencia__linea" [attr.d]="linea()" vector-effect="non-scaling-stroke" />
+    </svg>
+
+    @if (ultimo(); as fin) {
+      <span class="tendencia__punto" [style.left.%]="fin.x" [style.top.%]="fin.y"></span>
+    }
+
+    @if (detalle(); as punto) {
+      <span class="tendencia__punto tendencia__punto--activo"
+        [style.left.%]="punto.x" [style.top.%]="punto.y"></span>
+      <span class="tendencia__globo" [style.left.%]="punto.x">
+        <strong>{{ punto.valor }}</strong> {{ punto.etiqueta }}
+      </span>
+    }
+
+    <!-- Zonas de contacto anchas: el objetivo no es el punto sino toda su banda,
+         y al ser botones el teclado muestra exactamente lo mismo que el puntero. -->
+    <div class="tendencia__zonas">
+      @for (punto of puntos(); track punto.etiqueta; let i = $index) {
+        <button
+          type="button"
+          class="tendencia__zona"
+          [attr.aria-label]="punto.etiqueta + ': ' + punto.valor + ' rotaciones'"
+          (mouseenter)="activo.set(i)"
+          (mouseleave)="activo.set(null)"
+          (focus)="activo.set(i)"
+          (blur)="activo.set(null)"></button>
+      }
+    </div>
+  </div>
+
+  <div class="tendencia__meses">
+    @for (punto of puntos(); track punto.etiqueta) {
+      <span>{{ punto.etiqueta }}</span>
+    }
+  </div>
+</div>
