@@ -5,6 +5,7 @@ import { Login } from './features/auth/login/login';
 import { AdminLayout } from './layout/admin/admin-layout/admin-layout';
 import { ListadoProgramas } from './features/admin/programas/listado-programas/listado-programas';
 import { Historial } from './features/admin/historial/historial/historial';
+import { ListadoResidentes } from './features/admin/residentes/listado-residentes/listado-residentes';
 
 export const routes: Routes = [
   {
@@ -34,6 +35,10 @@ export const routes: Routes = [
       {
         path: 'historial',
         component: Historial
+      },
+      {
+        path: 'residentes',
+        component: ListadoResidentes
       }
     ]
   }

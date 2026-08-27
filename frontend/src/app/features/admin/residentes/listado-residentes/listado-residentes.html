@@ -1,0 +1,169 @@
+<!-- ===================== ENCABEZADO ===================== -->
+<header class="page-head">
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Residentes</h1>
+
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <span>Inicio</span>
+      <span class="breadcrumb__sep" aria-hidden="true">&gt;</span>
+      <span aria-current="page">Residentes</span>
+    </nav>
+  </div>
+
+  <div class="page-head__acciones">
+    <button type="button" class="btn btn--outline" (click)="importar()">Importar</button>
+    <button type="button" class="btn btn--add" (click)="agregarResidente()">
+      <span class="btn__plus" aria-hidden="true">+</span>
+      Agregar Residente
+    </button>
+  </div>
+</header>
+
+<!-- ===================== TARJETA DEL LISTADO ===================== -->
+<section class="card">
+  <!-- ===================== FILTROS ===================== -->
+  <div class="filtros">
+    <label class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+      <span class="sr-only">Buscar residente o documento</span>
+      <input
+        class="search__input"
+        type="search"
+        placeholder="Buscar residente o documento..."
+        [value]="termino()"
+        (input)="buscar($any($event.target).value)" />
+    </label>
+
+    <div class="filtro-grupo">
+      <label class="filtro-grupo__label" for="filtro-universidad">Universidad</label>
+      <select
+        id="filtro-universidad"
+        class="filtro-input"
+        [value]="universidadSeleccionada()"
+        (change)="onUniversidadChange($any($event.target).value)">
+        @for (universidad of universidades(); track universidad) {
+          <option [value]="universidad">{{ universidad }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filtro-grupo">
+      <label class="filtro-grupo__label" for="filtro-programa">Programa</label>
+      <select
+        id="filtro-programa"
+        class="filtro-input"
+        [value]="programaSeleccionado()"
+        (change)="onProgramaChange($any($event.target).value)">
+        @for (programa of programas(); track programa) {
+          <option [value]="programa">{{ programa }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filtro-grupo">
+      <label class="filtro-grupo__label" for="filtro-estado">Estado</label>
+      <select
+        id="filtro-estado"
+        class="filtro-input"
+        [value]="estadoSeleccionado()"
+        (change)="onEstadoChange($any($event.target).value)">
+        @for (estado of estados; track estado) {
+          <option [value]="estado">{{ estado }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filtro-grupo">
+      <label class="filtro-grupo__label" for="filtro-periodo">Periodo</label>
+      <select
+        id="filtro-periodo"
+        class="filtro-input"
+        [value]="periodoSeleccionado()"
+        (change)="onPeriodoChange($any($event.target).value)">
+        @for (periodo of periodos(); track periodo) {
+          <option [value]="periodo">{{ periodo }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- ===================== TABLA ===================== -->
+  <div class="table-wrap">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th class="col-no" scope="col">No.</th>
+          <th scope="col">Residente</th>
+          <th scope="col">Documento</th>
+          <th scope="col">Universidad</th>
+          <th scope="col">Programa</th>
+          <th scope="col">Estado</th>
+          <th class="col-acciones" scope="col">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (residente of residentesPagina(); track residente.id; let i = $index) {
+          <tr>
+            <td class="col-no">{{ desde() + i + 1 }}</td>
+            <td class="col-residente">{{ residente.nombre }}</td>
+            <td>{{ residente.documento }}</td>
+            <td>{{ residente.universidad }}</td>
+            <td>{{ residente.programa }}</td>
+            <td>
+              <span [class]="claseBadge(residente.estado)">{{ residente.estado }}</span>
+            </td>
+            <td class="col-acciones">
+              <button type="button" class="btn btn--navy" (click)="editar(residente)">Editar</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="tabla__vacia" colspan="7">No hay residentes registrados</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== PAGINACIÓN ===================== -->
+  <nav class="paginacion" aria-label="Paginación del listado">
+    <button
+      type="button"
+      class="pag pag--nav"
+      aria-label="Página anterior"
+      [disabled]="paginaActual() === 1"
+      (click)="irAPagina(paginaActual() - 1)">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    @for (pagina of paginas(); track pagina) {
+      <button
+        type="button"
+        class="pag pag--num"
+        [class.pag--activa]="pagina === paginaActual()"
+        [attr.aria-current]="pagina === paginaActual() ? 'page' : null"
+        (click)="irAPagina(pagina)">
+        {{ pagina }}
+      </button>
+    }
+
+    <button
+      type="button"
+      class="pag pag--nav"
+      aria-label="Página siguiente"
+      [disabled]="paginaActual() === totalPaginas()"
+      (click)="irAPagina(paginaActual() + 1)">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+  </nav>
+</section>
