@@ -6,6 +6,8 @@ import { AdminLayout } from './layout/admin/admin-layout/admin-layout';
 import { ListadoProgramas } from './features/admin/programas/listado-programas/listado-programas';
 import { ListadoUsuarios } from './features/admin/usuarios/listado-usuarios/listado-usuarios';
 import { PanelDashboard } from './features/admin/dashboard/panel-dashboard/panel-dashboard';
+import { ListadoServicios } from './features/admin/servicios/listado-servicios/listado-servicios';
+import { Ajustes } from './features/admin/ajustes/ajustes';
 
 export const routes: Routes = [
   {
@@ -37,8 +39,16 @@ export const routes: Routes = [
         component: ListadoProgramas
       },
       {
+        path: 'servicios',
+        component: ListadoServicios
+      },
+      {
         path: 'usuarios',
         component: ListadoUsuarios
+      },
+      {
+        path: 'ajustes',
+        component: Ajustes
       }
     ]
   }

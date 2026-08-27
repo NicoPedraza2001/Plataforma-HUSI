@@ -5,7 +5,6 @@ import { Paginacion } from '../../../../shared/paginacion/paginacion';
 export interface Programa {
   id: number;
   nombre: string;
-  categoria: string;
   asignatura: string;
 }
 
@@ -14,16 +13,10 @@ const TAMANO_PAGINA = 10;
 
 // TODO: reemplazar por los datos que entregue el backend.
 const PROGRAMAS_DEMO: readonly Programa[] = [
-  { id: 1, nombre: 'Especializacion Radiologia', categoria: 'Docencia Servicio', asignatura: 'Radiologia Integral II' },
-  { id: 2, nombre: 'Especializacion Anestesiologia', categoria: 'Docencia Servicio', asignatura: 'Anestesia Clinica I' },
-  { id: 3, nombre: 'Especializacion Pediatria', categoria: 'Docencia Servicio', asignatura: 'Pediatria General III' },
-  { id: 4, nombre: 'Especializacion Cirugia General', categoria: 'Docencia Servicio', asignatura: 'Cirugia Basica II' },
-  { id: 5, nombre: 'Especializacion Medicina Interna', categoria: 'Docencia Servicio', asignatura: 'Clinica Medica IV' },
-  { id: 6, nombre: 'Especializacion Ginecologia', categoria: 'Docencia Servicio', asignatura: 'Obstetricia II' },
-  { id: 7, nombre: 'Especializacion Ortopedia', categoria: 'Convenio Docente', asignatura: 'Trauma y Ortopedia I' },
-  { id: 8, nombre: 'Especializacion Dermatologia', categoria: 'Convenio Docente', asignatura: 'Dermatologia Clinica II' },
-  { id: 9, nombre: 'Especializacion Neurologia', categoria: 'Convenio Docente', asignatura: 'Neurologia Aplicada III' },
-  { id: 10, nombre: 'Especializacion Cardiologia', categoria: 'Convenio Docente', asignatura: 'Cardiologia Integral I' },
+  { id: 1, nombre: 'Especializacion Ortopedia', asignatura: 'Trauma y Ortopedia I' },
+  { id: 2, nombre: 'Especializacion Dermatologia', asignatura: 'Dermatologia Clinica II' },
+  { id: 3, nombre: 'Especializacion Neurologia', asignatura: 'Neurologia Aplicada III' },
+  { id: 4, nombre: 'Especializacion Cardiologia', asignatura: 'Cardiologia Integral I' },
 ];
 
 @Component({
@@ -46,9 +39,7 @@ export class ListadoProgramas {
     }
 
     return this.programas().filter((programa) =>
-      `${programa.nombre} ${programa.categoria} ${programa.asignatura}`
-        .toLowerCase()
-        .includes(busqueda),
+      `${programa.nombre} ${programa.asignatura}`.toLowerCase().includes(busqueda),
     );
   });
 

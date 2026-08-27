@@ -1,0 +1,289 @@
+/* El encabezado, la tarjeta y los botones vienen de src/styles/admin.css.
+   Aquí vive lo propio de la pantalla: la identidad, los bloques editables y
+   los campos de formulario. */
+
+:host {
+  display: block;
+  padding: 26px 34px 44px;
+}
+
+/* La ficha de cuenta se lee en columna estrecha: una línea de texto larga de
+   lado a lado cansa y aquí no hay tabla que justifique el ancho completo. */
+.cuenta {
+  max-width: 820px;
+  margin-inline: auto;
+  padding: 34px 32px 30px;
+}
+
+/* ===================== IDENTIDAD ===================== */
+.perfil {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 30px;
+}
+
+.perfil__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 78px;
+  height: 78px;
+  border-radius: 24px;
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  /* Mismo azul de la barra lateral, para que la identidad del panel sea una. */
+  background: linear-gradient(150deg, #0d63cf 0%, #0a4ea6 55%, var(--husi-navy) 100%);
+  box-shadow: 0 12px 26px rgba(11, 45, 92, 0.28);
+}
+
+.perfil__nombre {
+  margin-top: 18px;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--husi-navy);
+}
+
+.perfil__correo {
+  margin-top: 4px;
+  font-size: 0.86rem;
+  color: var(--husi-muted);
+}
+
+.perfil__rol {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--husi-navy);
+  background: var(--husi-surface);
+  border: 1px solid var(--husi-border);
+}
+
+.perfil__rol svg {
+  width: 16px;
+  height: 16px;
+  color: var(--husi-teal-dark);
+}
+
+.perfil__rol strong {
+  font-weight: 700;
+}
+
+/* ===================== BLOQUES EDITABLES ===================== */
+.bloque + .bloque {
+  margin-top: 26px;
+}
+
+.bloque__campos {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0;
+  padding: 6px 22px 22px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-md);
+  /* El fieldset deshabilitado no se atenúa entero: los valores deben seguir
+     legibles en solo lectura, que es el estado por defecto de la pantalla. */
+  min-width: 0;
+}
+
+.bloque__titulo {
+  padding-inline: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--husi-navy);
+}
+
+/* ===================== CAMPOS ===================== */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.campo__label {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--husi-navy);
+}
+
+.campo__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.campo__input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--husi-text);
+  background: var(--husi-bg);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.campo__input--con-boton {
+  padding-right: 48px;
+}
+
+.campo__input::placeholder {
+  color: var(--husi-muted);
+}
+
+.campo__input:focus {
+  outline: none;
+  border-color: var(--husi-teal-dark);
+  box-shadow: 0 0 0 3px rgba(43, 179, 168, 0.15);
+}
+
+/* Bloqueado: fondo apagado y cursor de "no se toca", pero texto a plena
+   opacidad para que el dato se siga leyendo. */
+.campo__input:disabled,
+.campo__input[readonly] {
+  background: var(--husi-surface);
+  color: var(--husi-text);
+  opacity: 1;
+  cursor: default;
+}
+
+/* El campo de confirmación se destaca para que se note que es un paso extra
+   y no otro dato más del formulario. */
+.campo--confirma {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(43, 179, 168, 0.55);
+  background: rgba(74, 211, 200, 0.07);
+}
+
+.campo__aviso {
+  font-size: 0.78rem;
+  color: var(--estado-alerta);
+}
+
+/* ===================== OJO DE LA CONTRASEÑA ===================== */
+.ojo {
+  position: absolute;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--husi-muted);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.ojo:hover {
+  background: var(--husi-surface);
+  color: var(--husi-navy);
+}
+
+.ojo:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 1px;
+}
+
+.ojo svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* ===================== PIE DEL BLOQUE ===================== */
+.bloque__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.bloque__acciones {
+  display: flex;
+  gap: 10px;
+  /* Empuja los botones a la derecha aunque no haya aviso a la izquierda. */
+  margin-left: auto;
+}
+
+.bloque__ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--estado-ok);
+}
+
+.bloque__ok svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Botones de formulario: mismo tamaño que los de fila del resto del panel. */
+.btn--navy,
+.btn--green,
+.btn--ghost {
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+}
+
+/* Variante local: cancelar no compite con la acción principal. Si otra
+   pantalla la necesita, su sitio pasa a ser src/styles/admin.css. */
+.btn--ghost {
+  color: var(--husi-muted);
+  background: transparent;
+  border-color: var(--husi-border);
+}
+
+.btn--ghost:hover {
+  background: var(--husi-surface);
+  color: var(--husi-navy);
+  border-color: var(--husi-navy);
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 720px) {
+  :host {
+    padding: 22px 18px 34px;
+  }
+
+  .cuenta {
+    padding: 26px 18px 22px;
+  }
+
+  .bloque__campos {
+    padding: 6px 14px 18px;
+  }
+
+  .bloque__pie {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bloque__acciones {
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+}

@@ -1,0 +1,56 @@
+/* El encabezado, la tarjeta, los filtros, la tabla, los distintivos de estado
+   y los botones vienen de src/styles/admin.css. Aquí solo queda lo propio de
+   esta pantalla. */
+
+:host {
+  display: block;
+  padding: 26px 34px 44px;
+}
+
+/* ===================== COLUMNAS ===================== */
+/* La descripción es la única de ancho libre: absorbe el espacio sobrante y es
+   la que se lee como texto, así que va alineada a la izquierda. */
+.tabla .col-descripcion {
+  text-align: left;
+  min-width: 220px;
+}
+
+/* Los dos cupos son cifras cortas; se les da un ancho fijo para que las
+   columnas no bailen al cambiar de página. */
+.tabla .col-cupo {
+  width: 110px;
+}
+
+/* El encabezado del cupo máximo es largo: se le deja partir en dos líneas
+   en lugar de estirar la columna. */
+.tabla thead th.col-cupo {
+  white-space: normal;
+}
+
+.col-estado {
+  width: 140px;
+}
+
+/* ===================== DESCRIPCIÓN AUSENTE ===================== */
+/* Es un campo opcional, así que la falta se avisa en ámbar (algo por
+   diligenciar) y no en rojo, que aquí significaría error. */
+.sin-descripcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--estado-alerta);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.sin-descripcion svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 22px 18px 34px;
+  }
+}

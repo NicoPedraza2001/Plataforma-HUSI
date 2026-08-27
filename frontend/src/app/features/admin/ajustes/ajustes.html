@@ -1,0 +1,213 @@
+<!-- ===================== ENCABEZADO ===================== -->
+<header class="page-head">
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Ajustes</h1>
+
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <span>Inicio</span>
+      <span class="breadcrumb__sep" aria-hidden="true">&gt;</span>
+      <span aria-current="page">Ajustes</span>
+    </nav>
+  </div>
+</header>
+
+<section class="card cuenta">
+  <!-- ===================== IDENTIDAD ===================== -->
+  <div class="perfil">
+    <span class="perfil__avatar" aria-hidden="true">{{ iniciales() }}</span>
+
+    <h2 class="perfil__nombre">{{ nombreCompleto() }}</h2>
+    <p class="perfil__correo">{{ perfil().correo }}</p>
+
+    <p class="perfil__rol">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3.5 5.5 6.2v5c0 3.9 2.7 7.5 6.5 8.6 3.8-1.1 6.5-4.7 6.5-8.6v-5L12 3.5Z"
+          fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+        <path d="m9.3 12.1 1.9 1.9 3.5-3.6" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      Rol actual: <strong>{{ perfil().rol }}</strong>
+    </p>
+  </div>
+
+  <!-- ===================== NOMBRES Y APELLIDOS ===================== -->
+  <form class="bloque" [formGroup]="formPerfil" (ngSubmit)="guardarPerfil()">
+    <!-- El bloqueo va campo a campo y no con [disabled] en el fieldset: así el
+         botón del ojo sigue vivo en solo lectura y los datos se pueden copiar. -->
+    <fieldset class="bloque__campos">
+      <legend class="bloque__titulo">Nombres y Apellidos</legend>
+
+      <div class="campo">
+        <label class="campo__label" for="nombres">Nombres</label>
+        <input id="nombres" class="campo__input" type="text" formControlName="nombres"
+          [readonly]="!editando('perfil')" autocomplete="given-name" />
+      </div>
+
+      <!-- La confirmación solo aparece para lo que de verdad se modificó. -->
+      @if (editando('perfil') && cambioNombres()) {
+        <div class="campo campo--confirma">
+          <label class="campo__label" for="confirmaNombres">Confirma los nombres nuevos</label>
+          <input id="confirmaNombres" class="campo__input" type="text"
+            formControlName="confirmaNombres" placeholder="Vuelve a escribirlos" autocomplete="off" />
+          @if (!confirmaNombresOk()) {
+            <p class="campo__aviso">Los nombres no coinciden.</p>
+          }
+        </div>
+      }
+
+      <div class="campo">
+        <label class="campo__label" for="apellidos">Apellidos</label>
+        <input id="apellidos" class="campo__input" type="text" formControlName="apellidos"
+          [readonly]="!editando('perfil')" autocomplete="family-name" />
+      </div>
+
+      @if (editando('perfil') && cambioApellidos()) {
+        <div class="campo campo--confirma">
+          <label class="campo__label" for="confirmaApellidos">Confirma los apellidos nuevos</label>
+          <input id="confirmaApellidos" class="campo__input" type="text"
+            formControlName="confirmaApellidos" placeholder="Vuelve a escribirlos"
+            autocomplete="off" />
+          @if (!confirmaApellidosOk()) {
+            <p class="campo__aviso">Los apellidos no coinciden.</p>
+          }
+        </div>
+      }
+    </fieldset>
+
+    <div class="bloque__pie">
+      @if (guardada() === 'perfil') {
+        <p class="bloque__ok" role="status">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+            <path d="m8.5 12.2 2.4 2.4 4.6-4.8" fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Nombre actualizado
+        </p>
+      }
+
+      <div class="bloque__acciones">
+        @if (editando('perfil')) {
+          <button type="button" class="btn btn--ghost" (click)="cancelar('perfil')">Cancelar</button>
+          <button type="submit" class="btn btn--green" [disabled]="!puedeGuardarPerfil()">
+            Guardar
+          </button>
+        } @else {
+          <button type="button" class="btn btn--navy" [disabled]="bloqueada('perfil')"
+            (click)="editar('perfil')">
+            Editar
+          </button>
+        }
+      </div>
+    </div>
+  </form>
+
+  <!-- ===================== CREDENCIALES ===================== -->
+  <form class="bloque" [formGroup]="formCredenciales" (ngSubmit)="guardarCredenciales()">
+    <fieldset class="bloque__campos">
+      <legend class="bloque__titulo">Credenciales</legend>
+
+      <div class="campo">
+        <label class="campo__label" for="correo">Correo</label>
+        <input id="correo" class="campo__input" type="email" formControlName="correo"
+          [readonly]="!editando('credenciales')" autocomplete="email" />
+        @if (correoInvalido()) {
+          <p class="campo__aviso">Escribe un correo con un formato válido.</p>
+        }
+      </div>
+
+      @if (editando('credenciales') && cambioCorreo()) {
+        <div class="campo campo--confirma">
+          <label class="campo__label" for="confirmaCorreo">Confirma el correo nuevo</label>
+          <input id="confirmaCorreo" class="campo__input" type="email"
+            formControlName="confirmaCorreo" placeholder="Vuelve a escribirlo" autocomplete="off" />
+          @if (!confirmaCorreoOk()) {
+            <p class="campo__aviso">Los correos no coinciden.</p>
+          }
+        </div>
+      }
+
+      <div class="campo">
+        <label class="campo__label" for="contrasena">Contraseña</label>
+
+        <!-- En solo lectura se muestra la guardada enmascarada; al editar, el
+             campo arranca vacío porque lo que se pide es la contraseña nueva. -->
+        <div class="campo__control">
+          @if (editando('credenciales')) {
+            <input id="contrasena" class="campo__input campo__input--con-boton"
+              [type]="verContrasena() ? 'text' : 'password'" formControlName="contrasena"
+              placeholder="Escribe la contraseña nueva" autocomplete="new-password" />
+          } @else {
+            <input id="contrasena" class="campo__input campo__input--con-boton" type="text" readonly
+              [value]="verContrasena() ? perfil().contrasena : contrasenaEnmascarada()" />
+          }
+
+          <button type="button" class="ojo" (click)="alternarContrasena()"
+            [attr.aria-pressed]="verContrasena()"
+            [attr.aria-label]="verContrasena() ? 'Ocultar la contraseña' : 'Mostrar la contraseña'">
+            @if (verContrasena()) {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12s3.6-6 9-6 9 6 9 6-3.6 6-9 6-9-6-9-6Z" fill="none"
+                  stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+                <circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.7" />
+                <path d="m4 20 16-16" fill="none" stroke="currentColor" stroke-width="1.7"
+                  stroke-linecap="round" />
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12s3.6-6 9-6 9 6 9 6-3.6 6-9 6-9-6-9-6Z" fill="none"
+                  stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+                <circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.7" />
+              </svg>
+            }
+          </button>
+        </div>
+
+        @if (contrasenaCorta()) {
+          <p class="campo__aviso">Debe tener al menos {{ minimoContrasena }} caracteres.</p>
+        }
+      </div>
+
+      @if (editando('credenciales') && cambioContrasena()) {
+        <div class="campo campo--confirma">
+          <label class="campo__label" for="confirmaContrasena">Confirma la contraseña nueva</label>
+          <input id="confirmaContrasena" class="campo__input"
+            [type]="verContrasena() ? 'text' : 'password'" formControlName="confirmaContrasena"
+            placeholder="Vuelve a escribirla" autocomplete="new-password" />
+          @if (!confirmaContrasenaOk()) {
+            <p class="campo__aviso">Las contraseñas no coinciden.</p>
+          }
+        </div>
+      }
+    </fieldset>
+
+    <div class="bloque__pie">
+      @if (guardada() === 'credenciales') {
+        <p class="bloque__ok" role="status">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+            <path d="m8.5 12.2 2.4 2.4 4.6-4.8" fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Credenciales actualizadas
+        </p>
+      }
+
+      <div class="bloque__acciones">
+        @if (editando('credenciales')) {
+          <button type="button" class="btn btn--ghost" (click)="cancelar('credenciales')">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn--green" [disabled]="!puedeGuardarCredenciales()">
+            Guardar
+          </button>
+        } @else {
+          <button type="button" class="btn btn--navy" [disabled]="bloqueada('credenciales')"
+            (click)="editar('credenciales')">
+            Editar
+          </button>
+        }
+      </div>
+    </div>
+  </form>
+</section>

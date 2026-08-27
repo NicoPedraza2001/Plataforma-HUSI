@@ -1,0 +1,135 @@
+<!-- ===================== ENCABEZADO ===================== -->
+<header class="page-head">
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Servicios</h1>
+
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <span>Inicio</span>
+      <span class="breadcrumb__sep" aria-hidden="true">&gt;</span>
+      <span aria-current="page">Servicios</span>
+    </nav>
+  </div>
+
+  <button type="button" class="btn btn--add">
+    <span class="btn__plus" aria-hidden="true">+</span>
+    Agregar servicio
+  </button>
+</header>
+
+<!-- ===================== TARJETA DEL LISTADO ===================== -->
+<section class="card">
+  <div class="filtros">
+    <label class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+      <span class="sr-only">Buscar servicio</span>
+      <input
+        class="search__input"
+        type="search"
+        placeholder="Buscar servicio..."
+        [value]="termino()"
+        (input)="buscar($any($event.target).value)" />
+    </label>
+
+    <!-- El mockup muestra el criterio dentro del propio control, así que la
+         etiqueta viaja en el texto de cada opción y queda solo para lectores. -->
+    <label class="filtro">
+      <span class="sr-only">Filtrar por estado</span>
+      <span class="filtro__control">
+        <select
+          class="filtro__select"
+          [value]="estado()"
+          (change)="filtrarPorEstado($any($event.target).value)">
+          <option value="todos">Estado: Todos</option>
+          <option value="activos">Estado: Activos</option>
+          <option value="inactivos">Estado: Inactivos</option>
+        </select>
+        <svg class="filtro__chevron" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+    </label>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th class="col-no" scope="col">No.</th>
+          <th scope="col">Servicio</th>
+          <th class="col-descripcion" scope="col">Descripción</th>
+          <th class="col-cupo" scope="col">Cupo simultáneo</th>
+          <th class="col-cupo" scope="col">Cupo máximo instalado</th>
+          <th class="col-estado" scope="col">Estado</th>
+          <th class="col-acciones" scope="col">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (servicio of serviciosPagina(); track servicio.id; let i = $index) {
+          <tr>
+            <td class="col-no">{{ desde() + i + 1 }}</td>
+            <td>{{ servicio.nombre }}</td>
+            <td class="col-descripcion">
+              <!-- La descripción es opcional en la base de datos: cuando falta
+                   se avisa en la propia celda en vez de dejarla en blanco. -->
+              @if (servicio.descripcion) {
+                {{ servicio.descripcion }}
+              } @else {
+                <span class="sin-descripcion">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 4.5 2.8 20h18.4L12 4.5Z" fill="none" stroke="currentColor"
+                      stroke-width="1.7" stroke-linejoin="round" />
+                    <path d="M12 10v4" fill="none" stroke="currentColor" stroke-width="1.7"
+                      stroke-linecap="round" />
+                    <circle cx="12" cy="17" r="1" fill="currentColor" />
+                  </svg>
+                  Sin descripción
+                </span>
+              }
+            </td>
+            <td class="col-cupo">{{ servicio.cupoSimultaneo }}</td>
+            <td class="col-cupo">{{ servicio.cupoMaximoInstalado }}</td>
+            <td>
+              <span
+                class="badge"
+                [class.badge--activo]="servicio.activo"
+                [class.badge--inactivo]="!servicio.activo">
+                {{ servicio.activo ? 'ACTIVO' : 'INACTIVO' }}
+              </span>
+            </td>
+            <td class="col-acciones">
+              <div class="acciones">
+                <!-- La acción es la contraria al estado actual: un servicio
+                     activo se inactiva y uno inactivo se reactiva. -->
+                <button
+                  type="button"
+                  class="btn"
+                  [class.btn--danger]="servicio.activo"
+                  [class.btn--green]="!servicio.activo"
+                  (click)="alternarEstado(servicio)">
+                  {{ servicio.activo ? 'Inactivar' : 'Activar' }}
+                </button>
+                <button type="button" class="btn btn--navy" (click)="editar(servicio)">
+                  Editar
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="tabla__vacia" colspan="7">No hay servicios cargados</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginacion
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    (cambio)="irAPagina($event)" />
+</section>
