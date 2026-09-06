@@ -1,0 +1,18 @@
+-- ============================================================
+-- Datos: roles y usuario administrador inicial
+-- Generado a partir de docs/database/04_Datos_Rol_Usuario.md
+-- Se ejecuta automaticamente al levantar el contenedor de
+-- PostgreSQL por primera vez (docker-entrypoint-initdb.d).
+-- ============================================================
+
+-- PENDIENTE: la contrasena del administrador es un marcador de posicion.
+-- Reemplazarla por un hash real generado con BCryptPasswordEncoder antes
+-- de probar el login.
+
+INSERT INTO rol (nombre_rol) VALUES
+    ('Administrador'),
+    ('Coordinador');
+
+INSERT INTO usuario (id_rol, nombre, apellido, correo, contrasena) VALUES
+    (1, 'Administrador', 'Sistema', 'admin@husi.com', '$2a$10$REEMPLAZAR_POR_HASH_BCRYPT_REAL');
+
