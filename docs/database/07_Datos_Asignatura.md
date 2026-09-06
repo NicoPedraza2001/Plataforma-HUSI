@@ -1,0 +1,272 @@
+# Datos — Asignaturas
+
+229 asignaturas, correspondientes a 203 nombres
+distintos.
+
+La diferencia de 26 son asignaturas que el Excel
+registra en más de un servicio. Como `ASIGNATURA` tiene una sola FK hacia
+`SERVICIO`, cada combinación entra como una fila propia. `Cirugía
+oculoplástica` y `Práctica en trastornos` aparecen tres veces cada una.
+
+```sql
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (1, 1, 'Ambulatoria I'),
+    (2, 1, 'Cadera'),
+    (3, 1, 'Cardiología para EMQ'),
+    (4, 1, 'Ciencias básicas de ortopedia'),
+    (5, 1, 'Cirugía general ginecobstetras'),
+    (6, 1, 'Cirugía ginecológica'),
+    (7, 1, 'Cirugía oculoplástica'),
+    (8, 1, 'Clinica asistencial I'),
+    (9, 1, 'Clinica asistencial II'),
+    (10, 1, 'Clinica hospitalaria I'),
+    (11, 1, 'Columna'),
+    (12, 1, 'Cuidado crítico ginecobstetras'),
+    (13, 1, 'Cuidado intensivo III'),
+    (14, 1, 'Dermatología para EMQ'),
+    (15, 1, 'Dermatopatología I'),
+    (16, 1, 'Endocrinología para EMQ'),
+    (17, 1, 'Enfermedades de la mano II'),
+    (18, 1, 'Fluoroscopia'),
+    (19, 1, 'Geriatría para EMQ'),
+    (20, 1, 'Ginecobstetricia integral'),
+    (21, 1, 'Ginecología oncológica I'),
+    (22, 1, 'Ginecología oncológica II'),
+    (23, 1, 'Hospitalaria I'),
+    (24, 1, 'Imagen Corporal I'),
+    (25, 1, 'Imagen corporal II');
+
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (26, 1, 'Imagen de Mamaria I'),
+    (27, 1, 'Imagen mamaria II'),
+    (28, 1, 'Intervencionista I'),
+    (29, 1, 'Intervencionista II'),
+    (30, 1, 'Intervencionista III'),
+    (31, 1, 'Introducción a la ortopedia'),
+    (32, 1, 'Mano'),
+    (33, 1, 'Medicina nuclear I'),
+    (34, 1, 'Miembro superior'),
+    (35, 1, 'Musculoesquelética I'),
+    (36, 1, 'Musculoesquelética II'),
+    (37, 1, 'Neumología para EMQ'),
+    (38, 1, 'Neurorradiología I'),
+    (39, 1, 'Neurorradiología II'),
+    (40, 1, 'Oftalmología de urgencias II'),
+    (41, 1, 'Oftalmología general II'),
+    (42, 1, 'Oncología ortopédica'),
+    (43, 1, 'Patología mamaria básica'),
+    (44, 1, 'Pie y cuello de pie'),
+    (45, 1, 'Profundización geriatría'),
+    (46, 1, 'ROTACIÒN OPCIONAL'),
+    (47, 1, 'Radiología General III'),
+    (48, 1, 'Radiología General IV'),
+    (49, 1, 'Radiología general I'),
+    (50, 1, 'Radiología general II');
+
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (51, 1, 'Radiología integral I'),
+    (52, 1, 'Radiología integral II'),
+    (53, 1, 'Reconstructiva trauma'),
+    (54, 1, 'Reconstructiva tumores'),
+    (55, 1, 'Rodilla'),
+    (56, 1, 'Semiología ortopédica'),
+    (57, 1, 'Trauma de mano I'),
+    (58, 1, 'Trauma de mano II'),
+    (59, 1, 'Técnica radiológica'),
+    (60, 1, 'Ultrasonido Doppler I'),
+    (61, 1, 'Ultrasonido gineco-obstétrico'),
+    (62, 1, 'Urgencias para EMQ'),
+    (63, 1, 'Urología para ginecobstetras'),
+    (64, 2, 'Alta complejidad II'),
+    (65, 2, 'Anestesia cardiovascular'),
+    (66, 2, 'Bases de la anestesia II'),
+    (67, 2, 'Cuidado intensivo II'),
+    (68, 2, 'Dolor Agudo y Crónico II'),
+    (69, 2, 'Mediana complejidad I'),
+    (70, 2, 'Tórax, neonatos y sedación'),
+    (71, 3, 'Cuidado paliativo geriatría'),
+    (72, 4, 'Cardiología avanzada'),
+    (73, 4, 'Cardiología para EMQ'),
+    (74, 4, 'Decisiones en cardiología I'),
+    (75, 4, 'Fundamentos I');
+
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (76, 5, 'Hemato-oncología para EMQ'),
+    (77, 5, 'Oncología quirúrgica'),
+    (78, 5, 'Oncología radioterápica'),
+    (79, 6, 'Cabeza y cuello - Oncológica'),
+    (80, 6, 'Cirugía Pediátrica'),
+    (81, 6, 'Cirugía cardiaca y vascular'),
+    (82, 6, 'Cirugía colorectal'),
+    (83, 6, 'Cirugía de cabeza y cuello'),
+    (84, 6, 'Cirugía de cuidado agudo'),
+    (85, 6, 'Cirugía de mama II'),
+    (86, 6, 'Cirugía de mama IV'),
+    (87, 6, 'Cirugía de tórax'),
+    (88, 6, 'Cirugía de tórax - Oncológica'),
+    (89, 6, 'Cirugía de urgencias I'),
+    (90, 6, 'Cirugía de urgencias II'),
+    (91, 6, 'Cirugía gastrointestinal'),
+    (92, 6, 'Cirugía gastrointestinal alta'),
+    (93, 6, 'Cirugía general avanzada'),
+    (94, 6, 'Cirugía pediátrica I'),
+    (95, 6, 'Cuidado perioperatorio'),
+    (96, 6, 'Gastrointestinal baja I'),
+    (97, 6, 'Patología básica'),
+    (98, 6, 'Rotación opcional Cirugía'),
+    (99, 6, 'Soporte metabólico'),
+    (100, 6, 'Soporte nutricional metabólico');
+
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (101, 7, 'Cirugía de mano I - Plástica'),
+    (102, 7, 'Cirugía general - Plástica'),
+    (103, 7, 'Cirugía maxilo craneofacial I'),
+    (104, 7, 'Cirugía oculoplástica'),
+    (105, 7, 'Cirugía paciente quemado'),
+    (106, 7, 'Cirugía plástica estética II'),
+    (107, 7, 'Microcirugía plástica'),
+    (108, 7, 'Reconstructiva I'),
+    (109, 7, 'Reconstructiva II'),
+    (110, 7, 'Reconstructiva III'),
+    (111, 8, 'Consulta externa en geriatría'),
+    (112, 8, 'Diagnóstico interdisciplinario'),
+    (113, 9, 'Ambulatoria I'),
+    (114, 9, 'Hospitalaria I'),
+    (115, 10, 'Endocrinología'),
+    (116, 10, 'Endocrinología para EMQ'),
+    (117, 11, 'Gastroenterología para EMQ'),
+    (118, 12, 'Biología y citogenética'),
+    (119, 12, 'Genética Clínica'),
+    (120, 13, 'Consulta externa en geriatría'),
+    (121, 13, 'Geriatría'),
+    (122, 13, 'Geriatría asistencia 1'),
+    (123, 13, 'Geriatría asistencia 2'),
+    (124, 13, 'Geriatría asistencia 3'),
+    (125, 13, 'Geriatría asistencia 4');
+
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (126, 13, 'Geriatría asistencia 5'),
+    (127, 13, 'Geriatría asistencia 6'),
+    (128, 13, 'Geriatría asistencia 7'),
+    (129, 13, 'Geriatría asistencia 8'),
+    (130, 13, 'Interconsultas en geriatría'),
+    (131, 13, 'Rehabilitación para geriatría'),
+    (132, 13, 'Unidad de larga estancia'),
+    (133, 13, 'Unidad geriátrica de agudos 1'),
+    (134, 13, 'Unidad geriátrica de agudos 2'),
+    (135, 14, 'Geriatría asistencia 6'),
+    (136, 15, 'Infectología'),
+    (137, 15, 'Infectología avanzada'),
+    (138, 15, 'Infectología avanzada para EMQ'),
+    (139, 16, 'Atención ambulatoria'),
+    (140, 16, 'Atención domiciliaria'),
+    (141, 16, 'Clínica de memoria'),
+    (142, 16, 'Cuidado crónico'),
+    (143, 16, 'Diagnóstico interdisciplinario'),
+    (144, 16, 'Geriatría asistencia 7'),
+    (145, 16, 'Neurología'),
+    (146, 16, 'Profundización geriatría'),
+    (147, 16, 'Psicogeriatría agudos'),
+    (148, 16, 'Psicogeriatría comunitaria'),
+    (149, 16, 'Rotación opcional'),
+    (150, 17, 'Nefrología avanzada');
+
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (151, 17, 'Nefrología para EMQ'),
+    (152, 18, 'Fisiología avanzada'),
+    (153, 18, 'Neumología para EMQ'),
+    (154, 19, 'Dolor y Espasticidad'),
+    (155, 19, 'Microcirugía'),
+    (156, 19, 'Movimientos anormales'),
+    (157, 19, 'Neuroanatomía'),
+    (158, 19, 'Neurocirugía Columna'),
+    (159, 19, 'Neurocirugía I'),
+    (160, 19, 'Neurocirugía II'),
+    (161, 19, 'Neurocirugía III'),
+    (162, 19, 'Neurocirugía IV'),
+    (163, 19, 'Neurocirugía V'),
+    (164, 19, 'Neuroendoscopia y Endovascular'),
+    (165, 19, 'Neurología'),
+    (166, 19, 'Neuroradiología'),
+    (167, 19, 'Neurotrauma'),
+    (168, 19, 'Patología para EMQ'),
+    (169, 19, 'Semiología Neurológica'),
+    (170, 20, 'Neurología para geriatras'),
+    (171, 20, 'Práctica en trastornos'),
+    (172, 21, 'Práctica en trastornos'),
+    (173, 22, 'Cirugía oculoplástica'),
+    (174, 22, 'Córnea, externas y uveítis'),
+    (175, 22, 'Oftalmología de urgencias I');
+
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (176, 22, 'Oftalmología de urgencias II'),
+    (177, 22, 'Oftalmología general I'),
+    (178, 22, 'Oftalmología general II'),
+    (179, 22, 'Refracción lentes de contacto'),
+    (180, 23, 'Cirugía de cabeza y cuello'),
+    (181, 23, 'Cirugía maxilofacial II'),
+    (182, 23, 'Laringología II'),
+    (183, 23, 'ORL general I'),
+    (184, 23, 'ORL general II'),
+    (185, 23, 'ORL hospitalaria II'),
+    (186, 23, 'ORL hospitalaria IV'),
+    (187, 23, 'ORL hospitalaria VI'),
+    (188, 23, 'ORL pediátrica II'),
+    (189, 23, 'Otología I'),
+    (190, 23, 'Plástica facial somnología I'),
+    (191, 23, 'Rinología senos paranasales I'),
+    (192, 23, 'Rinología senos paranasales II'),
+    (193, 24, 'Autopsias y Macroscopía'),
+    (194, 24, 'Dermatopatología I'),
+    (195, 24, 'Patología oncológica'),
+    (196, 24, 'Patología qurúrgica general'),
+    (197, 25, 'Práctica en trastornos'),
+    (198, 25, 'Psicogeriatría'),
+    (199, 26, 'Niños y adolescentes'),
+    (200, 27, 'Práctica psiquiatría de enlace');
+
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (201, 27, 'Psiquiatría de Enlace'),
+    (202, 28, 'Enlace en oncología'),
+    (203, 29, 'Imágenes diagnósticas'),
+    (204, 29, 'Radiología oncológica'),
+    (205, 30, 'Reumatología'),
+    (206, 30, 'Reumatología para EMQ'),
+    (207, 31, 'Cuidado crítico para EMQ'),
+    (208, 31, 'Cuidado intensivo I'),
+    (209, 31, 'Cuidado intensivo II'),
+    (210, 31, 'Cuidado intensivo III'),
+    (211, 31, 'Cuidado intensivo IV'),
+    (212, 31, 'Cuidado intensivo transplantes'),
+    (213, 31, 'Medicina crítica externa'),
+    (214, 31, 'Rotación opcional'),
+    (215, 32, 'Hospitalario adulto básico'),
+    (216, 32, 'Hospitalario adulto general'),
+    (217, 32, 'Hospitalario adulto intermedio'),
+    (218, 33, 'Urgencias para EMQ'),
+    (219, 34, 'Andrología'),
+    (220, 34, 'Cirugía urológica avanzada'),
+    (221, 34, 'Cuidado perioperatorio'),
+    (222, 34, 'Endoscopia básica'),
+    (223, 34, 'Imágenes de la próstata'),
+    (224, 34, 'Nefrología para EMQ'),
+    (225, 34, 'Patología básica');
+
+INSERT INTO asignatura (id_asignatura, id_servicio, nombre_asignatura) VALUES
+    (226, 34, 'Urología I'),
+    (227, 34, 'Urología general'),
+    (228, 34, 'Urología oncológica'),
+    (229, 34, 'Urología pediátrica');
+
+SELECT setval('asignatura_id_asignatura_seq', (SELECT max(id_asignatura) FROM asignatura));
+```
+
+---
+
+## Verificación
+
+```sql
+SELECT count(*) AS asignaturas FROM asignatura;  -- esperado: 229
+SELECT nombre_asignatura, count(*) AS servicios FROM asignatura
+GROUP BY nombre_asignatura HAVING count(*) > 1 ORDER BY 2 DESC;
+```

@@ -15,6 +15,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
 
+      # Scripts de creacion y carga inicial. La imagen de PostgreSQL los
+      # ejecuta en orden alfabetico UNA sola vez: cuando el volumen
+      # postgres_data esta vacio. Para volver a correrlos hay que borrar el
+      # volumen (docker compose down -v).
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U husi -d husi"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
     networks:
       - husi_network
 
