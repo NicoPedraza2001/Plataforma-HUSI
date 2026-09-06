@@ -1,0 +1,156 @@
+<!-- ===================== ENCABEZADO ===================== -->
+<header class="page-head">
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Historial de cambios</h1>
+
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <span>Inicio</span>
+      <span class="breadcrumb__sep" aria-hidden="true">&gt;</span>
+      <span aria-current="page">Historial</span>
+    </nav>
+  </div>
+
+  <button type="button" class="btn btn--add" (click)="exportar()">
+    <span class="btn__plus" aria-hidden="true">+</span>
+    Exportar
+  </button>
+</header>
+
+<!-- ===================== TARJETA DEL LISTADO ===================== -->
+<section class="card">
+  <!-- ===================== FILTROS ===================== -->
+  <div class="filtros">
+    <label class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+      <span class="sr-only">Buscar usuario, registro o detalle</span>
+      <input
+        class="search__input"
+        type="search"
+        placeholder="Buscar usuario, registro o detalle..."
+        [value]="termino()"
+        (input)="buscar($any($event.target).value)" />
+    </label>
+
+    <div class="filtro-grupo">
+      <label class="filtro-grupo__label" for="filtro-modulo">Módulo</label>
+      <select
+        id="filtro-modulo"
+        class="filtro-input"
+        [value]="moduloSeleccionado()"
+        (change)="onModuloChange($any($event.target).value)">
+        @for (modulo of modulos(); track modulo) {
+          <option [value]="modulo">{{ modulo }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filtro-grupo">
+      <label class="filtro-grupo__label" for="filtro-accion">Acción</label>
+      <select
+        id="filtro-accion"
+        class="filtro-input"
+        [value]="accionSeleccionada()"
+        (change)="onAccionChange($any($event.target).value)">
+        @for (accion of acciones; track accion) {
+          <option [value]="accion">{{ accion }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filtro-grupo">
+      <label class="filtro-grupo__label" for="filtro-fecha-inicial">Fecha inicial</label>
+      <input
+        id="filtro-fecha-inicial"
+        class="filtro-input"
+        type="date"
+        [value]="fechaInicial()"
+        (change)="onFechaInicialChange($any($event.target).value)" />
+    </div>
+
+    <div class="filtro-grupo">
+      <label class="filtro-grupo__label" for="filtro-fecha-final">Fecha final</label>
+      <input
+        id="filtro-fecha-final"
+        class="filtro-input"
+        type="date"
+        [value]="fechaFinal()"
+        (change)="onFechaFinalChange($any($event.target).value)" />
+    </div>
+  </div>
+
+  <!-- ===================== TABLA ===================== -->
+  <div class="table-wrap">
+    <table class="tabla-historial">
+      <thead>
+        <tr>
+          <th scope="col">Fecha y hora</th>
+          <th scope="col">Usuario</th>
+          <th scope="col">Módulo</th>
+          <th scope="col">Acción</th>
+          <th scope="col">Registro</th>
+          <th class="col-detalle" scope="col">Detalle</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (registro of registrosPagina(); track registro.id) {
+          <tr>
+            <td>{{ registro.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="col-usuario">{{ registro.usuario }}</td>
+            <td>{{ registro.modulo }}</td>
+            <td>
+              <span [class]="claseBadge(registro.accion)">{{ registro.accion }}</span>
+            </td>
+            <td>{{ registro.registro }}</td>
+            <td class="col-detalle">{{ registro.detalle }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="tabla__vacia" colspan="6">No hay movimientos registrados</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== PAGINACIÓN ===================== -->
+  <nav class="paginacion" aria-label="Paginación del historial">
+    <button
+      type="button"
+      class="pag pag--nav"
+      aria-label="Página anterior"
+      [disabled]="paginaActual() === 1"
+      (click)="irAPagina(paginaActual() - 1)">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    @for (pagina of paginas(); track pagina) {
+      <button
+        type="button"
+        class="pag pag--num"
+        [class.pag--activa]="pagina === paginaActual()"
+        [attr.aria-current]="pagina === paginaActual() ? 'page' : null"
+        (click)="irAPagina(pagina)">
+        {{ pagina }}
+      </button>
+    }
+
+    <button
+      type="button"
+      class="pag pag--nav"
+      aria-label="Página siguiente"
+      [disabled]="paginaActual() === totalPaginas()"
+      (click)="irAPagina(paginaActual() + 1)">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+  </nav>
+</section>
