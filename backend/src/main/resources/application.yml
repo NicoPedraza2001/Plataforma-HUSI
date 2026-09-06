@@ -1,0 +1,58 @@
+# ============================================================
+# Configuracion comun a todos los ambientes.
+# Lo que cambia entre ambientes vive en application-dev.yml
+# y application-prod.yml
+# ============================================================
+
+spring:
+  application:
+    name: husi-backend
+
+  profiles:
+    # Perfil por defecto al correr en local. En despliegue se sobreescribe
+    # con la variable de entorno SPRING_PROFILES_ACTIVE=prod
+    default: dev
+
+  jpa:
+    # El esquema lo crean los scripts de database/init cuando arranca el
+    # contenedor de Postgres. Hibernate NUNCA debe modificar tablas: solo
+    # valida que las entidades coincidan con lo que ya existe.
+    hibernate:
+      ddl-auto: validate
+    # Evita que la sesion de base de datos siga abierta durante el
+    # renderizado de la respuesta. Obliga a resolver los datos en el service.
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  jackson:
+    datatype:
+      datetime:
+        # Fechas en formato ISO-8601 (2026-09-06) en lugar de timestamps.
+        # En Spring Boot 4 (Jackson 3) esta opcion vive en DateTimeFeature,
+        # ya no en SerializationFeature.
+        write-dates-as-timestamps: false
+    # Omite del JSON los campos nulos.
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  servlet:
+    # Todos los endpoints quedan bajo /api  ->  http://localhost:8080/api/usuarios
+    context-path: /api
+
+# Documentacion interactiva: http://localhost:8080/api/swagger-ui.html
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+
+# ============================================================
+# Propiedades propias de la plataforma
+# ============================================================
+husi:
+  cors:
+    # Origen del frontend Angular en desarrollo. Lo consume la futura
+    # clase config/CorsConfig.java
+    allowed-origins: http://localhost:4200

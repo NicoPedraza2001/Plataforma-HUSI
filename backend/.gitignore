@@ -1,0 +1,18 @@
+# Compilados de Maven
+target/
+!.mvn/wrapper/maven-wrapper.properties
+
+# Archivo que genera Spring Initializr y no aporta al repositorio
+HELP.md
+
+# IDE
+*.iml
+.idea/
+.classpath
+.project
+.settings/
+.vscode/
+
+# Configuracion local con credenciales propias de cada integrante.
+# No se versiona: cada quien la crea si necesita sobreescribir algo.
+src/main/resources/application-local.yml

@@ -1,0 +1,1 @@
+DTOs de entrada (lo que llega del frontend). Llevan las anotaciones de validacion @NotBlank, @Email, @Min.

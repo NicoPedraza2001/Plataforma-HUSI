@@ -1,0 +1,1 @@
+Excepciones propias (RecursoNoEncontradoException, ReglaNegocioException) y el @RestControllerAdvice global.

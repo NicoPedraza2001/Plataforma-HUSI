@@ -1,0 +1,20 @@
+# ============================================================
+# Ambiente local. Apunta al contenedor definido en docker-compose.yml
+#   docker compose up -d postgres
+# ============================================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/husi
+    username: husi
+    password: husi_dev
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    # Muestra en consola el SQL que genera Hibernate. Util mientras se
+    # construyen las entidades; conviene apagarlo despues.
+    show-sql: true
+
+logging:
+  level:
+    co.edu.javeriana.husi: DEBUG

@@ -1,0 +1,1 @@
+Capa de presentacion. Un @RestController por entidad: recibe HTTP, valida el DTO y delega en el service. Sin logica de negocio.

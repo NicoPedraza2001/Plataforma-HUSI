@@ -1,0 +1,1 @@
+DTOs de salida (lo que se devuelve al frontend). Nunca se exponen entidades JPA directamente.

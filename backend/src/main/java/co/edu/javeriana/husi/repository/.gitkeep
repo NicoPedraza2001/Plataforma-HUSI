@@ -1,0 +1,1 @@
+Capa de acceso a datos. Interfaces que extienden JpaRepository, una por entidad. Consultas derivadas o @Query.
