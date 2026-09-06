@@ -243,36 +243,8 @@
   background: transparent;
 }
 
-/* ===================== BADGES DE ACCIÓN ===================== */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 100px;
-  padding: 6px 16px;
-  border-radius: 999px;
-  font-family: var(--font-serif);
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-  box-shadow: var(--shadow-sm);
-}
-
-/* CREÓ / ACTIVÓ: alta de un registro o reactivación. */
-.badge--teal {
-  background: var(--husi-teal-dark);
-}
-
-/* INACTIVÓ: baja de un registro. */
-.badge--red {
-  background: var(--husi-red);
-}
-
-/* ACTUALIZÓ / FINALIZÓ / INGRESÓ: cambio neutro sobre un registro existente. */
-.badge--navy {
-  background: var(--husi-navy);
-}
+/* Los distintivos de acción salen de src/styles/admin.css: son los mismos
+   que usan Usuarios y Servicios y no se redefinen aquí. */
 
 /* ===================== PAGINACIÓN ===================== */
 .paginacion {

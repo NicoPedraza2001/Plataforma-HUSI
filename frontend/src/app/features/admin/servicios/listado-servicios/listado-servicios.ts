@@ -164,9 +164,8 @@ export class ListadoServicios {
     this.paginaActual.set(pagina);
   }
 
-  protected alternarEstado(servicio: Servicio): void {
-    // TODO: conectar con el servicio de servicios del backend.
-  }
+  // TODO: activar/inactivar se manejará desde el distintivo de estado de la
+  // tabla, con un pop up de confirmación, en lugar de un botón de acciones.
 
   protected editar(servicio: Servicio): void {
     // TODO: abrir el formulario de edición del servicio.

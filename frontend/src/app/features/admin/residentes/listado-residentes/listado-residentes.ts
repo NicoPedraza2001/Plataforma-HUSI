@@ -151,8 +151,9 @@ export class ListadoResidentes {
   }
 
   /** Mismos colores de estado que el resto del sistema (ver historial: ACTIVÓ/INACTIVÓ). */
+  /** Modificadores compartidos de src/styles/admin.css, como en Usuarios. */
   protected claseBadge(estado: EstadoResidente): string {
-    return estado === 'ACTIVO' ? 'badge badge--teal' : 'badge badge--red';
+    return estado === 'ACTIVO' ? 'badge badge--activo' : 'badge badge--inactivo';
   }
 
   protected agregarResidente(): void {

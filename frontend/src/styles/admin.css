@@ -345,7 +345,10 @@
 }
 
 /* Azul: es información, no un resultado. El verde queda reservado para
-   lo que ya quedó en firme y el ámbar para lo que falta gestionar. */
+   lo que ya quedó en firme y el ámbar para lo que falta gestionar.
+   --info lo usan las acciones neutras del historial (actualizó, finalizó,
+   ingresó): dejan constancia de algo que pasó, no de un desenlace. */
+.badge--info,
 .badge--proxima {
   background: var(--grafico-1);
 }

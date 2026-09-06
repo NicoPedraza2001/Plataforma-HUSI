@@ -94,6 +94,8 @@
             <td class="col-cupo">{{ servicio.cupoSimultaneo }}</td>
             <td class="col-cupo">{{ servicio.cupoMaximoInstalado }}</td>
             <td>
+              <!-- TODO: activar/inactivar se hará desde este mismo distintivo,
+                   abriendo un pop up de confirmación. -->
               <span
                 class="badge"
                 [class.badge--activo]="servicio.activo"
@@ -103,16 +105,6 @@
             </td>
             <td class="col-acciones">
               <div class="acciones">
-                <!-- La acción es la contraria al estado actual: un servicio
-                     activo se inactiva y uno inactivo se reactiva. -->
-                <button
-                  type="button"
-                  class="btn"
-                  [class.btn--danger]="servicio.activo"
-                  [class.btn--green]="!servicio.activo"
-                  (click)="alternarEstado(servicio)">
-                  {{ servicio.activo ? 'Inactivar' : 'Activar' }}
-                </button>
                 <button type="button" class="btn btn--navy" (click)="editar(servicio)">
                   Editar
                 </button>

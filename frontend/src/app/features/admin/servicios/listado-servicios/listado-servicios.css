@@ -31,6 +31,12 @@
   width: 140px;
 }
 
+/* Solo queda el botón de editar, así que la columna no necesita los 200px
+   que reserva la hoja compartida. Mismo ancho que en Residentes. */
+.col-acciones {
+  width: 110px;
+}
+
 /* ===================== DESCRIPCIÓN AUSENTE ===================== */
 /* Es un campo opcional, así que la falta se avisa en ámbar (algo por
    diligenciar) y no en rojo, que aquí significaría error. */

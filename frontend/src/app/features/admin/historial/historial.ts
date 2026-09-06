@@ -157,16 +157,20 @@ export class Historial {
     this.paginaActual.set(pagina);
   }
 
-  /** Clase de color del badge según el estado de la acción (ver Figma "Estado <acción>"). */
+  /**
+   * Modificadores compartidos de src/styles/admin.css, como en Usuarios:
+   * verde para lo que da de alta, rojo para lo que da de baja y azul para
+   * la acción neutra, que deja constancia sin ser un desenlace.
+   */
   protected claseBadge(accion: AccionHistorial): string {
     switch (accion) {
       case 'CREÓ':
       case 'ACTIVÓ':
-        return 'badge badge--teal';
+        return 'badge badge--activo';
       case 'INACTIVÓ':
-        return 'badge badge--red';
+        return 'badge badge--inactivo';
       default:
-        return 'badge badge--navy';
+        return 'badge badge--info';
     }
   }
 

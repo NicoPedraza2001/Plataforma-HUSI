@@ -7,6 +7,8 @@ import { ListadoProgramas } from './features/admin/programas/listado-programas/l
 import { ListadoUsuarios } from './features/admin/usuarios/listado-usuarios/listado-usuarios';
 import { PanelDashboard } from './features/admin/dashboard/panel-dashboard/panel-dashboard';
 import { ListadoServicios } from './features/admin/servicios/listado-servicios/listado-servicios';
+import { ListadoResidentes } from './features/admin/residentes/listado-residentes/listado-residentes';
+import { Historial } from './features/admin/historial/historial';
 import { Ajustes } from './features/admin/ajustes/ajustes';
 
 export const routes: Routes = [
@@ -47,9 +49,17 @@ export const routes: Routes = [
         component: ListadoUsuarios
       },
       {
+              path: 'historial',
+        component: Historial
+      },
+      {
+        path: 'residentes',
+        component: ListadoResidentes,
+      },
+      {
         path: 'ajustes',
         component: Ajustes
-      }
+      },
     ]
   }
 ];
