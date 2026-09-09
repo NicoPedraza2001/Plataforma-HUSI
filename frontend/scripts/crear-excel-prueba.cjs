@@ -1,0 +1,23 @@
+const ExcelJS = require('exceljs');
+const fs = require('node:fs');
+const path = require('node:path');
+(async () => {
+  const catalogo = await (await fetch('http://localhost:8080/api/universidades')).json();
+  if (!catalogo.length) throw new Error('Se necesita al menos una universidad activa.');
+  const universidad = catalogo[0].nombre;
+  const libro = new ExcelJS.Workbook();
+  const hoja = libro.addWorksheet('Carga de prueba');
+  hoja.addRow(['Archivo de prueba de Programas — datos ficticios']);
+  hoja.addRow(['Institución', 'Observación no importada', 'Nombre académico']);
+  hoja.addRow([universidad, 'Válido', 'PRUEBA EXCEL HUSI A']);
+  hoja.addRow([universidad, 'Duplicado dentro del archivo', 'PRUEBA EXCEL HUSI A']);
+  hoja.addRow(['Universidad inexistente de prueba', 'Error universidad', 'PRUEBA EXCEL HUSI B']);
+  hoja.addRow([universidad, 'Error nombre vacío', '']);
+  hoja.addRow([universidad, 'Válido', 'PRUEBA EXCEL HUSI C']);
+  hoja.columns.forEach((c) => (c.width = 48));
+  hoja.getRow(2).font = { bold: true };
+  const carpeta = path.resolve(__dirname, '../../docs/pruebas');
+  fs.mkdirSync(carpeta, { recursive: true });
+  await libro.xlsx.writeFile(path.join(carpeta, 'programas-prueba.xlsx'));
+  console.log('Excel de prueba generado: encabezados en fila 2; nombre C; universidad A.');
+})();

@@ -1,0 +1,321 @@
+<header class="page-head">
+  <div>
+    <h1 class="page-head__title">Importar programas</h1>
+    <p class="breadcrumb">Programas &gt; Importar Excel</p>
+  </div>
+  <button class="btn btn--outline" [disabled]="ocupado()" (click)="cerrar.emit()">
+    Volver a programas
+  </button>
+</header>
+<ol class="pasos" aria-label="Pasos de importación">
+  @for (
+    etiqueta of ['Archivo', 'Columnas', 'Validación', 'Resultado'];
+    track etiqueta;
+    let i = $index
+  ) {
+    <li [class.actual]="paso() === i + 1" [attr.aria-current]="paso() === i + 1 ? 'step' : null">
+      <span>{{ i + 1 }}</span
+      >{{ etiqueta }}
+    </li>
+  }
+</ol>
+@if (error()) {
+  <p class="mensaje error" role="alert">{{ error() }}</p>
+}
+<section class="card asistente" [attr.aria-busy]="ocupado()">
+  @if (paso() === 1) {
+    <h2>Carga tu archivo Excel</h2>
+    <p class="intro">
+      Importa varios programas a la vez. Primero revisarás las columnas y los datos; nada se guarda
+      hasta que confirmes.
+    </p>
+    <div class="zona-archivo" (dragover)="$event.preventDefault()" (drop)="soltar($event)">
+      <span class="icono-excel" aria-hidden="true">X</span>
+      <h3>Arrastra tu archivo Excel aquí</h3>
+      <p>o selecciona un archivo de tu equipo</p>
+      <label class="btn btn--navy archivo"
+        >Seleccionar archivo<input
+          aria-label="Seleccionar archivo Excel"
+          type="file"
+          accept=".xlsx"
+          [disabled]="ocupado()"
+          (change)="seleccionar($event)"
+      /></label>
+      <small>Solo .xlsx · Hasta 5 MB · Máximo 1000 programas</small>
+    </div>
+    @if (ocupado()) {
+      <p role="status">Leyendo archivo…</p>
+    }
+    @if (nombreArchivo()) {
+      <div class="mensaje exito archivo-cargado" role="status">
+        <div class="archivo-cargado__cabecera">
+          <strong>{{ nombreArchivo() }}</strong>
+          <button type="button" class="quitar-archivo" aria-label="Quitar archivo seleccionado" title="Quitar archivo" [disabled]="ocupado()" (click)="quitarArchivo()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+        <p>
+          Archivo leído correctamente · {{ hojas().length }} hojas disponibles. En el siguiente paso
+          elegirás las columnas.
+        </p>
+      </div>
+    }
+    <div class="ayuda-plantilla">
+      <p>¿No tienes un archivo? Descarga una plantilla con los encabezados esperados.</p>
+      <button class="btn btn--outline" [disabled]="ocupado()" (click)="plantilla()">
+        ↓ Descargar plantilla
+      </button>
+    </div>
+    <footer>
+      <button class="btn btn--outline" [disabled]="ocupado()" (click)="cerrar.emit()">
+        Cancelar</button
+      ><button
+        class="btn btn--navy"
+        [disabled]="!hojas().length || ocupado()"
+        (click)="paso.set(2)"
+      >
+        Continuar: elegir columnas
+      </button>
+    </footer>
+  }
+  @if (paso() === 2) {
+    <h2>Relaciona las columnas de tu Excel</h2>
+    <p class="intro">
+      Indica dónde está cada dato. Por ejemplo: si la columna B contiene los nombres de los
+      programas, elige B para «Nombre del programa».
+    </p>
+    <div class="configuracion">
+      <label
+        >Hoja del libro<select
+          [ngModel]="hojaIndice()"
+          (ngModelChange)="cambiarHoja($event)"
+          [disabled]="ocupado()"
+        >
+          @for (h of hojas(); track h.nombre; let i = $index) {
+            <option [ngValue]="i">{{ h.nombre }}</option>
+          }
+        </select></label
+      >
+      <label
+        >Fila de encabezados<input
+          type="number"
+          min="1"
+          [max]="maxFilas()"
+          [ngModel]="encabezado()"
+          (ngModelChange)="cambiarEncabezado($event)"
+          [disabled]="ocupado()"
+      /></label>
+    </div>
+    <div class="mapeo">
+      <div>
+        <h3>Campo del sistema</h3>
+        <p>Nombre del programa <strong>*</strong></p>
+        <small>Nombre académico. Máximo 150 caracteres.</small>
+      </div>
+      <label
+        >Columna del Excel<select
+          [ngModel]="columnaNombre()"
+          (ngModelChange)="columnaNombre.set(+$event)"
+          [disabled]="ocupado()"
+        >
+          <option [ngValue]="-1">Selecciona una columna</option>
+          @for (c of columnas(); track c.indice) {
+            <option [ngValue]="c.indice">{{ c.etiqueta }}</option>
+          }
+        </select></label
+      >
+    </div>
+    <div class="mapeo">
+      <div>
+        <h3>Campo del sistema</h3>
+        <p>Universidad <strong>*</strong></p>
+        <small>Debe coincidir con una universidad activa del catálogo.</small>
+      </div>
+      <label
+        >Columna del Excel<select
+          [ngModel]="columnaUniversidad()"
+          (ngModelChange)="columnaUniversidad.set(+$event)"
+          [disabled]="ocupado()"
+        >
+          <option [ngValue]="-1">Selecciona una columna</option>
+          @for (c of columnas(); track c.indice) {
+            <option [ngValue]="c.indice">{{ c.etiqueta }}</option>
+          }
+        </select></label
+      >
+    </div>
+    <p class="intro">
+      Cada campo debe usar una columna diferente. Las columnas adicionales se ignoran. Esta carga
+      crea programas; no reemplaza ni reactiva registros existentes.
+    </p>
+    <details>
+      <summary>Ver nombres de universidades aceptadas</summary>
+      <ul>
+        @for (u of universidades(); track u.id) {
+          <li>{{ u.nombre }}</li>
+        }
+      </ul>
+    </details>
+    <h3 class="subtitulo">Vista previa · {{ filas().length }} registros detectados</h3>
+    <p class="intro">Se muestran las primeras 5 filas con la selección actual.</p>
+    <div class="table-wrap">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Fila Excel</th>
+            <th>Nombre del programa</th>
+            <th>Universidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filas().slice(0, 5); track f.fila) {
+            <tr>
+              <td>{{ f.fila }}</td>
+              <td>{{ f.nombre || 'Falta el nombre' }}</td>
+              <td>{{ f.universidad || 'Falta la universidad' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3">Selecciona dos columnas diferentes para ver los datos.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <footer>
+      <button class="btn btn--outline" [disabled]="ocupado()" (click)="paso.set(1)">Atrás</button
+      ><button
+        class="btn btn--navy"
+        [disabled]="!mapeoValido() || !filas().length || ocupado()"
+        (click)="validar()"
+      >
+        {{ ocupado() ? 'Validando…' : 'Validar datos' }}
+      </button>
+    </footer>
+  }
+  @if ((paso() === 3 || paso() === 4) && resultado(); as r) {
+    <h2>{{ paso() === 3 ? 'Resultado de validación' : 'Importación finalizada' }}</h2>
+    <p class="intro" role="status">
+      {{
+        paso() === 3
+          ? 'Revisa el resultado antes de guardar. Las filas con errores y los duplicados se omitirán.'
+          : 'Consulta cuántos programas se guardaron y descarga el detalle de las filas pendientes.'
+      }}
+    </p>
+    <div class="resumen">
+      <div class="exito">
+        <strong>{{ paso() === 3 ? r.validos : r.creados }}</strong
+        ><span>{{ paso() === 3 ? 'Válidos para crear' : 'Programas creados' }}</span>
+      </div>
+      <div class="advertencia">
+        <strong>{{ r.omitidos }}</strong
+        ><span>Duplicados omitidos</span>
+      </div>
+      <div class="error">
+        <strong>{{ r.errores }}</strong
+        ><span>Filas con errores</span>
+      </div>
+    </div>
+    <p class="intro">
+      Total procesado: {{ r.total }} filas.
+      {{
+        paso() === 3
+          ? 'Todavía no se ha guardado ningún programa.'
+          : 'Los registros guardados ya están disponibles en Programas.'
+      }}
+    </p>
+    @if (paso() === 3 && !r.validos) {
+      <p class="mensaje advertencia">
+        No hay programas nuevos válidos para guardar. Corrige el archivo o revisa las columnas
+        seleccionadas.
+      </p>
+    }
+    <div class="detalle-head">
+      <h3>Detalle por fila</h3>
+      <label
+        >Ver<select [ngModel]="filtro()" (ngModelChange)="filtrar($event)">
+          <option value="TODOS">Todos</option>
+          <option value="ERROR">Errores</option>
+          <option value="OMITIDO">Omitidos</option>
+          <option [value]="paso() === 3 ? 'VALIDO' : 'CREADO'">
+            {{ paso() === 3 ? 'Válidos' : 'Creados' }}
+          </option>
+        </select></label
+      >
+    </div>
+    <div class="table-wrap">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Fila</th>
+            <th>Programa</th>
+            <th>Universidad</th>
+            <th>Estado</th>
+            <th>Mensaje</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of detalle(); track f.fila) {
+            <tr>
+              <td>{{ f.fila }}</td>
+              <td>{{ f.nombre || '—' }}</td>
+              <td>{{ f.universidad || '—' }}</td>
+              <td>
+                <span
+                  [class.error]="f.estado === 'ERROR'"
+                  [class.advertencia]="f.estado === 'OMITIDO'"
+                  [class.exito]="f.estado === 'VALIDO' || f.estado === 'CREADO'"
+                  >{{ f.estado }}</span
+                >
+              </td>
+              <td>{{ f.mensaje }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5">No hay filas en esta categoría.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="paginacion-detalle">
+      <button
+        class="btn btn--outline"
+        [disabled]="paginaDetalle() === 1"
+        (click)="paginaDetalle.set(paginaDetalle() - 1)"
+      >
+        Anterior</button
+      ><span>{{ paginaDetalle() }} de {{ paginasDetalle() }}</span
+      ><button
+        class="btn btn--outline"
+        [disabled]="paginaDetalle() >= paginasDetalle()"
+        (click)="paginaDetalle.set(paginaDetalle() + 1)"
+      >
+        Siguiente
+      </button>
+    </div>
+    <footer>
+      <button
+        class="btn btn--outline"
+        [disabled]="ocupado() || !(r.errores + r.omitidos)"
+        (click)="descargarErrores()"
+      >
+        ↓ Descargar errores y omitidos
+      </button>
+      @if (paso() === 3) {
+        <button
+          class="btn btn--outline"
+          [disabled]="ocupado()"
+          (click)="paso.set(2); error.set('')"
+        >
+          Corregir columnas
+        </button>
+        <button class="btn btn--navy" [disabled]="ocupado() || !r.validos" (click)="importar()">
+          {{ ocupado() ? 'Guardando…' : 'Confirmar: importar ' + r.validos + ' programas' }}
+        </button>
+      } @else {
+        <button class="btn btn--navy" (click)="cerrar.emit()">Ver programas</button>
+      }
+    </footer>
+  }
+</section>

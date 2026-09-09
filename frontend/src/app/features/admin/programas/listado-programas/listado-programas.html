@@ -1,76 +1,214 @@
-<!-- ===================== ENCABEZADO ===================== -->
-<header class="page-head">
-  <div class="page-head__titles">
-    <h1 class="page-head__title">Programas</h1>
-
-    <nav class="breadcrumb" aria-label="Ruta de navegación">
-      <span>Inicio</span>
-      <span class="breadcrumb__sep" aria-hidden="true">&gt;</span>
-      <span aria-current="page">Programa</span>
-    </nav>
-  </div>
-
-  <button type="button" class="btn btn--add">
-    <span class="btn__plus" aria-hidden="true">+</span>
-    Agregar Programa
-  </button>
-</header>
-
-<!-- ===================== TARJETA DEL LISTADO ===================== -->
-<section class="card">
-  <label class="search">
-    <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
-      <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-    </svg>
-    <span class="sr-only">Buscar programa</span>
-    <input
-      class="search__input"
-      type="search"
-      placeholder="Buscar Programa ..."
-      [value]="termino()"
-      (input)="buscar($any($event.target).value)" />
-  </label>
-
-  <div class="table-wrap">
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th class="col-no" scope="col">No</th>
-          <th scope="col">Nombre</th>
-          <th scope="col">Asignatura</th>
-          <th class="col-acciones" scope="col">Acciones</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        @for (programa of programasPagina(); track programa.id; let i = $index) {
+@if (importando()) {
+  <app-importar-programas [universidades]="universidades()" (cerrar)="cerrarImportacion()" />
+} @else {
+  <header class="page-head">
+    <div class="page-head__titles">
+      <h1 class="page-head__title">Programas</h1>
+      <nav class="breadcrumb" aria-label="Ruta de navegación">
+        <span>Inicio</span><span aria-hidden="true">&gt;</span><span>Programas</span>
+      </nav>
+    </div>
+    <div class="acciones">
+      <button
+        type="button"
+        class="btn btn--outline btn--importar"
+        [disabled]="cargando() || !!error()"
+        (click)="importando.set(true)"
+      >
+        <svg class="icono-importar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" /></svg>
+        Importar Excel
+      </button>
+      <button
+        type="button"
+        class="btn btn--add"
+        [disabled]="cargando() || !!error()"
+        (click)="abrir()"
+      >
+        + Agregar programa
+      </button>
+    </div>
+  </header>
+  @if (aviso()) {
+    <p class="mensaje exito" role="status">{{ aviso() }}</p>
+  }
+  @if (error()) {
+    <div class="mensaje error" role="alert">
+      {{ error() }} <button class="btn btn--navy" (click)="cargar()">Reintentar</button>
+    </div>
+  }
+  <section class="card" [attr.aria-busy]="cargando()">
+    <label class="search"
+      ><span class="sr-only">Buscar por programa o universidad</span
+      ><input
+        class="search__input"
+        type="search"
+        placeholder="Buscar programa o universidad…"
+        [value]="termino()"
+        (input)="buscar($any($event.target).value)"
+    /></label>
+    <p class="ayuda">Programas activos · {{ filtrados().length }} resultados</p>
+    <div class="table-wrap">
+      <table class="tabla">
+        <thead>
           <tr>
-            <td class="col-no">{{ desde() + i + 1 }}</td>
-            <td>{{ programa.nombre }}</td>
-            <td>{{ programa.asignatura }}</td>
-            <td class="col-acciones">
-              <div class="acciones">
-                <button type="button" class="btn btn--danger" (click)="eliminar(programa)">
-                  Eliminar
-                </button>
-                <button type="button" class="btn btn--navy" (click)="editar(programa)">
-                  Editar
-                </button>
-              </div>
-            </td>
+            <th scope="col">No</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Universidad</th>
+            <th scope="col" class="col-acciones">Acciones</th>
           </tr>
-        } @empty {
-          <tr>
-            <td class="tabla__vacia" colspan="4">No hay programas cargados</td>
-          </tr>
+        </thead>
+        <tbody>
+          @if (cargando()) {
+            <tr>
+              <td colspan="4" class="tabla__vacia">Cargando programas…</td>
+            </tr>
+          } @else {
+            @for (programa of programasPagina(); track programa.id; let i = $index) {
+              <tr>
+                <td>{{ desde() + i + 1 }}</td>
+                <td>{{ programa.nombre }}</td>
+                <td>{{ programa.universidad }}</td>
+                <td>
+                  <div class="acciones">
+                    <button
+                      class="btn btn--danger"
+                      type="button"
+                      (click)="solicitarEliminar(programa)"
+                      [attr.aria-label]="'Eliminar ' + programa.nombre"
+                    >
+                      Eliminar
+                    </button>
+                    <button
+                      class="btn btn--navy"
+                      type="button"
+                      (click)="abrir(programa)"
+                      [attr.aria-label]="'Editar ' + programa.nombre"
+                    >
+                      Editar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="tabla__vacia">
+                  {{
+                    error()
+                      ? 'No se pudo obtener el listado.'
+                      : 'No hay programas que coincidan con la búsqueda.'
+                  }}
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-paginacion
+      [paginaActual]="paginaActual()"
+      [totalPaginas]="totalPaginas()"
+      (cambio)="irAPagina($event)"
+    />
+  </section>
+}
+@if (formulario()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+    <section
+      class="panel-modal"
+      appFocoModal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-formulario"
+    >
+      <header>
+        <h2 id="titulo-formulario">{{ edicion ? 'Editar programa' : 'Agregar programa' }}</h2>
+        <p>Programas &gt; Información básica</p>
+      </header>
+      <form (ngSubmit)="guardar()" #form="ngForm">
+        <h3>Información básica</h3>
+        <label for="nombre-programa">Nombre del programa <span aria-hidden="true">*</span></label>
+        <input
+          id="nombre-programa"
+          name="nombre"
+          [(ngModel)]="nombre"
+          required
+          maxlength="150"
+          [disabled]="guardando()"
+          autofocus
+          placeholder="Ej. Especialización en Pediatría"
+        />
+        <label for="universidad-programa">Universidad <span aria-hidden="true">*</span></label>
+        <select
+          id="universidad-programa"
+          name="universidad"
+          [(ngModel)]="universidadId"
+          required
+          [disabled]="guardando()"
+        >
+          <option [ngValue]="null">Selecciona una universidad</option>
+          @for (u of universidades(); track u.id) {
+            <option [ngValue]="u.id">{{ u.nombre }}</option>
+          }
+        </select>
+        <p class="ayuda">
+          Los dos campos son obligatorios. Solo se muestran universidades activas.
+        </p>
+        @if (!universidades().length) {
+          <p class="error" role="alert">
+            No hay universidades activas. Debe existir una universidad antes de crear programas.
+          </p>
         }
-      </tbody>
-    </table>
+        @if (errorFormulario()) {
+          <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+        }
+        <footer>
+          <button
+            class="btn btn--outline"
+            type="button"
+            [disabled]="guardando()"
+            (click)="formulario.set(false)"
+          >
+            Cancelar</button
+          ><button class="btn btn--navy" type="submit" [disabled]="guardando() || form.invalid">
+            {{ guardando() ? 'Guardando…' : 'Guardar programa' }}
+          </button>
+        </footer>
+      </form>
+    </section>
   </div>
-
-  <app-paginacion
-    [paginaActual]="paginaActual()"
-    [totalPaginas]="totalPaginas()"
-    (cambio)="irAPagina($event)" />
-</section>
+}
+@if (pendienteEliminar(); as programa) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && pendienteEliminar.set(null)">
+    <section
+      class="panel-modal confirmacion"
+      appFocoModal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-eliminar"
+    >
+      <h2 id="titulo-eliminar">¿Desactivar este programa?</h2>
+      <p>
+        <strong>{{ programa.nombre }}</strong
+        ><br />{{ programa.universidad }}
+      </p>
+      <p>
+        Dejará de aparecer en el listado activo. Su registro y los residentes asociados se
+        conservarán en la base de datos.
+      </p>
+      @if (errorFormulario()) {
+        <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+      }
+      <footer>
+        <button
+          class="btn btn--outline"
+          [disabled]="guardando()"
+          (click)="pendienteEliminar.set(null)"
+        >
+          Cancelar</button
+        ><button class="btn btn--danger" [disabled]="guardando()" (click)="confirmarEliminar()">
+          {{ guardando() ? 'Desactivando…' : 'Desactivar programa' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}
