@@ -207,6 +207,7 @@ CREATE TABLE rotacion (
     cupo_disponible  INTEGER NOT NULL,
 
     estado           VARCHAR(30) NOT NULL DEFAULT 'Disponible',
+    activa           BOOLEAN NOT NULL DEFAULT TRUE,
 
     PRIMARY KEY (id_asignatura, fecha_inicio, fecha_fin),
 
@@ -386,3 +387,9 @@ JOIN programa    p   ON p.id_programa    = res.id_programa
 JOIN universidad u   ON u.id_universidad = p.id_universidad
 WHERE rr.estado = 'Esperando cupo';
 ```
+
+## Estado administrativo de Rotación
+
+Actualizado 2026-09-14: `activa=true` representa Activo y `activa=false` representa Inactivo. **Activo ↔ Inactivo** es reversible. Se conserva `estado` como disponibilidad (Disponible / Cupo Lleno), independiente del estado administrativo. Eliminar definitivamente es una operación DELETE y no un estado. Requiere que no existan filas relacionadas en `rotacion_residente`, incluso canceladas.
+
+La base existente se actualiza con `database/migrations/20260914_rotacion_activa.sql`; la inicialización nueva aplica `database/init/11_rotacion_activa.sql`. Detalles y pruebas en `docs/rotaciones.md`.

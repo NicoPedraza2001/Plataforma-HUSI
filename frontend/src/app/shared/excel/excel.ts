@@ -1,9 +1,23 @@
+/**
+ * Lectura y generación de archivos Excel (.xlsx) en el navegador, reutilizable por cualquier
+ * pantalla con importación o exportación. ExcelJS se carga bajo demanda para no aumentar la
+ * carga inicial de la app.
+ */
 import type { Workbook } from 'exceljs';
-import { FilaImportacion } from './programas-api';
+
 export interface HojaExcel {
   nombre: string;
+  /** Celdas como texto; `filas[0]` es la fila 1 del Excel. */
   filas: string[][];
 }
+
+/**
+ * Texto que reemplaza a las celdas con fórmula: no se ejecutan fórmulas ni se confía en
+ * valores calculados obsoletos. La pantalla debe rechazar las filas que lo contengan.
+ */
+export const MARCA_FORMULA = '[FÓRMULA: reemplazar por texto]';
+
+/** Índice de columna (base 0) a letra de Excel: 0 → A, 26 → AA. */
 export function letraColumna(indice: number): string {
   let letra = '';
   let numero = indice + 1;
@@ -14,21 +28,8 @@ export function letraColumna(indice: number): string {
   }
   return letra;
 }
-export function mapearFilas(
-  hoja: HojaExcel,
-  encabezado: number,
-  nombre: number,
-  universidad: number,
-): FilaImportacion[] {
-  return hoja.filas
-    .slice(encabezado)
-    .map((celdas, i) => ({
-      fila: encabezado + i + 1,
-      nombre: (celdas[nombre] ?? '').trim(),
-      universidad: (celdas[universidad] ?? '').trim(),
-    }))
-    .filter((f) => f.nombre !== '' || f.universidad !== '');
-}
+
+/** Lee todas las hojas de un .xlsx. Lanza `Error` con un mensaje listo para mostrar. */
 export async function leerExcel(file: File): Promise<HojaExcel[]> {
   if (!/\.xlsx$/i.test(file.name))
     throw new Error(
@@ -56,22 +57,24 @@ export async function leerExcel(file: File): Promise<HojaExcel[]> {
       const celdas: string[] = [];
       for (let j = 1; j <= hoja.columnCount; j++) {
         const celda = hoja.getCell(i, j);
-        // No ejecutar fórmulas ni confiar en valores calculados obsoletos.
-        celdas.push(celda.formula ? '[FÓRMULA: reemplazar por texto]' : celda.text.trim());
+        celdas.push(celda.formula ? MARCA_FORMULA : celda.value instanceof Date ? celda.value.toISOString().slice(0, 10) : celda.text.trim());
       }
       filas.push(celdas);
     }
     return { nombre: hoja.name, filas };
   });
 }
+
+/** Genera un .xlsx de una hoja (encabezados en negrita) y lo descarga. */
 export async function descargarLibro(
-  nombre: string,
+  nombreArchivo: string,
+  nombreHoja: string,
   columnas: string[],
   filas: (string | number)[][],
 ): Promise<void> {
   const { Workbook } = await import('exceljs');
   const libro: Workbook = new Workbook();
-  const hoja = libro.addWorksheet('Programas');
+  const hoja = libro.addWorksheet(nombreHoja);
   hoja.addRow(columnas);
   filas.forEach((f) => hoja.addRow(f));
   hoja.getRow(1).font = { bold: true };
@@ -86,7 +89,7 @@ export async function descargarLibro(
   );
   const enlace = document.createElement('a');
   enlace.href = url;
-  enlace.download = nombre;
+  enlace.download = nombreArchivo;
   enlace.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

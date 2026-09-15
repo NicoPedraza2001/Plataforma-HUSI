@@ -1,33 +1,25 @@
-@if (importando()) {
-  <app-importar-programas [universidades]="universidades()" (cerrar)="cerrarImportacion()" />
-} @else {
-  <header class="page-head">
+<header class="page-head">
     <div class="page-head__titles">
       <h1 class="page-head__title">Programas</h1>
       <nav class="breadcrumb" aria-label="Ruta de navegación">
-        <span>Inicio</span><span aria-hidden="true">&gt;</span><span>Programas</span>
+        <a routerLink="/admin/universidades">Universidades</a><span aria-hidden="true">&gt;</span><span>Programas</span>
       </nav>
     </div>
     <div class="acciones">
       <button
         type="button"
-        class="btn btn--outline btn--importar"
-        [disabled]="cargando() || !!error()"
-        (click)="importando.set(true)"
-      >
-        <svg class="icono-importar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" /></svg>
-        Importar Excel
-      </button>
-      <button
-        type="button"
         class="btn btn--add"
-        [disabled]="cargando() || !!error()"
+        [disabled]="cargando() || !!error() || contextoInactivo()"
         (click)="abrir()"
       >
         + Agregar programa
       </button>
     </div>
   </header>
+  @if (universidadContexto(); as u) {
+    <p class="ayuda">Programas de <strong>{{ u.nombre }}</strong> · {{ u.estado }}</p>
+    @if (contextoInactivo()) { <p class="mensaje" role="status">Esta universidad está inactiva. Sus programas se conservan. Reactívala desde Universidades para crear o editar programas aquí.</p> }
+  }
   @if (aviso()) {
     <p class="mensaje exito" role="status">{{ aviso() }}</p>
   }
@@ -36,6 +28,7 @@
       {{ error() }} <button class="btn btn--navy" (click)="cargar()">Reintentar</button>
     </div>
   }
+  @if(errorAccion()){<p class="mensaje error" role="alert">{{errorAccion()}}</p>}
   <section class="card" [attr.aria-busy]="cargando()">
     <label class="search"
       ><span class="sr-only">Buscar por programa o universidad</span
@@ -46,7 +39,7 @@
         [value]="termino()"
         (input)="buscar($any($event.target).value)"
     /></label>
-    <p class="ayuda">Programas activos · {{ filtrados().length }} resultados</p>
+    <p class="ayuda">Programas · {{ totalElementos() }} resultados</p>
     <div class="table-wrap">
       <table class="tabla">
         <thead>
@@ -54,7 +47,7 @@
             <th scope="col">No</th>
             <th scope="col">Nombre</th>
             <th scope="col">Universidad</th>
-            <th scope="col" class="col-acciones">Acciones</th>
+            <th scope="col" class="col-acciones-registro">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -69,23 +62,10 @@
                 <td>{{ programa.nombre }}</td>
                 <td>{{ programa.universidad }}</td>
                 <td>
-                  <div class="acciones">
-                    <button
-                      class="btn btn--danger"
-                      type="button"
-                      (click)="solicitarEliminar(programa)"
-                      [attr.aria-label]="'Eliminar ' + programa.nombre"
-                    >
-                      Eliminar
-                    </button>
-                    <button
-                      class="btn btn--navy"
-                      type="button"
-                      (click)="abrir(programa)"
-                      [attr.aria-label]="'Editar ' + programa.nombre"
-                    >
-                      Editar
-                    </button>
+                  <div class="acciones-registro">
+                    <button class="btn estado-directo" [class.estado-directo--activo]="programa.estado==='Activo'" [class.estado-directo--inactivo]="programa.estado!=='Activo'" [disabled]="guardando()" [attr.aria-pressed]="programa.estado==='Activo'" [attr.aria-label]="(programa.estado==='Activo'?'Desactivar ':'Activar ')+programa.nombre" [title]="programa.estado==='Activo'?'Desactivar programa':'Activar programa'" (click)="cambiarEstado(programa)">{{programa.estado}}</button>
+                    <button class="btn btn--navy" type="button" [disabled]="guardando()||contextoInactivo()" (click)="abrir(programa)" [attr.aria-label]="'Editar '+programa.nombre">Editar</button>
+                    <button class="btn papelera" type="button" [disabled]="guardando()" (click)="solicitarEliminar(programa)" [attr.aria-label]="'Eliminar definitivamente '+programa.nombre" title="Eliminar definitivamente"><app-icono-papelera /></button>
                   </div>
                 </td>
               </tr>
@@ -95,7 +75,7 @@
                   {{
                     error()
                       ? 'No se pudo obtener el listado.'
-                      : 'No hay programas que coincidan con la búsqueda.'
+                      : (universidadRuta() !== null && !termino() ? 'Esta universidad no tiene programas registrados.' : 'No hay programas que coincidan con la búsqueda.')
                   }}
                 </td>
               </tr>
@@ -105,12 +85,11 @@
       </table>
     </div>
     <app-paginacion
-      [paginaActual]="paginaActual()"
+      [paginaActual]="paginaVisible()"
       [totalPaginas]="totalPaginas()"
       (cambio)="irAPagina($event)"
     />
   </section>
-}
 @if (formulario()) {
   <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
     <section
@@ -143,7 +122,7 @@
           name="universidad"
           [(ngModel)]="universidadId"
           required
-          [disabled]="guardando()"
+          [disabled]="guardando() || universidadRuta() !== null"
         >
           <option [ngValue]="null">Selecciona una universidad</option>
           @for (u of universidades(); track u.id) {
@@ -151,7 +130,7 @@
           }
         </select>
         <p class="ayuda">
-          Los dos campos son obligatorios. Solo se muestran universidades activas.
+          Los dos campos son obligatorios. Solo se muestran universidades activas. Al entrar desde una universidad, queda seleccionada automáticamente.
         </p>
         @if (!universidades().length) {
           <p class="error" role="alert">
@@ -186,14 +165,13 @@
       aria-modal="true"
       aria-labelledby="titulo-eliminar"
     >
-      <h2 id="titulo-eliminar">¿Desactivar este programa?</h2>
+      <h2 id="titulo-eliminar">¿Eliminar definitivamente este programa?</h2>
       <p>
         <strong>{{ programa.nombre }}</strong
         ><br />{{ programa.universidad }}
       </p>
       <p>
-        Dejará de aparecer en el listado activo. Su registro y los residentes asociados se
-        conservarán en la base de datos.
+        Esta acción eliminará completamente el programa de la base de datos y no podrá recuperarse. Si piensas utilizarlo nuevamente, puedes desactivarlo en lugar de eliminarlo. Si tiene residentes asociados, la eliminación será bloqueada para proteger su historial.
       </p>
       @if (errorFormulario()) {
         <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
@@ -206,7 +184,7 @@
         >
           Cancelar</button
         ><button class="btn btn--danger" [disabled]="guardando()" (click)="confirmarEliminar()">
-          {{ guardando() ? 'Desactivando…' : 'Desactivar programa' }}
+          {{ guardando() ? 'Eliminando…' : 'Eliminar definitivamente' }}
         </button>
       </footer>
     </section>

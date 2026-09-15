@@ -10,11 +10,15 @@
     </nav>
   </div>
 
-  <button type="button" class="btn btn--add" (click)="agregar()">
+  <button type="button" class="btn btn--add" disabled title="Función pendiente de implementación">
     <span class="btn__plus" aria-hidden="true">+</span>
     Agregar usuario
   </button>
 </header>
+
+@if (cargando()) { <p class="mensaje" role="status">Cargando datos…</p> }
+@if (error()) { <div class="mensaje" role="alert">{{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button></div> }
+
 
 <!-- ===================== TARJETA DEL LISTADO ===================== -->
 <section class="card">
@@ -71,7 +75,8 @@
     </label>
   </div>
 
-  <div class="table-wrap">
+  @if (!cargando() && !error()) { <p role="status">{{ consulta.datos()?.totalElementos ?? 0 }} resultados</p> }
+<div class="table-wrap">
     <table class="tabla">
       <thead>
         <tr>
@@ -85,6 +90,7 @@
       </thead>
 
       <tbody>
+@if (!cargando() && !error()) {
         @for (usuario of usuariosPagina(); track usuario.id; let i = $index) {
           <tr>
             <td class="col-no">{{ desde() + i + 1 }}</td>
@@ -98,10 +104,10 @@
             </td>
             <td class="col-acciones">
               <div class="acciones">
-                <button type="button" class="btn btn--navy" (click)="editar(usuario)">
+                <button type="button" class="btn btn--navy" disabled title="Función pendiente de implementación">
                   Editar
                 </button>
-                <button type="button" class="btn btn--green" (click)="permisos(usuario)">
+                <button type="button" class="btn btn--green" disabled title="Función pendiente de implementación">
                   Permisos
                 </button>
               </div>
@@ -112,7 +118,8 @@
             <td class="tabla__vacia" colspan="6">No hay usuarios que coincidan con la búsqueda</td>
           </tr>
         }
-      </tbody>
+      }
+</tbody>
     </table>
   </div>
 

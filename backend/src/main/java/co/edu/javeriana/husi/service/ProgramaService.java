@@ -8,6 +8,7 @@ public interface ProgramaService {
  ProgramaResponse crear(ProgramaRequest request);
  ProgramaResponse actualizar(Integer id,ProgramaRequest request);
  void desactivar(Integer id);
- List<CatalogoResponse> universidades();
+ ProgramaResponse cambiarEstado(Integer id,String estado);
+ void eliminarDefinitivamente(Integer id);
  ProgramaRequest validarImportacion(String nombre,String universidad);
 }

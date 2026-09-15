@@ -1,0 +1,153 @@
+:host {
+  display: block;
+  padding: 26px 34px 44px;
+}
+.acciones {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.btn--outline {
+  background: var(--husi-bg);
+  border: 1px solid var(--husi-border);
+  color: var(--husi-navy);
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ayuda {
+  color: var(--husi-muted);
+  font-size: 14px;
+  margin: 14px 0;
+}
+.mensaje {
+  padding: 16px;
+  margin-bottom: 18px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+.exito {
+  color: var(--husi-green);
+  background: var(--husi-surface);
+}
+.error {
+  color: var(--husi-red-dark);
+}
+.fondo-modal {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--husi-navy-deep) 65%, transparent);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
+}
+.panel-modal {
+  width: min(680px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: var(--husi-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border-top: 8px solid var(--husi-blue);
+}
+.panel-modal header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--husi-border);
+}
+.panel-modal h2,
+.panel-modal h3 {
+  font-family: var(--font-serif);
+  color: var(--husi-navy);
+}
+.panel-modal header p {
+  color: var(--husi-muted);
+  margin-top: 10px;
+}
+form {
+  padding: 32px;
+}
+h3 {
+  margin-bottom: 28px;
+  text-align: center;
+}
+label {
+  display: block;
+  font-weight: 600;
+  margin: 20px 0 8px;
+  color: var(--husi-navy);
+}
+input,
+select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  background: var(--husi-bg);
+  color: var(--husi-text);
+}
+input:focus,
+select:focus {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.confirmacion {
+  padding: 32px;
+}
+.confirmacion p {
+  margin-top: 20px;
+  line-height: 1.6;
+}
+@media (max-width: 720px) {
+  :host {
+    padding: 22px 18px;
+  }
+  .page-head {
+    align-items: flex-start;
+    gap: 18px;
+    flex-direction: column;
+  }
+  .panel-modal header,
+  form {
+    padding: 20px;
+  }
+}
+
+.page-head .acciones > .btn {
+  min-height: 50px;
+  width: 220px;
+  max-width: 100%;
+  padding: 13px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.filtros-universidades { display: flex; align-items: end; gap: 20px; }
+.filtros-universidades .search { flex: 1; }
+.acciones a { text-decoration: none; }
+@media (max-width: 720px) { .filtros-universidades { display: block; } }
+.acciones a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.enlace-asociados{display:inline-flex;text-decoration:none;padding:10px 14px;border-radius:9px;font-size:14px;font-weight:600;white-space:nowrap}

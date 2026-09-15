@@ -11,13 +11,17 @@
   </div>
 
   <div class="page-head__acciones">
-    <button type="button" class="btn btn--outline" (click)="importar()">Importar</button>
-    <button type="button" class="btn btn--add" (click)="agregarResidente()">
+    <button type="button" class="btn btn--outline" disabled title="Función pendiente de implementación">Importar</button>
+    <button type="button" class="btn btn--add" disabled title="Función pendiente de implementación">
       <span class="btn__plus" aria-hidden="true">+</span>
       Agregar Residente
     </button>
   </div>
 </header>
+
+@if (cargando()) { <p class="mensaje" role="status">Cargando datos…</p> }
+@if (error()) { <div class="mensaje" role="alert">{{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button></div> }
+
 
 <!-- ===================== TARJETA DEL LISTADO ===================== -->
 <section class="card">
@@ -91,7 +95,8 @@
   </div>
 
   <!-- ===================== TABLA ===================== -->
-  <div class="table-wrap">
+  @if (!cargando() && !error()) { <p role="status">{{ consulta.datos()?.totalElementos ?? 0 }} resultados</p> }
+<div class="table-wrap">
     <table class="tabla">
       <thead>
         <tr>
@@ -106,6 +111,7 @@
       </thead>
 
       <tbody>
+@if (!cargando() && !error()) {
         @for (residente of residentesPagina(); track residente.id; let i = $index) {
           <tr>
             <td class="col-no">{{ desde() + i + 1 }}</td>
@@ -117,7 +123,7 @@
               <span [class]="claseBadge(residente.estado)">{{ residente.estado }}</span>
             </td>
             <td class="col-acciones">
-              <button type="button" class="btn btn--navy" (click)="editar(residente)">Editar</button>
+              <button type="button" class="btn btn--navy" disabled title="Función pendiente de implementación">Editar</button>
             </td>
           </tr>
         } @empty {
@@ -125,45 +131,11 @@
             <td class="tabla__vacia" colspan="7">No hay residentes registrados</td>
           </tr>
         }
-      </tbody>
+      }
+</tbody>
     </table>
   </div>
 
   <!-- ===================== PAGINACIÓN ===================== -->
-  <nav class="paginacion" aria-label="Paginación del listado">
-    <button
-      type="button"
-      class="pag pag--nav"
-      aria-label="Página anterior"
-      [disabled]="paginaActual() === 1"
-      (click)="irAPagina(paginaActual() - 1)">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
-
-    @for (pagina of paginas(); track pagina) {
-      <button
-        type="button"
-        class="pag pag--num"
-        [class.pag--activa]="pagina === paginaActual()"
-        [attr.aria-current]="pagina === paginaActual() ? 'page' : null"
-        (click)="irAPagina(pagina)">
-        {{ pagina }}
-      </button>
-    }
-
-    <button
-      type="button"
-      class="pag pag--nav"
-      aria-label="Página siguiente"
-      [disabled]="paginaActual() === totalPaginas()"
-      (click)="irAPagina(paginaActual() + 1)">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
-  </nav>
+  <app-paginacion [paginaActual]="paginaActual()" [totalPaginas]="totalPaginas()" (cambio)="irAPagina($event)" />
 </section>

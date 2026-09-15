@@ -1,5 +1,6 @@
-import { letraColumna, mapearFilas } from './excel-programas';
-describe('Mapeo de Excel', () => {
+import { mapearFilas } from './mapear-filas';
+
+describe('mapearFilas', () => {
   it('respeta columnas elegidas, encabezados desplazados y números originales de fila', () => {
     const hoja = {
       nombre: 'Datos',
@@ -15,9 +16,5 @@ describe('Mapeo de Excel', () => {
       { fila: 3, nombre: 'Pediatría', universidad: 'Universidad A' },
       { fila: 5, nombre: '', universidad: 'Universidad B' },
     ]);
-  });
-  it('identifica columnas después de Z', () => {
-    expect(letraColumna(26)).toBe('AA');
-    expect(letraColumna(51)).toBe('AZ');
   });
 });

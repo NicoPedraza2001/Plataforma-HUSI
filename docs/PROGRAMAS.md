@@ -18,6 +18,20 @@ Para desplegar el frontend estático se necesita un proxy /api hacia Spring Boot
 CORS de desarrollo admite localhost y 127.0.0.1 en 4200 y 4201.
 Producción sigue usando CORS_ALLOWED_ORIGINS.
 
+## Archivos del frontend
+
+| Archivo (`frontend/src/app`) | Responsabilidad |
+| --- | --- |
+| `services/programa.service.ts` | Llamadas HTTP a `ProgramaController` (CRUD + importación) |
+| `services/universidad.service.ts` | Llamadas HTTP a `UniversidadController` (catálogo) |
+| `services/api-error.ts` | Convierte errores HTTP en mensajes para el usuario |
+| `models/programa.model.ts`, `models/universidad.model.ts`, `models/importacion-programas.model.ts` | Interfaces de los DTO |
+| `features/admin/programas/listado-programas/` | Pantalla de listado, formulario y confirmación de desactivar |
+| `features/admin/programas/importar-programas/` | Asistente de importación Excel |
+| `features/admin/programas/importar-programas/mapear-filas.ts` | Convierte filas del Excel en filas de importación de programas |
+| `shared/excel/excel.ts` | Lectura y descarga de Excel en el navegador (ExcelJS), compartido entre pantallas |
+| `shared/foco-modal/foco-modal.ts` | Directiva que atrapa el foco dentro de los modales |
+
 ## Comportamiento
 
 - Listado y búsqueda de programas activos con paginación.
@@ -89,7 +103,7 @@ Referencia de la biblioteca: https://github.com/exceljs/exceljs
 - Backend: `.\mvnw.cmd test` con PostgreSQL local encendido.
   Las pruebas de integración usan transacciones con rollback: no conservan datos de prueba.
   Las secuencias de PostgreSQL sí pueden avanzar durante una prueba.
-- Frontend Programas: `npm test -- --watch=false --include="src/app/features/admin/programas/**/*.spec.ts"`.
+- Frontend Programas: `npm test -- --watch=false --include="src/app/features/admin/programas/**/*.spec.ts" --include="src/app/services/**/*.spec.ts" --include="src/app/shared/excel/*.spec.ts"`.
 - Compilación frontend: `npm run build`.
 - Generar Excel ficticio (backend activo): desde frontend, `node scripts/crear-excel-prueba.cjs`.
   Archivo: docs/pruebas/programas-prueba.xlsx.

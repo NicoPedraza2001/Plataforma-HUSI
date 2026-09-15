@@ -9,5 +9,7 @@ public interface ProgramaRepository extends JpaRepository<Programa,Integer> {
  @Lock(LockModeType.PESSIMISTIC_WRITE)
  @Query("select p from Programa p where p.id = :id")
  Optional<Programa> bloquearPorId(Integer id);
+ @Query(value="select count(*) from residente where id_programa=:id",nativeQuery=true)
+ long contarResidentes(Integer id);
  Optional<Programa> findFirstByUniversidadIdAndNombreIgnoreCase(Integer universidadId,String nombre);
 }

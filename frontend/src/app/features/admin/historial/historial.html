@@ -10,11 +10,15 @@
     </nav>
   </div>
 
-  <button type="button" class="btn btn--add" (click)="exportar()">
+  <button type="button" class="btn btn--add" disabled title="Función pendiente de implementación">
     <span class="btn__plus" aria-hidden="true">+</span>
     Exportar
   </button>
 </header>
+
+@if (cargando()) { <p class="mensaje" role="status">Cargando datos…</p> }
+@if (error()) { <div class="mensaje" role="alert">{{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button></div> }
+
 
 <!-- ===================== TARJETA DEL LISTADO ===================== -->
 <section class="card">
@@ -54,7 +58,7 @@
         class="filtro-input"
         [value]="accionSeleccionada()"
         (change)="onAccionChange($any($event.target).value)">
-        @for (accion of acciones; track accion) {
+        @for (accion of acciones(); track accion) {
           <option [value]="accion">{{ accion }}</option>
         }
       </select>
@@ -82,7 +86,8 @@
   </div>
 
   <!-- ===================== TABLA ===================== -->
-  <div class="table-wrap">
+  @if (!cargando() && !error()) { <p role="status">{{ consulta.datos()?.totalElementos ?? 0 }} resultados</p> }
+<div class="table-wrap">
     <table class="tabla-historial">
       <thead>
         <tr>
@@ -96,6 +101,7 @@
       </thead>
 
       <tbody>
+@if (!cargando() && !error()) {
         @for (registro of registrosPagina(); track registro.id) {
           <tr>
             <td>{{ registro.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
@@ -112,45 +118,11 @@
             <td class="tabla__vacia" colspan="6">No hay movimientos registrados</td>
           </tr>
         }
-      </tbody>
+      }
+</tbody>
     </table>
   </div>
 
   <!-- ===================== PAGINACIÓN ===================== -->
-  <nav class="paginacion" aria-label="Paginación del historial">
-    <button
-      type="button"
-      class="pag pag--nav"
-      aria-label="Página anterior"
-      [disabled]="paginaActual() === 1"
-      (click)="irAPagina(paginaActual() - 1)">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
-
-    @for (pagina of paginas(); track pagina) {
-      <button
-        type="button"
-        class="pag pag--num"
-        [class.pag--activa]="pagina === paginaActual()"
-        [attr.aria-current]="pagina === paginaActual() ? 'page' : null"
-        (click)="irAPagina(pagina)">
-        {{ pagina }}
-      </button>
-    }
-
-    <button
-      type="button"
-      class="pag pag--nav"
-      aria-label="Página siguiente"
-      [disabled]="paginaActual() === totalPaginas()"
-      (click)="irAPagina(paginaActual() + 1)">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
-  </nav>
+  <app-paginacion [paginaActual]="paginaActual()" [totalPaginas]="totalPaginas()" (cambio)="irAPagina($event)" />
 </section>

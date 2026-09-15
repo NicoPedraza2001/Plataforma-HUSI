@@ -16,6 +16,8 @@ public class ProgramaController {
  @PostMapping @ResponseStatus(HttpStatus.CREATED) public ProgramaResponse crear(@Valid @RequestBody ProgramaRequest request) { return programas.crear(request); }
  @PutMapping("/{id}") public ProgramaResponse actualizar(@PathVariable Integer id,@Valid @RequestBody ProgramaRequest request) { return programas.actualizar(id,request); }
  @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void desactivar(@PathVariable Integer id) { programas.desactivar(id); }
+ @PatchMapping("/{id}/estado") public ProgramaResponse estado(@PathVariable Integer id,@Valid @RequestBody EstadoProgramaRequest request) { return programas.cambiarEstado(id,request.estado()); }
+ @DeleteMapping("/{id}/definitivo") @ResponseStatus(HttpStatus.NO_CONTENT) public void eliminar(@PathVariable Integer id) { programas.eliminarDefinitivamente(id); }
  @PostMapping("/importacion/validar") public ImportacionProgramasResponse validar(@Valid @RequestBody ImportacionProgramasRequest request) { return importacion.procesar(request,false); }
  @PostMapping("/importacion") public ImportacionProgramasResponse importar(@Valid @RequestBody ImportacionProgramasRequest request) { return importacion.procesar(request,true); }
 }

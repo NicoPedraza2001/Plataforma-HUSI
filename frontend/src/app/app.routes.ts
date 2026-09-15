@@ -1,3 +1,5 @@
+import { ListadoRotaciones } from './features/admin/rotaciones/listado-rotaciones';
+import { ListadoUniversidades } from './features/admin/universidades/listado-universidades/listado-universidades';
 import { Routes } from '@angular/router';
 import { Landing } from './features/public/landing/pages/landing/landing';
 import { PublicLayout } from './layout/public/public-layout/public-layout';
@@ -32,6 +34,9 @@ export const routes: Routes = [
     path: 'admin',
     component: AdminLayout,
     children: [
+      { path: 'rotaciones', component: ListadoRotaciones },
+      { path: 'universidades', component: ListadoUniversidades },
+      { path: 'universidades/:universidadId/programas', component: ListadoProgramas },
       {
         path: 'dashboard',
         component: PanelDashboard

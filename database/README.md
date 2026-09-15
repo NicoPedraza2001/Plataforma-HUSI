@@ -80,3 +80,7 @@ con las filas asignadas.
   documentadas como comentario al inicio de ese archivo.
 
 
+
+## Actualización de rotaciones (2026-09-14)
+
+Para bases ya creadas, aplicar `migrations/20260914_rotacion_activa.sql` antes de iniciar el nuevo backend. Es una migración transaccional aditiva: agrega `rotacion.activa`, conserva la disponibilidad y protege nuevas asignaciones a rotaciones inactivas. No borrar volúmenes ni volver a cargar los datos. Las bases nuevas ejecutan `init/11_rotacion_activa.sql` automáticamente. Ver `../docs/rotaciones.md`.

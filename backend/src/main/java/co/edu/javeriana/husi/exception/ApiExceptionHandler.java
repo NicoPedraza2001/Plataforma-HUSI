@@ -27,4 +27,8 @@ public class ApiExceptionHandler {
  public ResponseEntity<ErrorResponse> integridad(DataIntegrityViolationException e) {
   return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("No se pudo guardar: existe un registro duplicado o una referencia dejó de estar disponible. Actualiza el listado e intenta de nuevo.",Map.of()));
  }
+ @ExceptionHandler(org.springframework.dao.DataAccessException.class)
+ public ResponseEntity<ErrorResponse> baseDeDatos(org.springframework.dao.DataAccessException e) {
+  return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse("No se pudo consultar la base de datos. Intenta nuevamente en unos momentos.",Map.of()));
+ }
 }

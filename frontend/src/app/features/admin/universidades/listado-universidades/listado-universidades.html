@@ -1,0 +1,62 @@
+<header class="page-head">
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Universidades</h1>
+    <nav class="breadcrumb" aria-label="Ruta de navegación"><span>Inicio</span><span aria-hidden="true">&gt;</span><span>Universidades</span></nav>
+  </div>
+  <div class="acciones"><button class="btn btn--add" type="button" [disabled]="guardando()" (click)="abrir()">+ Agregar universidad</button></div>
+</header>
+@if (aviso()) { <p class="mensaje exito" role="status">{{ aviso() }}</p> }
+@if (consulta.error()) { <div class="mensaje error" role="alert">{{ consulta.error() }} <button class="btn btn--navy" (click)="cargar()">Reintentar</button></div> }
+@if(errorFormulario() && !formulario() && !pendienteEliminar()){<p class="mensaje error" role="alert">{{errorFormulario()}}</p>}
+<section class="card" [attr.aria-busy]="consulta.cargando()">
+  <div class="filtros-universidades">
+    <label class="search"><span class="sr-only">Buscar universidad, país o perfil</span><input type="search" class="search__input" placeholder="Buscar universidad, país o perfil…" [value]="termino()" (input)="buscar($any($event.target).value)" maxlength="200" /></label>
+    <label>Estado<select [value]="estado()" (change)="filtrarEstado($any($event.target).value)"><option>Todos</option><option>Activo</option><option>Inactivo</option></select></label>
+  </div>
+  @if (!consulta.cargando() && !consulta.error()) { <p class="ayuda">{{ consulta.datos()?.totalElementos ?? 0 }} universidades encontradas</p> }
+  <div class="table-wrap"><table class="tabla">
+    <thead><tr><th scope="col">Nombre</th><th scope="col">País</th><th scope="col">Perfil</th><th scope="col">Asociados</th><th scope="col" class="col-acciones-registro">Acciones</th></tr></thead>
+    <tbody>
+      @if (consulta.cargando()) { <tr><td colspan="5" class="tabla__vacia" role="status">Cargando universidades…</td></tr> }
+      @else if (consulta.error()) { <tr><td colspan="5" class="tabla__vacia">No se pudo obtener el listado.</td></tr> }
+      @else {
+        @for (u of filas(); track u.id) {
+          <tr><td>{{ u.nombre }}</td><td>{{ u.pais }}</td><td>{{ u.perfil || 'Sin perfil' }}</td>
+            <td><a class="btn btn--outline enlace-asociados" [routerLink]="['/admin/universidades',u.id,'programas']" [attr.aria-label]="'Ver programas de '+u.nombre">Ver programas</a></td>
+            <td><div class="acciones-registro">
+              <button class="btn estado-directo" [class.estado-directo--activo]="u.estado==='Activo'" [class.estado-directo--inactivo]="u.estado!=='Activo'" [disabled]="guardando()" [attr.aria-pressed]="u.estado==='Activo'" [attr.aria-label]="(u.estado==='Activo'?'Desactivar ':'Activar ')+u.nombre" [title]="u.estado==='Activo'?'Desactivar universidad':'Activar universidad'" (click)="cambiarEstado(u)">{{u.estado}}</button>
+              <button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(u)" [attr.aria-label]="'Editar '+u.nombre">Editar</button>
+              <button class="btn papelera" [disabled]="guardando()" (click)="solicitarEliminar(u)" [attr.aria-label]="'Eliminar definitivamente '+u.nombre" title="Eliminar definitivamente"><app-icono-papelera /></button>
+            </div></td></tr>
+        } @empty { <tr><td colspan="5" class="tabla__vacia">{{ termino() || estado() !== 'Todos' ? 'No hay universidades que coincidan con los filtros.' : 'No hay universidades registradas. Agrega la primera para comenzar.' }}</td></tr> }
+      }
+    </tbody>
+  </table></div>
+  <app-paginacion [paginaActual]="pagina()" [totalPaginas]="totalPaginas()" (cambio)="irAPagina($event)" />
+</section>
+@if (formulario()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+    <section class="panel-modal" appFocoModal role="dialog" aria-modal="true" aria-labelledby="titulo-universidad">
+      <header><h2 id="titulo-universidad">{{ edicion ? 'Editar universidad' : 'Agregar universidad' }}</h2><p>Universidades &gt; Información básica</p></header>
+      <form (ngSubmit)="guardar()" #form="ngForm">
+        <label for="nombre-universidad">Nombre de la universidad *</label><input id="nombre-universidad" name="nombre" [(ngModel)]="nombre" required maxlength="150" [disabled]="guardando()" autofocus />
+        <label for="pais-universidad">País *</label><input id="pais-universidad" name="pais" [(ngModel)]="pais" required maxlength="100" [disabled]="guardando()" />
+        <label for="perfil-universidad">Perfil (opcional)</label><input id="perfil-universidad" name="perfil" [(ngModel)]="perfil" maxlength="50" [disabled]="guardando()" />
+        <p class="ayuda">Nombre y país son obligatorios. {{ edicion ? 'El estado se conserva al guardar.' : 'La universidad se registrará como activa.' }}</p>
+        @if (errorFormulario()) { <p class="mensaje error" role="alert">{{ errorFormulario() }}</p> }
+        <footer><button class="btn btn--outline" type="button" [disabled]="guardando()" (click)="formulario.set(false)">Cancelar</button><button class="btn btn--navy" type="submit" [disabled]="guardando() || form.invalid">{{ guardando() ? 'Guardando…' : 'Guardar universidad' }}</button></footer>
+      </form>
+    </section>
+  </div>
+}
+@if (pendienteEliminar(); as u) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && pendienteEliminar.set(null)">
+    <section class="panel-modal confirmacion" appFocoModal role="dialog" aria-modal="true" aria-labelledby="titulo-eliminar-universidad">
+      <h2 id="titulo-eliminar-universidad">¿Eliminar definitivamente esta universidad?</h2><p><strong>{{u.nombre}}</strong></p>
+      <p>Esta acción eliminará completamente la universidad de la base de datos y no podrá recuperarse. Si piensas utilizarla nuevamente, puedes desactivarla en lugar de eliminarla.</p>
+      <p>Si tiene programas asociados, incluso inactivos, la eliminación será bloqueada para conservar sus relaciones.</p>
+      @if(errorFormulario()){<p class="mensaje error" role="alert">{{errorFormulario()}}</p>}
+      <footer><button class="btn btn--outline" [disabled]="guardando()" (click)="pendienteEliminar.set(null)">Cancelar</button><button class="btn btn--danger" [disabled]="guardando()" (click)="confirmarEliminar()">{{guardando()?'Eliminando…':'Eliminar definitivamente'}}</button></footer>
+    </section>
+  </div>
+}

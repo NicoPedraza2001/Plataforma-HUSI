@@ -10,11 +10,15 @@
     </nav>
   </div>
 
-  <button type="button" class="btn btn--add">
+  <button type="button" class="btn btn--add" disabled title="Función pendiente de implementación">
     <span class="btn__plus" aria-hidden="true">+</span>
     Agregar servicio
   </button>
 </header>
+
+@if (cargando()) { <p class="mensaje" role="status">Cargando datos…</p> }
+@if (error()) { <div class="mensaje" role="alert">{{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button></div> }
+
 
 <!-- ===================== TARJETA DEL LISTADO ===================== -->
 <section class="card">
@@ -54,7 +58,8 @@
     </label>
   </div>
 
-  <div class="table-wrap">
+  @if (!cargando() && !error()) { <p role="status">{{ consulta.datos()?.totalElementos ?? 0 }} resultados</p> }
+<div class="table-wrap">
     <table class="tabla">
       <thead>
         <tr>
@@ -69,6 +74,7 @@
       </thead>
 
       <tbody>
+@if (!cargando() && !error()) {
         @for (servicio of serviciosPagina(); track servicio.id; let i = $index) {
           <tr>
             <td class="col-no">{{ desde() + i + 1 }}</td>
@@ -105,7 +111,7 @@
             </td>
             <td class="col-acciones">
               <div class="acciones">
-                <button type="button" class="btn btn--navy" (click)="editar(servicio)">
+                <button type="button" class="btn btn--navy" disabled title="Función pendiente de implementación">
                   Editar
                 </button>
               </div>
@@ -116,7 +122,8 @@
             <td class="tabla__vacia" colspan="7">No hay servicios cargados</td>
           </tr>
         }
-      </tbody>
+      }
+</tbody>
     </table>
   </div>
 

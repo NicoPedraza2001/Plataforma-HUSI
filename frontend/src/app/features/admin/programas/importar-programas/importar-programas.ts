@@ -1,20 +1,21 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { Universidad } from '../../../../models/universidad.model';
 import {
-  ProgramasApi,
-  Universidad,
-  ResultadoImportacion,
   FilaImportacion,
-  mensajeError,
-} from '../programas-api';
+  ResultadoImportacion,
+} from '../../../../models/importacion-programas.model';
+import { ProgramaService } from '../../../../services/programa.service';
+import { mensajeError } from '../../../../services/api-error';
 import {
   HojaExcel,
-  leerExcel,
-  mapearFilas,
-  letraColumna,
+  MARCA_FORMULA,
   descargarLibro,
-} from '../excel-programas';
+  leerExcel,
+  letraColumna,
+} from '../../../../shared/excel/excel';
+import { mapearFilas } from './mapear-filas';
 @Component({
   selector: 'app-importar-programas',
   imports: [FormsModule],
@@ -24,7 +25,7 @@ import {
 export class ImportarProgramas {
   readonly universidades = input.required<Universidad[]>();
   readonly cerrar = output<void>();
-  private readonly api = inject(ProgramasApi);
+  private readonly programaService = inject(ProgramaService);
   protected readonly paso = signal(1);
   protected readonly ocupado = signal(false);
   protected readonly error = signal('');
@@ -175,7 +176,7 @@ export class ImportarProgramas {
     }
     if (
       this.filas().some(
-        (f) => f.nombre.includes('[FÓRMULA:') || f.universidad.includes('[FÓRMULA:'),
+        (f) => f.nombre.includes(MARCA_FORMULA) || f.universidad.includes(MARCA_FORMULA),
       )
     ) {
       this.error.set(
@@ -186,7 +187,7 @@ export class ImportarProgramas {
     this.ocupado.set(true);
     try {
       this.filasValidadas = this.filas().map((f) => ({ ...f }));
-      this.resultado.set(await firstValueFrom(this.api.validar(this.filasValidadas)));
+      this.resultado.set(await firstValueFrom(this.programaService.validar(this.filasValidadas)));
       this.paso.set(3);
       this.filtrar('TODOS');
     } catch (e) {
@@ -200,7 +201,7 @@ export class ImportarProgramas {
     this.ocupado.set(true);
     this.error.set('');
     try {
-      this.resultado.set(await firstValueFrom(this.api.importar(this.filasValidadas)));
+      this.resultado.set(await firstValueFrom(this.programaService.importar(this.filasValidadas)));
       this.paso.set(4);
       this.filtrar('TODOS');
     } catch (e) {
@@ -221,6 +222,7 @@ export class ImportarProgramas {
     try {
       await descargarLibro(
         'plantilla-programas.xlsx',
+        'Programas',
         ['Nombre del programa', 'Universidad'],
         [
           [
@@ -238,6 +240,7 @@ export class ImportarProgramas {
     try {
       await descargarLibro(
         'resultado-importacion-programas.xlsx',
+        'Programas',
         ['Fila', 'Programa', 'Universidad', 'Estado', 'Mensaje'],
         (this.resultado()?.filas ?? [])
           .filter((f) => ['ERROR', 'OMITIDO'].includes(f.estado))

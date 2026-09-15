@@ -18,7 +18,6 @@ public class ProgramaServiceImpl implements ProgramaService {
  private final ProgramaMapper mapper;
  public List<ProgramaResponse> listar() { return programas.findByEstadoOrderByNombreAscIdAsc("Activo").stream().map(mapper::response).toList(); }
  public ProgramaResponse consultar(Integer id) { return mapper.response(obtener(id)); }
- public List<CatalogoResponse> universidades() { return universidades.findByEstadoOrderByNombreAsc("Activo").stream().map(u -> new CatalogoResponse(u.getId(),u.getNombre())).toList(); }
  private Programa obtener(Integer id) { return programas.findById(id).orElseThrow(() -> error(HttpStatus.NOT_FOUND,"No se encontró el programa.")); }
  private Programa obtenerBloqueado(Integer id) { return programas.bloquearPorId(id).orElseThrow(() -> error(HttpStatus.NOT_FOUND,"No se encontró el programa.")); }
  private String nombreValido(String nombre) {
@@ -47,7 +46,7 @@ public class ProgramaServiceImpl implements ProgramaService {
  }
  @Transactional public ProgramaResponse actualizar(Integer id,ProgramaRequest request) {
   Programa p=obtenerBloqueado(id);
-  if(!"Activo".equals(p.getEstado())) throw error(HttpStatus.CONFLICT,"El programa está inactivo. Actualiza el listado.");
+  if("Eliminado".equals(p.getEstado())) throw error(HttpStatus.CONFLICT,"El programa no está disponible.");
   String nombre=nombreValido(request.nombre());
   Universidad u=universidadActiva(request.universidadId());
   sinDuplicado(u.getId(),nombre,id);
@@ -56,6 +55,19 @@ public class ProgramaServiceImpl implements ProgramaService {
  }
  @Transactional public void desactivar(Integer id) {
   Programa p=obtenerBloqueado(id); p.setEstado("Inactivo"); programas.saveAndFlush(p);
+ }
+ @Transactional public ProgramaResponse cambiarEstado(Integer id,String estado) {
+  if(!Set.of("Activo","Inactivo").contains(estado==null?"":estado)) throw error(HttpStatus.BAD_REQUEST,"El estado debe ser Activo o Inactivo.");
+  Programa p=obtenerBloqueado(id);
+  if("Eliminado".equals(p.getEstado())) throw error(HttpStatus.CONFLICT,"El programa no está disponible.");
+  if("Activo".equals(estado)) universidadActiva(p.getUniversidad().getId());
+  p.setEstado(estado);return mapper.response(programas.saveAndFlush(p));
+ }
+ @Transactional public void eliminarDefinitivamente(Integer id) {
+  Programa p=obtenerBloqueado(id);
+  long cantidad=programas.contarResidentes(id);
+  if(cantidad>0) throw error(HttpStatus.CONFLICT,"No se puede eliminar definitivamente: este programa tiene "+cantidad+" residentes asociados, incluidos los inactivos. Puedes desactivarlo para conservar su historial.");
+  programas.delete(p);programas.flush();
  }
  public ProgramaRequest validarImportacion(String nombre,String universidad) {
   String limpio=nombreValido(nombre);

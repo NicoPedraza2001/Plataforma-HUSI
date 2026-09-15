@@ -5,8 +5,8 @@ Plataforma de gestión de residentes del Hospital Universitario San Ignacio.
 ## Stack
 
 - **Frontend**: Angular 21 (standalone components, sin `NgModule`), en `/frontend`.
-- **Backend**: Spring Boot (API REST). Aún no hay código en el repo — se documentará aquí
-  cuando exista `/backend`.
+- **Backend**: Spring Boot (API REST), en `/backend`. Capas: controller → service (interfaz)
+  → service/impl → repository, con `dto/request`, `dto/response`, `mapper` y `model/entity`.
 - **Gestor de paquetes**: npm.
 - **Tests**: Vitest + Angular TestBed (`ng test`). Cada componente trae su `*.spec.ts` con,
   como mínimo, el test `should create`.
@@ -25,6 +25,14 @@ app/
       <pantalla>.html
       <pantalla>.css
       <pantalla>.spec.ts
+  models/                     # Interfaces de los DTO del backend (≈ backend dto/)
+    <recurso>.model.ts
+  services/                   # Clientes HTTP, uno por controller (≈ backend controller/)
+    api.config.ts             # API_URL = '/api'
+    api-error.ts              # mensajeError(): error HTTP → texto para el usuario
+    <recurso>.service.ts
+    <recurso>.service.spec.ts
+  shared/                     # Piezas reutilizables (paginacion/, foco-modal/, excel/)
   app.routes.ts               # Único árbol de rutas de la app
 ```
 
@@ -34,20 +42,55 @@ app/
 - Nombre de clase = PascalCase del nombre de carpeta, sin sufijo `Component`
   (`login/` → `Login`, `listado-programas/` → `ListadoProgramas`, `admin-layout/` → `AdminLayout`).
   Selector = `app-` + kebab-case de la carpeta.
-- Todavía no hay una carpeta de componentes compartidos (`shared/`, `ui/`, etc.). Los patrones
-  visuales repetidos (tarjeta, tabla, buscador, badges, paginación) se **copian y adaptan**
-  de la pantalla existente más parecida (hoy, la referencia es
+- `shared/` guarda piezas genéricas: `Paginacion`, `FocoModal` (atrapa el foco en modales) y
+  `excel/` (`leerExcel`, `descargarLibro`: toda importación/exportación de Excel debe usarlo en
+  vez de importar `exceljs` directamente). Lo que es propio de una pantalla (p. ej. cómo se
+  mapean las columnas a un DTO) queda en la carpeta de esa pantalla, como
+  `importar-programas/mapear-filas.ts`.
+- Los demás patrones visuales repetidos (tarjeta, tabla, buscador, badges) se **copian y
+  adaptan** de la pantalla existente más parecida (hoy, la referencia es
   `features/admin/programas/listado-programas`). Si se repiten una tercera vez, valorar
-  extraerlos a un componente compartido.
+  extraerlos a `shared/`.
+
+## Conexión con el backend (`models/` + `services/`)
+
+Los componentes **nunca** usan `HttpClient` directamente: inyectan un servicio de `services/`.
+La estructura es un espejo del backend para encontrar cada pieza en ambos lados:
+
+| Frontend | Backend |
+|---|---|
+| `services/programa.service.ts` → `ProgramaService` | `controller/ProgramaController` (`/api/programas`) |
+| `services/universidad.service.ts` → `UniversidadService` | `controller/UniversidadController` (`/api/universidades`) |
+| `models/programa.model.ts` → `Programa`, `ProgramaRequest` | `dto/response/ProgramaResponse`, `dto/request/ProgramaRequest` |
+| `models/universidad.model.ts` → `Universidad` | `dto/response/CatalogoResponse` |
+| `models/importacion-programas.model.ts` | `dto/*/ImportacionProgramas*` |
+| `models/api-error.model.ts` → `ApiError` + `services/api-error.ts` | `exception/ApiExceptionHandler` |
+
+Al conectar un módulo nuevo (p. ej. servicios, residentes):
+
+1. Crear `models/<recurso>.model.ts` con una interfaz por DTO; comentar arriba de cada una el
+   DTO del backend al que corresponde (`/** Backend: dto/response/XResponse. */`).
+2. Crear `services/<recurso>.service.ts` (`@Injectable({ providedIn: 'root' })`), con URL
+   `` `${API_URL}/<recurso>` `` y **los mismos nombres de método que el controller**
+   (`listar`, `consultar`, `crear`, `actualizar`, `desactivar`…). Cada método devuelve el
+   `Observable` de `HttpClient` y lleva un comentario con verbo y ruta (`/** GET /programas */`).
+3. Añadir `<recurso>.service.spec.ts` con `provideHttpClientTesting()` comprobando verbo, URL y body.
+4. En el componente: `inject(<Recurso>Service)`, `await firstValueFrom(...)` dentro de
+   `try/catch` y mostrar `mensajeError(e)` en un signal de error.
+5. En el spec del componente, sustituir el servicio con `{ provide: XService, useValue: mock }`.
+
+`/api` lo redirige `proxy.conf.json` a `localhost:8080` en desarrollo (el backend usa
+`context-path: /api`).
 
 ## Convenciones de componentes
 
 - Standalone: `imports: [...]` en el decorador, sin módulos.
 - Estado con signals (`signal`, `computed`), no `BehaviorSubject` ni servicios de estado.
 - Control de flujo nativo de plantillas: `@for`/`@if`/`@empty` (no `*ngFor`/`*ngIf`).
-- Datos que vienen del backend: se mockean con una constante `..._DEMO` y un comentario
-  `// TODO: reemplazar por los datos que entregue el backend` justo encima. Los handlers
-  que deberían llamar a un servicio real quedan con `// TODO: conectar con ...`.
+- Datos que vienen del backend: si el endpoint ya existe, se consumen con su servicio (ver
+  "Conexión con el backend"). Mientras no exista, se mockean con una constante `..._DEMO` y un
+  comentario `// TODO: reemplazar por los datos que entregue el backend` justo encima. Los
+  handlers que deberían llamar a un servicio real quedan con `// TODO: conectar con ...`.
 - Los miembros de la clase usados solo por la plantilla son `protected`.
 
 ## Diseño: colores y tipografía (`frontend/src/styles.css`)
