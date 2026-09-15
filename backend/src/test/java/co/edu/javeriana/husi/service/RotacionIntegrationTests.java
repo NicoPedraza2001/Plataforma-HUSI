@@ -249,9 +249,9 @@ class RotacionIntegrationTests {
       )
     );
     var validar = importacion.procesar(req, false);
-    assertThat(validar.get("VALIDO")).isEqualTo(1L);
-    assertThat(validar.get("OMITIDO")).isEqualTo(1L);
-    assertThat(validar.get("ERROR")).isEqualTo(1L);
+    assertThat(validar.validos()).isEqualTo(1L);
+    assertThat(validar.omitidos()).isEqualTo(1L);
+    assertThat(validar.errores()).isEqualTo(1L);
     assertThat(
       jdbc.queryForObject(
         "select count(*) from rotacion where id_asignatura=?",
@@ -259,7 +259,7 @@ class RotacionIntegrationTests {
         id
       )
     ).isZero();
-    assertThat(importacion.procesar(req, true).get("CREADO")).isEqualTo(1L);
-    assertThat(importacion.procesar(req, true).get("CREADO")).isEqualTo(0L);
+    assertThat(importacion.procesar(req, true).creados()).isEqualTo(1L);
+    assertThat(importacion.procesar(req, true).creados()).isEqualTo(0L);
   }
 }

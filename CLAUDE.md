@@ -87,10 +87,7 @@ Al conectar un módulo nuevo (p. ej. servicios, residentes):
 - Standalone: `imports: [...]` en el decorador, sin módulos.
 - Estado con signals (`signal`, `computed`), no `BehaviorSubject` ni servicios de estado.
 - Control de flujo nativo de plantillas: `@for`/`@if`/`@empty` (no `*ngFor`/`*ngIf`).
-- Datos que vienen del backend: si el endpoint ya existe, se consumen con su servicio (ver
-  "Conexión con el backend"). Mientras no exista, se mockean con una constante `..._DEMO` y un
-  comentario `// TODO: reemplazar por los datos que entregue el backend` justo encima. Los
-  handlers que deberían llamar a un servicio real quedan con `// TODO: conectar con ...`.
+- Los listados consultan el backend mediante services; no agregar constantes DEMO para sustituir datos reales. Si falta un endpoint, implementar la integración o mostrar un estado vacío/error explícito.
 - Los miembros de la clase usados solo por la plantilla son `protected`.
 
 ## Diseño: colores y tipografía (`frontend/src/styles.css`)
@@ -144,3 +141,7 @@ Todo el árbol vive en `app.routes.ts` (un solo archivo, sin lazy loading por ah
 Al agregar una pantalla admin: crear el componente en `features/admin/<módulo>/<pantalla>/`,
 importarlo en `app.routes.ts` y añadir su `{ path, component }` como hijo de `AdminLayout`.
 El link del sidebar (`admin-layout.ts`) normalmente ya existe apuntando a la ruta futura.
+
+## Organización ampliada
+
+Consultar docs/organizacion-codigo.md. Los formularios de programas, universidades y rotaciones viven en su propia carpeta del módulo. Consulta está en shared/consulta y sus tipos de paginación en models. Los estilos comunes de formularios están en shared/formularios.

@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { API_URL } from './api.config';
 import { Usuario } from '../models/usuario.model';
 import { Injectable, inject } from '@angular/core';
@@ -7,7 +8,8 @@ import { Pagina, Parametros } from '../models/pagina.model';
 @Injectable({ providedIn: 'root' })
 export class UsuarioService {
   private readonly http = inject(HttpClient);
-  listar(params: Parametros) {
+  /** GET /api/usuarios */
+  listar(params: Parametros): Observable<Pagina<Usuario>> {
     return this.http.get<Pagina<Usuario>>(`${API_URL}/usuarios`, { params });
   }
 }

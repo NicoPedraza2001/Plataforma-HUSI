@@ -1,3 +1,4 @@
+import { FormularioRotacion } from '../formulario-rotacion/formulario-rotacion';
 import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -12,7 +13,14 @@ import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 import { ImportarRotaciones } from '../importar-rotaciones/importar-rotaciones';
 @Component({
   selector: 'app-listado-rotaciones',
-  imports: [IconoPapelera, FormsModule, Paginacion, FocoModal, ImportarRotaciones],
+  imports: [
+    FormularioRotacion,
+    IconoPapelera,
+    FormsModule,
+    Paginacion,
+    FocoModal,
+    ImportarRotaciones,
+  ],
   templateUrl: './listado-rotaciones.html',
   styleUrl: './listado-rotaciones.css',
 })

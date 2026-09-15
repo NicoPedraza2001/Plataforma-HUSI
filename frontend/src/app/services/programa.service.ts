@@ -16,13 +16,16 @@ export class ProgramaService {
   private readonly http = inject(HttpClient);
   private readonly url = `${API_URL}/programas`;
 
-  buscar(params: Parametros = {}) {
+  /** GET /api/programas/buscar */
+  buscar(params: Parametros = {}): Observable<Pagina<Programa>> {
     return this.http.get<Pagina<Programa>>(`${this.url}/buscar`, { params });
   }
-  cambiarEstado(id: number, estado: string) {
+  /** PATCH /api/programas/{id}/estado */
+  cambiarEstado(id: number, estado: string): Observable<Programa> {
     return this.http.patch<Programa>(`${this.url}/${id}/estado`, { estado });
   }
-  eliminarDefinitivamente(id: number) {
+  /** DELETE /api/programas/{id}/definitivo */
+  eliminarDefinitivamente(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}/definitivo`);
   }
 

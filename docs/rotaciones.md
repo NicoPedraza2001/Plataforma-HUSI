@@ -37,8 +37,8 @@ Frontend:
 
 - `src/app/features/admin/rotaciones/listado-rotaciones.ts`, `.html`, `.css`, `.spec.ts`.
 - `src/app/features/admin/rotaciones/importar-rotaciones.ts`, `.html`, `.css`, `.spec.ts`.
-- `src/app/features/admin/rotaciones/importar-rotaciones.real-test.ts`: prueba optativa contra el servidor real.
-- `src/app/shared/excel/archivo-excel.ts`: lectura/exportación Excel reutilizable.
+- `src/app/features/admin/rotaciones/importar-rotaciones/importar-rotaciones.real-test.ts`: prueba optativa contra el servidor real.
+- `src/app/shared/excel/excel.ts`: lectura/exportación Excel reutilizable.
 - `tsconfig.rotaciones-e2e.json`: configuración de la prueba optativa.
 
 Base y documentación:
@@ -110,7 +110,7 @@ Prueba real optativa (requiere backend y PostgreSQL):
 
 ```powershell
 cd frontend
-npx ng test --watch=false --ts-config=tsconfig.rotaciones-e2e.json --include=src/app/features/admin/rotaciones/importar-rotaciones.real-test.ts
+npx ng test --watch=false --ts-config=tsconfig.rotaciones-e2e.json --include=src/app/features/admin/rotaciones/importar-rotaciones/importar-rotaciones.real-test.ts
 ```
 
 La prueba exige que no exista previamente la rotación de prueba de fechas `2094-09-14` a `2094-09-15` en la primera asignatura del catálogo; si existe, falla antes de modificarla.

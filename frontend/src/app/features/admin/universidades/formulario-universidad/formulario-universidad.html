@@ -1,0 +1,50 @@
+<form (ngSubmit)="guardar.emit()" #form="ngForm">
+  <label for="nombre-universidad">Nombre de la universidad *</label
+  ><input
+    id="nombre-universidad"
+    name="nombre"
+    [(ngModel)]="nombre"
+    required
+    maxlength="150"
+    [disabled]="guardando()"
+    autofocus
+  />
+  <label for="pais-universidad">País *</label
+  ><input
+    id="pais-universidad"
+    name="pais"
+    [(ngModel)]="pais"
+    required
+    maxlength="100"
+    [disabled]="guardando()"
+  />
+  <label for="perfil-universidad">Perfil (opcional)</label
+  ><input
+    id="perfil-universidad"
+    name="perfil"
+    [(ngModel)]="perfil"
+    maxlength="50"
+    [disabled]="guardando()"
+  />
+  <p class="ayuda">
+    Nombre y país son obligatorios.
+    {{
+      edicion() ? 'El estado se conserva al guardar.' : 'La universidad se registrará como activa.'
+    }}
+  </p>
+  @if (errorFormulario()) {
+    <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+  }
+  <footer>
+    <button
+      class="btn btn--outline"
+      type="button"
+      [disabled]="guardando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar</button
+    ><button class="btn btn--navy" type="submit" [disabled]="guardando() || form.invalid">
+      {{ guardando() ? 'Guardando…' : 'Guardar universidad' }}
+    </button>
+  </footer>
+</form>

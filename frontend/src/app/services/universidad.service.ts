@@ -24,30 +24,38 @@ export class UniversidadService {
   listar(): Observable<Universidad[]> {
     return this.http.get<Universidad[]>(this.url);
   }
-  programas(id: number, params: Parametros) {
+  /** GET /api/universidades/{id}/programas */
+  programas(id: number, params: Parametros): Observable<Pagina<Programa>> {
     return this.http.get<Pagina<Programa>>(`${this.url}/${id}/programas`, { params });
   }
-  buscar(params: Parametros = {}) {
+  /** GET /api/universidades/buscar */
+  buscar(params: Parametros = {}): Observable<Pagina<UniversidadDetalle>> {
     return this.http.get<Pagina<UniversidadDetalle>>(`${API_URL}/universidades/buscar`, { params });
   }
-  consultar(id: number) {
+  /** GET /api/universidades/{id} */
+  consultar(id: number): Observable<UniversidadDetalle> {
     return this.http.get<UniversidadDetalle>(`${API_URL}/universidades/` + id);
   }
-  crear(datos: UniversidadDatos) {
+  /** POST /api/universidades */
+  crear(datos: UniversidadDatos): Observable<UniversidadDetalle> {
     return this.http.post<UniversidadDetalle>(`${API_URL}/universidades`, datos);
   }
-  actualizar(id: number, datos: UniversidadDatos) {
+  /** PUT /api/universidades/{id} */
+  actualizar(id: number, datos: UniversidadDatos): Observable<UniversidadDetalle> {
     return this.http.put<UniversidadDetalle>(`${API_URL}/universidades/` + id, datos);
   }
-  cambiarEstado(id: number, estado: string) {
+  /** PATCH /api/universidades/{id}/estado */
+  cambiarEstado(id: number, estado: string): Observable<UniversidadDetalle> {
     return this.http.patch<UniversidadDetalle>(`${API_URL}/universidades/` + id + '/estado', {
       estado,
     });
   }
-  eliminarDefinitivamente(id: number) {
+  /** DELETE /api/universidades/{id}/definitivo */
+  eliminarDefinitivamente(id: number): Observable<void> {
     return this.http.delete<void>(`${API_URL}/universidades/` + id + '/definitivo');
   }
-  desactivar(id: number) {
+  /** DELETE /api/universidades/{id} */
+  desactivar(id: number): Observable<void> {
     return this.http.delete<void>(`${API_URL}/universidades/` + id);
   }
 }

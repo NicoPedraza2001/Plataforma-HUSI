@@ -1,10 +1,10 @@
+import { FormularioPrograma } from '../formulario-programa/formulario-programa';
 import { UniversidadService } from '../../../../services/universidad.service';
 import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Consulta } from '../../../../shared/consulta/consulta';
 import { Pagina } from '../../../../models/pagina.model';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
-import { FormsModule } from '@angular/forms';
 import { firstValueFrom, forkJoin, of } from 'rxjs';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,7 +16,7 @@ import { Universidad } from '../../../../models/universidad.model';
 import { mensajeError } from '../../../../services/api-error';
 @Component({
   selector: 'app-listado-programas',
-  imports: [IconoPapelera, Paginacion, FormsModule, RouterLink, FocoModal],
+  imports: [FormularioPrograma, IconoPapelera, Paginacion, RouterLink, FocoModal],
   templateUrl: './listado-programas.html',
   styleUrl: './listado-programas.css',
 })

@@ -109,8 +109,8 @@ PostgreSQL en Docker, backend en localhost:8080/api y frontend en http://localho
 - `docs/integracion-frontend-backend.md`
 - `frontend/src/app/services/api-error.ts`
 - `frontend/src/app/services/catalogos-api.ts`
-- `frontend/src/app/services/consulta.spec.ts`
-- `frontend/src/app/services/consulta.ts`
+- `frontend/src/app/shared/consulta.spec.ts`
+- `frontend/src/app/shared/consulta.ts`
 - `frontend/src/app/services/dashboard-api.ts`
 - `frontend/src/app/services/historial-api.ts`
 - `frontend/src/app/services/programas-api.ts`

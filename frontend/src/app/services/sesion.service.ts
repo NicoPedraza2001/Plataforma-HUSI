@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { API_URL } from './api.config';
 import { Perfil } from '../models/sesion.model';
 import { Injectable, inject } from '@angular/core';
@@ -6,7 +7,8 @@ import { HttpClient } from '@angular/common/http';
 @Injectable({ providedIn: 'root' })
 export class SesionService {
   private readonly http = inject(HttpClient);
-  perfil() {
+  /** GET /api/sesion/perfil */
+  perfil(): Observable<Perfil> {
     return this.http.get<Perfil>(`${API_URL}/sesion/perfil`);
   }
 }

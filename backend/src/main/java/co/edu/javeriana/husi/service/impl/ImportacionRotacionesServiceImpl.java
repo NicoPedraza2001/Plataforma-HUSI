@@ -1,6 +1,7 @@
 package co.edu.javeriana.husi.service.impl;
 
 import co.edu.javeriana.husi.dto.request.ImportacionRotacionesRequest;
+import co.edu.javeriana.husi.dto.response.ImportacionRotacionesResponse;
 import co.edu.javeriana.husi.exception.NegocioException;
 import co.edu.javeriana.husi.service.ImportacionRotacionesService;
 import co.edu.javeriana.husi.service.RotacionService;
@@ -19,7 +20,7 @@ public class ImportacionRotacionesServiceImpl
   private final RotacionService rotaciones;
 
   // Cada creación usa su propia transacción; validar nunca escribe.
-  public Map<String, Object> procesar(
+  public ImportacionRotacionesResponse procesar(
     ImportacionRotacionesRequest request,
     boolean guardar
   ) {
@@ -40,7 +41,7 @@ public class ImportacionRotacionesServiceImpl
         HttpStatus.BAD_REQUEST,
         "Los números de fila deben ser positivos y distintos."
       );
-    List<Map<String, Object>> filas = new ArrayList<>();
+    List<ImportacionRotacionesResponse.Fila> filas = new ArrayList<>();
     Set<String> vistos = new HashSet<>();
     for (var f : request.filas()) {
       String estado = "VALIDO",
@@ -63,19 +64,27 @@ public class ImportacionRotacionesServiceImpl
         mensaje =
           "No se pudo guardar o consultar la fila. Vuelve a validar; las rotaciones existentes se omitirán.";
       }
-      filas.add(Map.of("fila", f.fila(), "estado", estado, "mensaje", mensaje));
-    }
-    Map<String, Object> resultado = new LinkedHashMap<>();
-    resultado.put("filas", filas);
-    resultado.put("total", filas.size());
-    for (String e : List.of("VALIDO", "CREADO", "OMITIDO", "ERROR"))
-      resultado.put(
-        e,
-        filas
-          .stream()
-          .filter(f -> e.equals(f.get("estado")))
-          .count()
+      filas.add(
+        new ImportacionRotacionesResponse.Fila(f.fila(), estado, mensaje)
       );
-    return resultado;
+    }
+    return new ImportacionRotacionesResponse(
+      filas.size(),
+      contar(filas, "VALIDO"),
+      contar(filas, "CREADO"),
+      contar(filas, "OMITIDO"),
+      contar(filas, "ERROR"),
+      filas
+    );
+  }
+
+  private long contar(
+    List<ImportacionRotacionesResponse.Fila> filas,
+    String estado
+  ) {
+    return filas
+      .stream()
+      .filter(f -> estado.equals(f.estado()))
+      .count();
   }
 }

@@ -76,7 +76,7 @@ Los registros usados en la prueba de navegador se dejaron inactivos: universidad
 - backend/src/main/java/co/edu/javeriana/husi/service/UniversidadService.java
 - backend/src/main/java/co/edu/javeriana/husi/service/impl/UniversidadServiceImpl.java
 - backend/src/test/java/co/edu/javeriana/husi/service/UniversidadIntegrationTests.java
-- frontend/src/app/services/universidades-api.ts
+- frontend/src/app/services/universidad.service.ts
 - frontend/src/app/features/admin/universidades/listado-universidades/listado-universidades.ts
 - frontend/src/app/features/admin/universidades/listado-universidades/listado-universidades.html
 - frontend/src/app/features/admin/universidades/listado-universidades/listado-universidades.css

@@ -144,96 +144,20 @@
         <header>
           <h2 id="titulo-form">{{ edicion ? 'Editar rotación' : 'Agregar rotación' }}</h2>
         </header>
-        <form #form="ngForm" (ngSubmit)="guardar()">
-          <label for="asignatura">Asignatura *</label
-          ><select
-            id="asignatura"
-            name="asignatura"
-            [(ngModel)]="asignaturaId"
-            required
-            [disabled]="guardando() || !!edicion || catalogos.cargando()"
-          >
-            <option [ngValue]="0">Selecciona una asignatura</option>
-            @if (edicion) {
-              <option [ngValue]="edicion.asignaturaId">
-                {{ edicion.asignatura }} — {{ edicion.servicio }}
-              </option>
-            } @else {
-              @for (a of catalogos.datos()?.asignaturas ?? []; track a.id) {
-                <option [ngValue]="a.id">{{ a.nombre }} — {{ a.servicio }}</option>
-              }
-            }
-          </select>
-          @if (catalogos.cargando()) {
-            <p role="status">Cargando asignaturas…</p>
-          }
-          @if (catalogos.error()) {
-            <p class="mensaje error" role="alert">
-              {{ catalogos.error() }}
-              <button type="button" class="btn btn--outline" (click)="catalogos.cargar()">
-                Reintentar
-              </button>
-            </p>
-          }
-          <label for="inicio">Fecha de inicio *</label
-          ><input
-            id="inicio"
-            type="date"
-            name="inicio"
-            [(ngModel)]="inicio"
-            min="1900-01-01"
-            max="9999-12-31"
-            required
-            [disabled]="guardando() || !!edicion?.relaciones"
-          />
-          <label for="fin">Fecha de fin *</label
-          ><input
-            id="fin"
-            type="date"
-            name="fin"
-            [(ngModel)]="fin"
-            [min]="inicio || '1900-01-01'"
-            max="9999-12-31"
-            required
-            [disabled]="guardando() || !!edicion?.relaciones"
-          />
-          <p class="ayuda">
-            Los cupos se calculan automáticamente a partir del servicio. La asignatura no se cambia
-            al editar.
-          </p>
-          @if (edicion?.relaciones) {
-            <p class="mensaje">
-              Esta rotación tiene {{ edicion?.relaciones }} registros de residentes. Sus fechas se
-              conservan para proteger el historial; puedes cambiar su estado desde el listado.
-            </p>
-          }
-          @if (error()) {
-            <p class="mensaje error" role="alert">{{ error() }}</p>
-          }
-          <footer>
-            <button
-              type="button"
-              class="btn btn--outline"
-              [disabled]="guardando()"
-              (click)="formulario.set(false)"
-            >
-              Cancelar</button
-            ><button
-              class="btn btn--navy"
-              type="submit"
-              [disabled]="
-                guardando() ||
-                form.invalid ||
-                !asignaturaId ||
-                !!edicion?.relaciones ||
-                catalogos.cargando() ||
-                !!catalogos.error()
-              "
-            >
-              {{ guardando() ? 'Guardando…' : 'Guardar rotación' }}
-            </button>
-          </footer>
-        </form>
+        <app-formulario-rotacion
+          [(asignaturaId)]="asignaturaId"
+          [(inicio)]="inicio"
+          [(fin)]="fin"
+          [edicion]="edicion"
+          [asignaturas]="catalogos.datos()?.asignaturas ?? []"
+          [cargandoCatalogos]="catalogos.cargando()"
+          [errorCatalogos]="catalogos.error()"
+          [errorFormulario]="error()"
+          (reintentar)="catalogos.cargar()"
+          [guardando]="guardando()"
+          (guardar)="guardar()"
+          (cancelar)="formulario.set(false)"
+        />
       </section>
     </div>
   }

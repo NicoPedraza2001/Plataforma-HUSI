@@ -147,57 +147,16 @@
         <h2 id="titulo-formulario">{{ edicion ? 'Editar programa' : 'Agregar programa' }}</h2>
         <p>Programas &gt; Información básica</p>
       </header>
-      <form (ngSubmit)="guardar()" #form="ngForm">
-        <h3>Información básica</h3>
-        <label for="nombre-programa">Nombre del programa <span aria-hidden="true">*</span></label>
-        <input
-          id="nombre-programa"
-          name="nombre"
-          [(ngModel)]="nombre"
-          required
-          maxlength="150"
-          [disabled]="guardando()"
-          autofocus
-          placeholder="Ej. Especialización en Pediatría"
-        />
-        <label for="universidad-programa">Universidad <span aria-hidden="true">*</span></label>
-        <select
-          id="universidad-programa"
-          name="universidad"
-          [(ngModel)]="universidadId"
-          required
-          [disabled]="guardando() || universidadRuta() !== null"
-        >
-          <option [ngValue]="null">Selecciona una universidad</option>
-          @for (u of universidades(); track u.id) {
-            <option [ngValue]="u.id">{{ u.nombre }}</option>
-          }
-        </select>
-        <p class="ayuda">
-          Los dos campos son obligatorios. Solo se muestran universidades activas. Al entrar desde
-          una universidad, queda seleccionada automáticamente.
-        </p>
-        @if (!universidades().length) {
-          <p class="error" role="alert">
-            No hay universidades activas. Debe existir una universidad antes de crear programas.
-          </p>
-        }
-        @if (errorFormulario()) {
-          <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
-        }
-        <footer>
-          <button
-            class="btn btn--outline"
-            type="button"
-            [disabled]="guardando()"
-            (click)="formulario.set(false)"
-          >
-            Cancelar</button
-          ><button class="btn btn--navy" type="submit" [disabled]="guardando() || form.invalid">
-            {{ guardando() ? 'Guardando…' : 'Guardar programa' }}
-          </button>
-        </footer>
-      </form>
+      <app-formulario-programa
+        [(nombre)]="nombre"
+        [(universidadId)]="universidadId"
+        [universidades]="universidades()"
+        [universidadRuta]="universidadRuta()"
+        [errorFormulario]="errorFormulario()"
+        [guardando]="guardando()"
+        (guardar)="guardar()"
+        (cancelar)="formulario.set(false)"
+      />
     </section>
   </div>
 }

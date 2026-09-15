@@ -1,6 +1,6 @@
+import { FormularioUniversidad } from '../formulario-universidad/formulario-universidad';
 import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { UniversidadService } from '../../../../services/universidad.service';
@@ -13,7 +13,7 @@ import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 
 @Component({
   selector: 'app-listado-universidades',
-  imports: [IconoPapelera, FormsModule, RouterLink, Paginacion, FocoModal],
+  imports: [FormularioUniversidad, IconoPapelera, RouterLink, Paginacion, FocoModal],
   templateUrl: './listado-universidades.html',
   styleUrl: './listado-universidades.css',
 })

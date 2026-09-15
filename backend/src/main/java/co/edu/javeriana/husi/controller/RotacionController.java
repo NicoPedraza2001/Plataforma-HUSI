@@ -1,6 +1,7 @@
 package co.edu.javeriana.husi.controller;
 
 import co.edu.javeriana.husi.dto.request.*;
+import co.edu.javeriana.husi.dto.response.ImportacionRotacionesResponse;
 import co.edu.javeriana.husi.dto.response.PaginaResponse;
 import co.edu.javeriana.husi.dto.response.RotacionResponse;
 import co.edu.javeriana.husi.model.entity.RotacionId;
@@ -81,14 +82,14 @@ public class RotacionController {
   }
 
   @PostMapping("/importar/validar")
-  public Map<String, Object> validar(
+  public ImportacionRotacionesResponse validar(
     @Valid @RequestBody ImportacionRotacionesRequest d
   ) {
     return importacion.procesar(d, false);
   }
 
   @PostMapping("/importar")
-  public Map<String, Object> importar(
+  public ImportacionRotacionesResponse importar(
     @Valid @RequestBody ImportacionRotacionesRequest d
   ) {
     return importacion.procesar(d, true);

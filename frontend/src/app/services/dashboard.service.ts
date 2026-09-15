@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { API_URL } from './api.config';
 import { DashboardDatos } from '../models/dashboard.model';
 import { Injectable, inject } from '@angular/core';
@@ -7,7 +8,8 @@ import { Parametros } from '../models/pagina.model';
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private readonly http = inject(HttpClient);
-  consultar(params: Parametros) {
+  /** GET /api/dashboard */
+  consultar(params: Parametros): Observable<DashboardDatos> {
     return this.http.get<DashboardDatos>(`${API_URL}/dashboard`, { params });
   }
 }

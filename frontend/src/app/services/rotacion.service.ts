@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { API_URL } from './api.config';
 import {
   Rotacion,
@@ -15,34 +16,43 @@ import { Pagina, Parametros } from '../models/pagina.model';
 export class RotacionService {
   private readonly http = inject(HttpClient);
   private readonly gestion = `${API_URL}/rotaciones/gestion`;
-  gestionar(params: Parametros) {
+  /** GET /api/rotaciones/gestion */
+  gestionar(params: Parametros): Observable<Pagina<RotacionGestion>> {
     return this.http.get<Pagina<RotacionGestion>>(this.gestion, { params });
   }
-  catalogos() {
+  /** GET /api/rotaciones/gestion/catalogos */
+  catalogos(): Observable<CatalogosRotacion> {
     return this.http.get<CatalogosRotacion>(this.gestion + '/catalogos');
   }
   private ruta(r: RotacionDatos) {
     return `${this.gestion}/${r.asignaturaId}/${r.inicio}/${r.fin}`;
   }
-  crear(d: RotacionDatos) {
+  /** POST /api/rotaciones/gestion */
+  crear(d: RotacionDatos): Observable<RotacionGestion> {
     return this.http.post<RotacionGestion>(this.gestion, d);
   }
-  editar(r: RotacionDatos, d: RotacionDatos) {
+  /** PUT /api/rotaciones/gestion/{asignatura}/{inicio}/{fin} */
+  editar(r: RotacionDatos, d: RotacionDatos): Observable<RotacionGestion> {
     return this.http.put<RotacionGestion>(this.ruta(r), d);
   }
-  estado(r: RotacionDatos, activa: boolean) {
+  /** PATCH /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/estado */
+  estado(r: RotacionDatos, activa: boolean): Observable<RotacionGestion> {
     return this.http.patch<RotacionGestion>(this.ruta(r) + '/estado', { activa });
   }
-  eliminar(r: RotacionDatos) {
+  /** DELETE /api/rotaciones/gestion/{asignatura}/{inicio}/{fin} */
+  eliminar(r: RotacionDatos): Observable<void> {
     return this.http.delete<void>(this.ruta(r));
   }
-  validar(filas: FilaRotacion[]) {
+  /** POST /api/rotaciones/gestion/importar/validar */
+  validar(filas: FilaRotacion[]): Observable<ResultadoRotaciones> {
     return this.http.post<ResultadoRotaciones>(this.gestion + '/importar/validar', { filas });
   }
-  importar(filas: FilaRotacion[]) {
+  /** POST /api/rotaciones/gestion/importar */
+  importar(filas: FilaRotacion[]): Observable<ResultadoRotaciones> {
     return this.http.post<ResultadoRotaciones>(this.gestion + '/importar', { filas });
   }
-  listar(params: Parametros) {
+  /** GET /api/rotaciones */
+  listar(params: Parametros): Observable<Pagina<Rotacion>> {
     return this.http.get<Pagina<Rotacion>>(`${API_URL}/rotaciones`, { params });
   }
 }
