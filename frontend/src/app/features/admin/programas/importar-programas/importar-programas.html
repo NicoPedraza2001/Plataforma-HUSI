@@ -50,8 +50,24 @@
       <div class="mensaje exito archivo-cargado" role="status">
         <div class="archivo-cargado__cabecera">
           <strong>{{ nombreArchivo() }}</strong>
-          <button type="button" class="quitar-archivo" aria-label="Quitar archivo seleccionado" title="Quitar archivo" [disabled]="ocupado()" (click)="quitarArchivo()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          <button
+            type="button"
+            class="quitar-archivo"
+            aria-label="Quitar archivo seleccionado"
+            title="Quitar archivo"
+            [disabled]="ocupado()"
+            (click)="quitarArchivo()"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
           </button>
         </div>
         <p>

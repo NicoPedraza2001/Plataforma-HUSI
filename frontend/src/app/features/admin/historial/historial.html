@@ -16,9 +16,14 @@
   </button>
 </header>
 
-@if (cargando()) { <p class="mensaje" role="status">Cargando datos…</p> }
-@if (error()) { <div class="mensaje" role="alert">{{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button></div> }
-
+@if (cargando()) {
+  <p class="mensaje" role="status">Cargando datos…</p>
+}
+@if (error()) {
+  <div class="mensaje" role="alert">
+    {{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button>
+  </div>
+}
 
 <!-- ===================== TARJETA DEL LISTADO ===================== -->
 <section class="card">
@@ -27,7 +32,13 @@
     <label class="search">
       <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
-        <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        <path
+          d="m16 16 4 4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
       </svg>
       <span class="sr-only">Buscar usuario, registro o detalle</span>
       <input
@@ -35,7 +46,8 @@
         type="search"
         placeholder="Buscar usuario, registro o detalle..."
         [value]="termino()"
-        (input)="buscar($any($event.target).value)" />
+        (input)="buscar($any($event.target).value)"
+      />
     </label>
 
     <div class="filtro-grupo">
@@ -44,7 +56,8 @@
         id="filtro-modulo"
         class="filtro-input"
         [value]="moduloSeleccionado()"
-        (change)="onModuloChange($any($event.target).value)">
+        (change)="onModuloChange($any($event.target).value)"
+      >
         @for (modulo of modulos(); track modulo) {
           <option [value]="modulo">{{ modulo }}</option>
         }
@@ -57,7 +70,8 @@
         id="filtro-accion"
         class="filtro-input"
         [value]="accionSeleccionada()"
-        (change)="onAccionChange($any($event.target).value)">
+        (change)="onAccionChange($any($event.target).value)"
+      >
         @for (accion of acciones(); track accion) {
           <option [value]="accion">{{ accion }}</option>
         }
@@ -71,7 +85,8 @@
         class="filtro-input"
         type="date"
         [value]="fechaInicial()"
-        (change)="onFechaInicialChange($any($event.target).value)" />
+        (change)="onFechaInicialChange($any($event.target).value)"
+      />
     </div>
 
     <div class="filtro-grupo">
@@ -81,13 +96,16 @@
         class="filtro-input"
         type="date"
         [value]="fechaFinal()"
-        (change)="onFechaFinalChange($any($event.target).value)" />
+        (change)="onFechaFinalChange($any($event.target).value)"
+      />
     </div>
   </div>
 
   <!-- ===================== TABLA ===================== -->
-  @if (!cargando() && !error()) { <p role="status">{{ consulta.datos()?.totalElementos ?? 0 }} resultados</p> }
-<div class="table-wrap">
+  @if (!cargando() && !error()) {
+    <p role="status">{{ consulta.datos()?.totalElementos ?? 0 }} resultados</p>
+  }
+  <div class="table-wrap">
     <table class="tabla-historial">
       <thead>
         <tr>
@@ -101,28 +119,32 @@
       </thead>
 
       <tbody>
-@if (!cargando() && !error()) {
-        @for (registro of registrosPagina(); track registro.id) {
-          <tr>
-            <td>{{ registro.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
-            <td class="col-usuario">{{ registro.usuario }}</td>
-            <td>{{ registro.modulo }}</td>
-            <td>
-              <span [class]="claseBadge(registro.accion)">{{ registro.accion }}</span>
-            </td>
-            <td>{{ registro.registro }}</td>
-            <td class="col-detalle">{{ registro.detalle }}</td>
-          </tr>
-        } @empty {
-          <tr>
-            <td class="tabla__vacia" colspan="6">No hay movimientos registrados</td>
-          </tr>
+        @if (!cargando() && !error()) {
+          @for (registro of registrosPagina(); track registro.id) {
+            <tr>
+              <td>{{ registro.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="col-usuario">{{ registro.usuario }}</td>
+              <td>{{ registro.modulo }}</td>
+              <td>
+                <span [class]="claseBadge(registro.accion)">{{ registro.accion }}</span>
+              </td>
+              <td>{{ registro.registro }}</td>
+              <td class="col-detalle">{{ registro.detalle }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="tabla__vacia" colspan="6">No hay movimientos registrados</td>
+            </tr>
+          }
         }
-      }
-</tbody>
+      </tbody>
     </table>
   </div>
 
   <!-- ===================== PAGINACIÓN ===================== -->
-  <app-paginacion [paginaActual]="paginaActual()" [totalPaginas]="totalPaginas()" (cambio)="irAPagina($event)" />
+  <app-paginacion
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    (cambio)="irAPagina($event)"
+  />
 </section>

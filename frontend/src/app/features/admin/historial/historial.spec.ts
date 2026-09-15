@@ -12,9 +12,8 @@ describe('Historial', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
-      imports: [Historial]
-    })
-    .compileComponents();
+      imports: [Historial],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(Historial);
     component = fixture.componentInstance;

@@ -1,9 +1,14 @@
+import { Programa } from '../models/programa.model';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from './api.config';
-import { Pagina, Parametros } from './consulta';
-import { UniversidadCatalogo, UniversidadDetalle, UniversidadDatos } from '../models/universidad.model';
+import { Pagina, Parametros } from '../models/pagina.model';
+import {
+  UniversidadCatalogo,
+  UniversidadDetalle,
+  UniversidadDatos,
+} from '../models/universidad.model';
 import { Universidad } from '../models/universidad.model';
 
 /**
@@ -19,13 +24,30 @@ export class UniversidadService {
   listar(): Observable<Universidad[]> {
     return this.http.get<Universidad[]>(this.url);
   }
-  buscar(params: Parametros = {}) { return this.http.get<Pagina<UniversidadDetalle>>('/api/universidades/buscar', { params }); }
-  catalogo() { return this.http.get<UniversidadCatalogo[]>('/api/universidades'); }
-  consultar(id: number) { return this.http.get<UniversidadDetalle>('/api/universidades/' + id); }
-  crear(datos: UniversidadDatos) { return this.http.post<UniversidadDetalle>('/api/universidades', datos); }
-  actualizar(id: number, datos: UniversidadDatos) { return this.http.put<UniversidadDetalle>('/api/universidades/' + id, datos); }
-  cambiarEstado(id: number, estado: string) { return this.http.patch<UniversidadDetalle>('/api/universidades/' + id + '/estado', {estado}); }
-  eliminarDefinitivamente(id: number) { return this.http.delete<void>('/api/universidades/' + id + '/definitivo'); }
-  desactivar(id: number) { return this.http.delete<void>('/api/universidades/' + id); }
-  activar(id: number) { return this.http.patch<UniversidadDetalle>('/api/universidades/' + id + '/estado', { estado: 'Activo' }); }
+  programas(id: number, params: Parametros) {
+    return this.http.get<Pagina<Programa>>(`${this.url}/${id}/programas`, { params });
+  }
+  buscar(params: Parametros = {}) {
+    return this.http.get<Pagina<UniversidadDetalle>>(`${API_URL}/universidades/buscar`, { params });
+  }
+  consultar(id: number) {
+    return this.http.get<UniversidadDetalle>(`${API_URL}/universidades/` + id);
+  }
+  crear(datos: UniversidadDatos) {
+    return this.http.post<UniversidadDetalle>(`${API_URL}/universidades`, datos);
+  }
+  actualizar(id: number, datos: UniversidadDatos) {
+    return this.http.put<UniversidadDetalle>(`${API_URL}/universidades/` + id, datos);
+  }
+  cambiarEstado(id: number, estado: string) {
+    return this.http.patch<UniversidadDetalle>(`${API_URL}/universidades/` + id + '/estado', {
+      estado,
+    });
+  }
+  eliminarDefinitivamente(id: number) {
+    return this.http.delete<void>(`${API_URL}/universidades/` + id + '/definitivo');
+  }
+  desactivar(id: number) {
+    return this.http.delete<void>(`${API_URL}/universidades/` + id);
+  }
 }

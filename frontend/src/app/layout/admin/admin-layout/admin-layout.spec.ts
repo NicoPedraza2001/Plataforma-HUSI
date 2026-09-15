@@ -10,9 +10,8 @@ describe('AdminLayout', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       providers: [provideRouter([])],
-      imports: [AdminLayout]
-    })
-    .compileComponents();
+      imports: [AdminLayout],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(AdminLayout);
     component = fixture.componentInstance;

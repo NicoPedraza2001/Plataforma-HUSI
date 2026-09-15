@@ -8,9 +8,8 @@ describe('GraficoBarras', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GraficoBarras]
-    })
-    .compileComponents();
+      imports: [GraficoBarras],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(GraficoBarras);
     component = fixture.componentInstance;

@@ -57,7 +57,13 @@ export async function leerExcel(file: File): Promise<HojaExcel[]> {
       const celdas: string[] = [];
       for (let j = 1; j <= hoja.columnCount; j++) {
         const celda = hoja.getCell(i, j);
-        celdas.push(celda.formula ? MARCA_FORMULA : celda.value instanceof Date ? celda.value.toISOString().slice(0, 10) : celda.text.trim());
+        celdas.push(
+          celda.formula
+            ? MARCA_FORMULA
+            : celda.value instanceof Date
+              ? celda.value.toISOString().slice(0, 10)
+              : celda.text.trim(),
+        );
       }
       filas.push(celdas);
     }

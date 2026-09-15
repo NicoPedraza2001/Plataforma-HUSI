@@ -134,10 +134,22 @@ footer {
   line-height: 1.25;
 }
 
-.filtros-universidades { display: flex; align-items: end; gap: 20px; }
-.filtros-universidades .search { flex: 1; }
-.acciones a { text-decoration: none; }
-@media (max-width: 720px) { .filtros-universidades { display: block; } }
+.filtros-universidades {
+  display: flex;
+  align-items: end;
+  gap: 20px;
+}
+.filtros-universidades .search {
+  flex: 1;
+}
+.acciones a {
+  text-decoration: none;
+}
+@media (max-width: 720px) {
+  .filtros-universidades {
+    display: block;
+  }
+}
 .acciones a.btn {
   display: inline-flex;
   align-items: center;
@@ -150,4 +162,12 @@ footer {
   text-decoration: none;
 }
 
-.enlace-asociados{display:inline-flex;text-decoration:none;padding:10px 14px;border-radius:9px;font-size:14px;font-weight:600;white-space:nowrap}
+.enlace-asociados {
+  display: inline-flex;
+  text-decoration: none;
+  padding: 10px 14px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}

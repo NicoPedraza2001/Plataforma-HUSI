@@ -12,9 +12,8 @@ describe('Ajustes', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
-      imports: [Ajustes]
-    })
-    .compileComponents();
+      imports: [Ajustes],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(Ajustes);
     component = fixture.componentInstance;

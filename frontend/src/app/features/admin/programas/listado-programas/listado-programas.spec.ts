@@ -1,9 +1,10 @@
+import { UniversidadService } from '../../../../services/universidad.service';
 import { provideRouter } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ListadoProgramas } from './listado-programas';
-import { ProgramaService as ProgramasApi } from '../../../../services/programa.service';
+import { ProgramaService } from '../../../../services/programa.service';
 describe('Programas conectado', () => {
   const programa = {
     id: 1,
@@ -15,16 +16,28 @@ describe('Programas conectado', () => {
   function configurar(falla = false) {
     const api = {
       buscar: vi.fn(() =>
-        falla ? throwError(() => new HttpErrorResponse({ status: 0 })) : of({contenido:[programa],totalElementos:1,totalPaginas:1,pagina:1,tamano:10}),
+        falla
+          ? throwError(() => new HttpErrorResponse({ status: 0 }))
+          : of({
+              contenido: [programa],
+              totalElementos: 1,
+              totalPaginas: 1,
+              pagina: 1,
+              tamano: 10,
+            }),
       ),
-      universidades: vi.fn(() => of([{ id: 2, nombre: 'Universidad de prueba' }])),
+      listar: vi.fn(() => of([{ id: 2, nombre: 'Universidad de prueba' }])),
       crear: vi.fn(() => of(programa)),
       actualizar: vi.fn(() => of(programa)),
       eliminarDefinitivamente: vi.fn(() => of(undefined)),
     };
     TestBed.configureTestingModule({
       imports: [ListadoProgramas],
-      providers: [provideRouter([]), { provide: ProgramasApi, useValue: api }],
+      providers: [
+        provideRouter([]),
+        { provide: ProgramaService, useValue: api },
+        { provide: UniversidadService, useValue: api },
+      ],
     });
     return { fixture: TestBed.createComponent(ListadoProgramas), api };
   }
@@ -33,7 +46,9 @@ describe('Programas conectado', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Universidad de prueba');
-    fixture.nativeElement.querySelector('[aria-label="Eliminar definitivamente Pediatría"]').click();
+    fixture.nativeElement
+      .querySelector('[aria-label="Eliminar definitivamente Pediatría"]')
+      .click();
     fixture.detectChanges();
     expect(api.eliminarDefinitivamente).not.toHaveBeenCalled();
     const botones = Array.from(

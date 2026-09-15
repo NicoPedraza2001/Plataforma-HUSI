@@ -12,9 +12,8 @@ describe('PanelDashboard', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
-      imports: [PanelDashboard]
-    })
-    .compileComponents();
+      imports: [PanelDashboard],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(PanelDashboard);
     component = fixture.componentInstance;

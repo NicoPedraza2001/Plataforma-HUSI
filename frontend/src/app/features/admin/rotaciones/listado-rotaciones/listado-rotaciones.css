@@ -134,10 +134,22 @@ footer {
   line-height: 1.25;
 }
 
-.filtros-universidades { display: flex; align-items: end; gap: 20px; }
-.filtros-universidades .search { flex: 1; }
-.acciones a { text-decoration: none; }
-@media (max-width: 720px) { .filtros-universidades { display: block; } }
+.filtros-universidades {
+  display: flex;
+  align-items: end;
+  gap: 20px;
+}
+.filtros-universidades .search {
+  flex: 1;
+}
+.acciones a {
+  text-decoration: none;
+}
+@media (max-width: 720px) {
+  .filtros-universidades {
+    display: block;
+  }
+}
 .acciones a.btn {
   display: inline-flex;
   align-items: center;
@@ -150,7 +162,23 @@ footer {
   text-decoration: none;
 }
 
-.filtros {display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;align-items:end}
-small {display:block;color:var(--husi-muted);margin-top:5px}
-.btn--outline {padding:10px 16px;border-radius:var(--radius-sm)}
-@media(max-width:900px){.filtros{grid-template-columns:1fr}}
+.filtros {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+  align-items: end;
+}
+small {
+  display: block;
+  color: var(--husi-muted);
+  margin-top: 5px;
+}
+.btn--outline {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+}
+@media (max-width: 900px) {
+  .filtros {
+    grid-template-columns: 1fr;
+  }
+}

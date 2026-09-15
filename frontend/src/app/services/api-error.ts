@@ -11,7 +11,8 @@ export function mensajeError(error: unknown): string {
       return 'No pudimos conectar con el servidor. Comprueba que el backend esté encendido e intenta de nuevo.';
     }
 
-    if (error.status >= 500 && !error.error?.mensaje) return 'El servidor no está disponible o no pudo responder. Intenta nuevamente.';
+    if (error.status >= 500 && !error.error?.mensaje)
+      return 'El servidor no está disponible o no pudo responder. Intenta nuevamente.';
     const detalle = error.error as Partial<ApiError> | null;
     if (detalle?.mensaje) {
       return [detalle.mensaje, ...Object.values(detalle.campos ?? {})].join(' ');

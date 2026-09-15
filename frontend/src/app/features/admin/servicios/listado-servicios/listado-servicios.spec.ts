@@ -12,9 +12,8 @@ describe('ListadoServicios', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
-      imports: [ListadoServicios]
-    })
-    .compileComponents();
+      imports: [ListadoServicios],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ListadoServicios);
     component = fixture.componentInstance;

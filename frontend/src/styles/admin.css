@@ -370,13 +370,61 @@
 }
 
 /* Acciones comunes: estado directo, edición y eliminación permanente. */
-.tabla thead th.col-acciones-registro{width:1%;text-align:center;white-space:nowrap}
-.acciones-registro{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:nowrap;width:max-content;margin-left:auto}
-.acciones-registro>.btn{min-height:40px;border-radius:9px;padding:9px 16px;font-size:14px;font-weight:600;line-height:1.2;display:inline-flex;align-items:center;justify-content:center}
-.acciones-registro>.estado-directo{min-width:92px;border:1px solid transparent;color:#fff;cursor:pointer}
-.acciones-registro>.estado-directo--activo{background:#3d8c62}
-.acciones-registro>.estado-directo--inactivo{background:#6b7280}
-.acciones-registro>.papelera{width:40px;min-width:40px;padding:9px;border:0;background:transparent;color:#be2920;box-shadow:none}
-.acciones-registro>.papelera:hover{background:transparent;color:#941e17}
-.acciones-registro>.btn:focus-visible{outline:3px solid var(--husi-blue);outline-offset:3px}
-.acciones-registro>.btn:disabled{opacity:.55;cursor:wait}
+.tabla thead th.col-acciones-registro {
+  width: 1%;
+  text-align: center;
+  white-space: nowrap;
+}
+.acciones-registro {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: nowrap;
+  width: max-content;
+  margin-left: auto;
+}
+.acciones-registro > .btn {
+  min-height: 40px;
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.acciones-registro > .estado-directo {
+  min-width: 92px;
+  border: 1px solid transparent;
+  color: #fff;
+  cursor: pointer;
+}
+.acciones-registro > .estado-directo--activo {
+  background: #3d8c62;
+}
+.acciones-registro > .estado-directo--inactivo {
+  background: #6b7280;
+}
+.acciones-registro > .papelera {
+  width: 40px;
+  min-width: 40px;
+  padding: 9px;
+  border: 0;
+  background: transparent;
+  color: #be2920;
+  box-shadow: none;
+}
+.acciones-registro > .papelera:hover {
+  background: transparent;
+  color: #941e17;
+}
+.acciones-registro > .btn:focus-visible {
+  outline: 3px solid var(--husi-blue);
+  outline-offset: 3px;
+}
+.acciones-registro > .btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}

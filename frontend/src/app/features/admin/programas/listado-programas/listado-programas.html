@@ -1,95 +1,139 @@
 <header class="page-head">
-    <div class="page-head__titles">
-      <h1 class="page-head__title">Programas</h1>
-      <nav class="breadcrumb" aria-label="Ruta de navegación">
-        <a routerLink="/admin/universidades">Universidades</a><span aria-hidden="true">&gt;</span><span>Programas</span>
-      </nav>
-    </div>
-    <div class="acciones">
-      <button
-        type="button"
-        class="btn btn--add"
-        [disabled]="cargando() || !!error() || contextoInactivo()"
-        (click)="abrir()"
-      >
-        + Agregar programa
-      </button>
-    </div>
-  </header>
-  @if (universidadContexto(); as u) {
-    <p class="ayuda">Programas de <strong>{{ u.nombre }}</strong> · {{ u.estado }}</p>
-    @if (contextoInactivo()) { <p class="mensaje" role="status">Esta universidad está inactiva. Sus programas se conservan. Reactívala desde Universidades para crear o editar programas aquí.</p> }
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Programas</h1>
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <a routerLink="/admin/universidades">Universidades</a><span aria-hidden="true">&gt;</span
+      ><span>Programas</span>
+    </nav>
+  </div>
+  <div class="acciones">
+    <button
+      type="button"
+      class="btn btn--add"
+      [disabled]="cargando() || !!error() || contextoInactivo()"
+      (click)="abrir()"
+    >
+      + Agregar programa
+    </button>
+  </div>
+</header>
+@if (universidadContexto(); as u) {
+  <p class="ayuda">
+    Programas de <strong>{{ u.nombre }}</strong> · {{ u.estado }}
+  </p>
+  @if (contextoInactivo()) {
+    <p class="mensaje" role="status">
+      Esta universidad está inactiva. Sus programas se conservan. Reactívala desde Universidades
+      para crear o editar programas aquí.
+    </p>
   }
-  @if (aviso()) {
-    <p class="mensaje exito" role="status">{{ aviso() }}</p>
-  }
-  @if (error()) {
-    <div class="mensaje error" role="alert">
-      {{ error() }} <button class="btn btn--navy" (click)="cargar()">Reintentar</button>
-    </div>
-  }
-  @if(errorAccion()){<p class="mensaje error" role="alert">{{errorAccion()}}</p>}
-  <section class="card" [attr.aria-busy]="cargando()">
-    <label class="search"
-      ><span class="sr-only">Buscar por programa o universidad</span
-      ><input
-        class="search__input"
-        type="search"
-        placeholder="Buscar programa o universidad…"
-        [value]="termino()"
-        (input)="buscar($any($event.target).value)"
-    /></label>
-    <p class="ayuda">Programas · {{ totalElementos() }} resultados</p>
-    <div class="table-wrap">
-      <table class="tabla">
-        <thead>
+}
+@if (aviso()) {
+  <p class="mensaje exito" role="status">{{ aviso() }}</p>
+}
+@if (error()) {
+  <div class="mensaje error" role="alert">
+    {{ error() }} <button class="btn btn--navy" (click)="cargar()">Reintentar</button>
+  </div>
+}
+@if (errorAccion()) {
+  <p class="mensaje error" role="alert">{{ errorAccion() }}</p>
+}
+<section class="card" [attr.aria-busy]="cargando()">
+  <label class="search"
+    ><span class="sr-only">Buscar por programa o universidad</span
+    ><input
+      class="search__input"
+      type="search"
+      placeholder="Buscar programa o universidad…"
+      [value]="termino()"
+      (input)="buscar($any($event.target).value)"
+  /></label>
+  <p class="ayuda">Programas · {{ totalElementos() }} resultados</p>
+  <div class="table-wrap">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">No</th>
+          <th scope="col">Nombre</th>
+          <th scope="col">Universidad</th>
+          <th scope="col" class="col-acciones-registro">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (cargando()) {
           <tr>
-            <th scope="col">No</th>
-            <th scope="col">Nombre</th>
-            <th scope="col">Universidad</th>
-            <th scope="col" class="col-acciones-registro">Acciones</th>
+            <td colspan="4" class="tabla__vacia">Cargando programas…</td>
           </tr>
-        </thead>
-        <tbody>
-          @if (cargando()) {
+        } @else {
+          @for (programa of programasPagina(); track programa.id; let i = $index) {
             <tr>
-              <td colspan="4" class="tabla__vacia">Cargando programas…</td>
+              <td>{{ desde() + i + 1 }}</td>
+              <td>{{ programa.nombre }}</td>
+              <td>{{ programa.universidad }}</td>
+              <td>
+                <div class="acciones-registro">
+                  <button
+                    class="btn estado-directo"
+                    [class.estado-directo--activo]="programa.estado === 'Activo'"
+                    [class.estado-directo--inactivo]="programa.estado !== 'Activo'"
+                    [disabled]="guardando()"
+                    [attr.aria-pressed]="programa.estado === 'Activo'"
+                    [attr.aria-label]="
+                      (programa.estado === 'Activo' ? 'Desactivar ' : 'Activar ') + programa.nombre
+                    "
+                    [title]="
+                      programa.estado === 'Activo' ? 'Desactivar programa' : 'Activar programa'
+                    "
+                    (click)="cambiarEstado(programa)"
+                  >
+                    {{ programa.estado }}
+                  </button>
+                  <button
+                    class="btn btn--navy"
+                    type="button"
+                    [disabled]="guardando() || contextoInactivo()"
+                    (click)="abrir(programa)"
+                    [attr.aria-label]="'Editar ' + programa.nombre"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    class="btn papelera"
+                    type="button"
+                    [disabled]="guardando()"
+                    (click)="solicitarEliminar(programa)"
+                    [attr.aria-label]="'Eliminar definitivamente ' + programa.nombre"
+                    title="Eliminar definitivamente"
+                  >
+                    <app-icono-papelera />
+                  </button>
+                </div>
+              </td>
             </tr>
-          } @else {
-            @for (programa of programasPagina(); track programa.id; let i = $index) {
-              <tr>
-                <td>{{ desde() + i + 1 }}</td>
-                <td>{{ programa.nombre }}</td>
-                <td>{{ programa.universidad }}</td>
-                <td>
-                  <div class="acciones-registro">
-                    <button class="btn estado-directo" [class.estado-directo--activo]="programa.estado==='Activo'" [class.estado-directo--inactivo]="programa.estado!=='Activo'" [disabled]="guardando()" [attr.aria-pressed]="programa.estado==='Activo'" [attr.aria-label]="(programa.estado==='Activo'?'Desactivar ':'Activar ')+programa.nombre" [title]="programa.estado==='Activo'?'Desactivar programa':'Activar programa'" (click)="cambiarEstado(programa)">{{programa.estado}}</button>
-                    <button class="btn btn--navy" type="button" [disabled]="guardando()||contextoInactivo()" (click)="abrir(programa)" [attr.aria-label]="'Editar '+programa.nombre">Editar</button>
-                    <button class="btn papelera" type="button" [disabled]="guardando()" (click)="solicitarEliminar(programa)" [attr.aria-label]="'Eliminar definitivamente '+programa.nombre" title="Eliminar definitivamente"><app-icono-papelera /></button>
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="4" class="tabla__vacia">
-                  {{
-                    error()
-                      ? 'No se pudo obtener el listado.'
-                      : (universidadRuta() !== null && !termino() ? 'Esta universidad no tiene programas registrados.' : 'No hay programas que coincidan con la búsqueda.')
-                  }}
-                </td>
-              </tr>
-            }
+          } @empty {
+            <tr>
+              <td colspan="4" class="tabla__vacia">
+                {{
+                  error()
+                    ? 'No se pudo obtener el listado.'
+                    : universidadRuta() !== null && !termino()
+                      ? 'Esta universidad no tiene programas registrados.'
+                      : 'No hay programas que coincidan con la búsqueda.'
+                }}
+              </td>
+            </tr>
           }
-        </tbody>
-      </table>
-    </div>
-    <app-paginacion
-      [paginaActual]="paginaVisible()"
-      [totalPaginas]="totalPaginas()"
-      (cambio)="irAPagina($event)"
-    />
-  </section>
+        }
+      </tbody>
+    </table>
+  </div>
+  <app-paginacion
+    [paginaActual]="paginaVisible()"
+    [totalPaginas]="totalPaginas()"
+    (cambio)="irAPagina($event)"
+  />
+</section>
 @if (formulario()) {
   <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
     <section
@@ -130,7 +174,8 @@
           }
         </select>
         <p class="ayuda">
-          Los dos campos son obligatorios. Solo se muestran universidades activas. Al entrar desde una universidad, queda seleccionada automáticamente.
+          Los dos campos son obligatorios. Solo se muestran universidades activas. Al entrar desde
+          una universidad, queda seleccionada automáticamente.
         </p>
         @if (!universidades().length) {
           <p class="error" role="alert">
@@ -171,7 +216,9 @@
         ><br />{{ programa.universidad }}
       </p>
       <p>
-        Esta acción eliminará completamente el programa de la base de datos y no podrá recuperarse. Si piensas utilizarlo nuevamente, puedes desactivarlo en lugar de eliminarlo. Si tiene residentes asociados, la eliminación será bloqueada para proteger su historial.
+        Esta acción eliminará completamente el programa de la base de datos y no podrá recuperarse.
+        Si piensas utilizarlo nuevamente, puedes desactivarlo en lugar de eliminarlo. Si tiene
+        residentes asociados, la eliminación será bloqueada para proteger su historial.
       </p>
       @if (errorFormulario()) {
         <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>

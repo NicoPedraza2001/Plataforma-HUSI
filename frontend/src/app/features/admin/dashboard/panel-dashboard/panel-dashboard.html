@@ -19,15 +19,24 @@
   <label class="filtro">
     <span class="filtro__label">Periodo</span>
     <span class="filtro__control">
-      <select class="filtro__select" [value]="periodoElegido()"
-        (change)="elegirPeriodo($any($event.target).value)">
+      <select
+        class="filtro__select"
+        [value]="periodoElegido()"
+        (change)="elegirPeriodo($any($event.target).value)"
+      >
         @for (opcion of periodos(); track opcion) {
           <option [value]="opcion">{{ opcion }}</option>
         }
       </select>
       <svg class="filtro__chevron" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" />
+        <path
+          d="m7 10 5 5 5-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </span>
   </label>
@@ -35,15 +44,24 @@
   <label class="filtro">
     <span class="filtro__label">Universidad</span>
     <span class="filtro__control">
-      <select class="filtro__select" [value]="universidadElegida()"
-        (change)="elegirUniversidad($any($event.target).value)">
+      <select
+        class="filtro__select"
+        [value]="universidadElegida()"
+        (change)="elegirUniversidad($any($event.target).value)"
+      >
         @for (opcion of universidades(); track opcion) {
           <option [value]="opcion">{{ opcion }}</option>
         }
       </select>
       <svg class="filtro__chevron" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" />
+        <path
+          d="m7 10 5 5 5-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </span>
   </label>
@@ -51,15 +69,24 @@
   <label class="filtro">
     <span class="filtro__label">Servicio</span>
     <span class="filtro__control">
-      <select class="filtro__select" [value]="servicioElegido()"
-        (change)="elegirServicio($any($event.target).value)">
+      <select
+        class="filtro__select"
+        [value]="servicioElegido()"
+        (change)="elegirServicio($any($event.target).value)"
+      >
         @for (opcion of servicios(); track opcion) {
           <option [value]="opcion">{{ opcion }}</option>
         }
       </select>
       <svg class="filtro__chevron" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" />
+        <path
+          d="m7 10 5 5 5-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </span>
   </label>
@@ -70,115 +97,140 @@
 </section>
 
 <!-- ===================== INDICADORES ===================== -->
-@if (cargando()) { <p role="status">Cargando datos…</p> }
-@if (error()) { <div role="alert">{{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button></div> }
-@if (!cargando() && !error() && consulta.datos()) {
-@if (!consulta.datos()!.totalRegistros) { <p role="status">No hay asignaciones de rotación en este corte.</p> }
-<ul class="kpis">
-  @for (indicador of indicadores(); track indicador.id) {
-    <li class="kpi" [class]="'kpi--' + indicador.tono">
-      <p class="kpi__etiqueta">{{ indicador.etiqueta }}</p>
-      <p class="kpi__valor">{{ indicador.valor }}</p>
-      <p class="kpi__detalle">
-        {{ indicador.detalle }}
-        @if (indicador.delta) {
-          <span class="kpi__delta">{{ indicador.delta }}</span>
-        }
-      </p>
-    </li>
-  }
-</ul>
-
-<!-- ===================== PANELES ===================== -->
-<div class="rejilla">
-  <section class="card panel">
-    <h2 class="panel__titulo">Rotaciones por servicio</h2>
-    <p class="panel__nota">Periodo {{ corte().periodo }} · {{ corte().universidad }} · Rotaciones con residentes</p>
-    <app-grafico-barras [datos]="rotacionesPorServicio()" />
-  </section>
-
-  <section class="card panel">
-    <h2 class="panel__titulo">Distribución por universidad</h2>
-    <p class="panel__nota">Reparto completo del periodo, sin el filtro de universidad</p>
-    <app-grafico-apilado [datos]="distribucionUniversidad()" />
-  </section>
-
-  <section class="card panel">
-    <h2 class="panel__titulo">Rotaciones iniciadas por mes</h2>
-    <p class="panel__nota">{{ totalInicios() }} inicios en el periodo {{ corte().periodo }}</p>
-    <app-grafico-tendencia [datos]="tendenciaInicios()" />
-  </section>
-
-  <section class="card panel">
-    <h2 class="panel__titulo">Requiere atención</h2>
-    <p class="panel__nota">Pendientes de toda la operación, no del corte</p>
-
-    <ul class="alertas">
-      @for (alerta of alertas(); track alerta.id) {
-        <li class="alerta" [class]="'alerta--' + alerta.nivel">
-          <span class="alerta__marca" aria-hidden="true"></span>
-          <span class="alerta__texto">
-            {{ alerta.etiqueta }}
-            <small>{{ alerta.detalle }}</small>
-          </span>
-          <span class="alerta__cantidad">{{ alerta.cantidad }}</span>
-        </li>
-      }
-    </ul>
-    @if (!alertas().length) { <p>Sin pendientes registrados.</p> }
-  </section>
-
-  <section class="card panel panel--completo">
-    <h2 class="panel__titulo">Ocupación de cupos por servicio</h2>
-    <p class="panel__nota">
-      Ocupación de hoy (independiente del periodo). El color señala saturación: ámbar desde 85% y rojo desde 95%. El cupo es del servicio,
-      así que este panel no depende de la universidad.
-    </p>
-    <app-grafico-barras [datos]="ocupacionPorServicio()" [severidad]="true" formato="porcentaje" />
-  </section>
-</div>
-
-<!-- ===================== PRÓXIMAS ROTACIONES ===================== -->
-<section class="card panel panel--tabla">
-  <h2 class="panel__titulo">Próximas rotaciones</h2>
-
-  <div class="table-wrap">
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th scope="col">Residente</th>
-          <th scope="col">Universidad</th>
-          <th scope="col">Servicio</th>
-          <th scope="col">Doctor responsable¹</th>
-          <th scope="col">Fecha de inicio</th>
-          <th scope="col">Estado</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        @for (rotacion of rotacionesProximas(); track rotacion.id) {
-          <tr>
-            <td>{{ rotacion.residente }}</td>
-            <td>{{ rotacion.universidad }}</td>
-            <td>{{ rotacion.servicio }}</td>
-            <td>{{ rotacion.doctor }}</td>
-            <td class="col-fecha">{{ rotacion.inicio }}</td>
-            <td>
-              <span class="badge" [class.badge--confirmada]="rotacion.estado === 'Asignado'" [class.badge--pendiente]="rotacion.estado === 'Esperando cupo'" [class.badge--inactivo]="rotacion.estado === 'Cancelado'">
-                {{ etiquetaEstado(rotacion.estado) }}
-              </span>
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td class="tabla__vacia" colspan="6">No hay rotaciones próximas en este corte</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+@if (cargando()) {
+  <p role="status">Cargando datos…</p>
+}
+@if (error()) {
+  <div role="alert">
+    {{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button>
   </div>
-</section>
+}
+@if (!cargando() && !error() && consulta.datos()) {
+  @if (!consulta.datos()!.totalRegistros) {
+    <p role="status">No hay asignaciones de rotación en este corte.</p>
+  }
+  <ul class="kpis">
+    @for (indicador of indicadores(); track indicador.id) {
+      <li class="kpi" [class]="'kpi--' + indicador.tono">
+        <p class="kpi__etiqueta">{{ indicador.etiqueta }}</p>
+        <p class="kpi__valor">{{ indicador.valor }}</p>
+        <p class="kpi__detalle">
+          {{ indicador.detalle }}
+          @if (indicador.delta) {
+            <span class="kpi__delta">{{ indicador.delta }}</span>
+          }
+        </p>
+      </li>
+    }
+  </ul>
 
-<app-paginacion [paginaActual]="paginaActual()" [totalPaginas]="totalPaginas()" (cambio)="irAPagina($event)" />
-<p class="panel__nota">¹ La base actual no registra un doctor responsable por rotación.</p>
+  <!-- ===================== PANELES ===================== -->
+  <div class="rejilla">
+    <section class="card panel">
+      <h2 class="panel__titulo">Rotaciones por servicio</h2>
+      <p class="panel__nota">
+        Periodo {{ corte().periodo }} · {{ corte().universidad }} · Rotaciones con residentes
+      </p>
+      <app-grafico-barras [datos]="rotacionesPorServicio()" />
+    </section>
+
+    <section class="card panel">
+      <h2 class="panel__titulo">Distribución por universidad</h2>
+      <p class="panel__nota">Reparto completo del periodo, sin el filtro de universidad</p>
+      <app-grafico-apilado [datos]="distribucionUniversidad()" />
+    </section>
+
+    <section class="card panel">
+      <h2 class="panel__titulo">Rotaciones iniciadas por mes</h2>
+      <p class="panel__nota">{{ totalInicios() }} inicios en el periodo {{ corte().periodo }}</p>
+      <app-grafico-tendencia [datos]="tendenciaInicios()" />
+    </section>
+
+    <section class="card panel">
+      <h2 class="panel__titulo">Requiere atención</h2>
+      <p class="panel__nota">Pendientes de toda la operación, no del corte</p>
+
+      <ul class="alertas">
+        @for (alerta of alertas(); track alerta.id) {
+          <li class="alerta" [class]="'alerta--' + alerta.nivel">
+            <span class="alerta__marca" aria-hidden="true"></span>
+            <span class="alerta__texto">
+              {{ alerta.etiqueta }}
+              <small>{{ alerta.detalle }}</small>
+            </span>
+            <span class="alerta__cantidad">{{ alerta.cantidad }}</span>
+          </li>
+        }
+      </ul>
+      @if (!alertas().length) {
+        <p>Sin pendientes registrados.</p>
+      }
+    </section>
+
+    <section class="card panel panel--completo">
+      <h2 class="panel__titulo">Ocupación de cupos por servicio</h2>
+      <p class="panel__nota">
+        Ocupación de hoy (independiente del periodo). El color señala saturación: ámbar desde 85% y
+        rojo desde 95%. El cupo es del servicio, así que este panel no depende de la universidad.
+      </p>
+      <app-grafico-barras
+        [datos]="ocupacionPorServicio()"
+        [severidad]="true"
+        formato="porcentaje"
+      />
+    </section>
+  </div>
+
+  <!-- ===================== PRÓXIMAS ROTACIONES ===================== -->
+  <section class="card panel panel--tabla">
+    <h2 class="panel__titulo">Próximas rotaciones</h2>
+
+    <div class="table-wrap">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col">Residente</th>
+            <th scope="col">Universidad</th>
+            <th scope="col">Servicio</th>
+            <th scope="col">Doctor responsable¹</th>
+            <th scope="col">Fecha de inicio</th>
+            <th scope="col">Estado</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (rotacion of rotacionesProximas(); track rotacion.id) {
+            <tr>
+              <td>{{ rotacion.residente }}</td>
+              <td>{{ rotacion.universidad }}</td>
+              <td>{{ rotacion.servicio }}</td>
+              <td>{{ rotacion.doctor }}</td>
+              <td class="col-fecha">{{ rotacion.inicio }}</td>
+              <td>
+                <span
+                  class="badge"
+                  [class.badge--confirmada]="rotacion.estado === 'Asignado'"
+                  [class.badge--pendiente]="rotacion.estado === 'Esperando cupo'"
+                  [class.badge--inactivo]="rotacion.estado === 'Cancelado'"
+                >
+                  {{ etiquetaEstado(rotacion.estado) }}
+                </span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="tabla__vacia" colspan="6">No hay rotaciones próximas en este corte</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <app-paginacion
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    (cambio)="irAPagina($event)"
+  />
+  <p class="panel__nota">¹ La base actual no registra un doctor responsable por rotación.</p>
 }

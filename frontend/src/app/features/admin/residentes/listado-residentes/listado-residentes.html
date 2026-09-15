@@ -11,7 +11,14 @@
   </div>
 
   <div class="page-head__acciones">
-    <button type="button" class="btn btn--outline" disabled title="Función pendiente de implementación">Importar</button>
+    <button
+      type="button"
+      class="btn btn--outline"
+      disabled
+      title="Función pendiente de implementación"
+    >
+      Importar
+    </button>
     <button type="button" class="btn btn--add" disabled title="Función pendiente de implementación">
       <span class="btn__plus" aria-hidden="true">+</span>
       Agregar Residente
@@ -19,9 +26,14 @@
   </div>
 </header>
 
-@if (cargando()) { <p class="mensaje" role="status">Cargando datos…</p> }
-@if (error()) { <div class="mensaje" role="alert">{{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button></div> }
-
+@if (cargando()) {
+  <p class="mensaje" role="status">Cargando datos…</p>
+}
+@if (error()) {
+  <div class="mensaje" role="alert">
+    {{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button>
+  </div>
+}
 
 <!-- ===================== TARJETA DEL LISTADO ===================== -->
 <section class="card">
@@ -30,7 +42,13 @@
     <label class="search">
       <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
-        <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        <path
+          d="m16 16 4 4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
       </svg>
       <span class="sr-only">Buscar residente o documento</span>
       <input
@@ -38,7 +56,8 @@
         type="search"
         placeholder="Buscar residente o documento..."
         [value]="termino()"
-        (input)="buscar($any($event.target).value)" />
+        (input)="buscar($any($event.target).value)"
+      />
     </label>
 
     <div class="filtro-grupo">
@@ -47,7 +66,8 @@
         id="filtro-universidad"
         class="filtro-input"
         [value]="universidadSeleccionada()"
-        (change)="onUniversidadChange($any($event.target).value)">
+        (change)="onUniversidadChange($any($event.target).value)"
+      >
         @for (universidad of universidades(); track universidad) {
           <option [value]="universidad">{{ universidad }}</option>
         }
@@ -60,7 +80,8 @@
         id="filtro-programa"
         class="filtro-input"
         [value]="programaSeleccionado()"
-        (change)="onProgramaChange($any($event.target).value)">
+        (change)="onProgramaChange($any($event.target).value)"
+      >
         @for (programa of programas(); track programa) {
           <option [value]="programa">{{ programa }}</option>
         }
@@ -73,7 +94,8 @@
         id="filtro-estado"
         class="filtro-input"
         [value]="estadoSeleccionado()"
-        (change)="onEstadoChange($any($event.target).value)">
+        (change)="onEstadoChange($any($event.target).value)"
+      >
         @for (estado of estados; track estado) {
           <option [value]="estado">{{ estado }}</option>
         }
@@ -86,7 +108,8 @@
         id="filtro-periodo"
         class="filtro-input"
         [value]="periodoSeleccionado()"
-        (change)="onPeriodoChange($any($event.target).value)">
+        (change)="onPeriodoChange($any($event.target).value)"
+      >
         @for (periodo of periodos(); track periodo) {
           <option [value]="periodo">{{ periodo }}</option>
         }
@@ -95,8 +118,10 @@
   </div>
 
   <!-- ===================== TABLA ===================== -->
-  @if (!cargando() && !error()) { <p role="status">{{ consulta.datos()?.totalElementos ?? 0 }} resultados</p> }
-<div class="table-wrap">
+  @if (!cargando() && !error()) {
+    <p role="status">{{ consulta.datos()?.totalElementos ?? 0 }} resultados</p>
+  }
+  <div class="table-wrap">
     <table class="tabla">
       <thead>
         <tr>
@@ -111,31 +136,42 @@
       </thead>
 
       <tbody>
-@if (!cargando() && !error()) {
-        @for (residente of residentesPagina(); track residente.id; let i = $index) {
-          <tr>
-            <td class="col-no">{{ desde() + i + 1 }}</td>
-            <td class="col-residente">{{ residente.nombre }}</td>
-            <td>{{ residente.documento }}</td>
-            <td>{{ residente.universidad }}</td>
-            <td>{{ residente.programa }}</td>
-            <td>
-              <span [class]="claseBadge(residente.estado)">{{ residente.estado }}</span>
-            </td>
-            <td class="col-acciones">
-              <button type="button" class="btn btn--navy" disabled title="Función pendiente de implementación">Editar</button>
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td class="tabla__vacia" colspan="7">No hay residentes registrados</td>
-          </tr>
+        @if (!cargando() && !error()) {
+          @for (residente of residentesPagina(); track residente.id; let i = $index) {
+            <tr>
+              <td class="col-no">{{ desde() + i + 1 }}</td>
+              <td class="col-residente">{{ residente.nombre }}</td>
+              <td>{{ residente.documento }}</td>
+              <td>{{ residente.universidad }}</td>
+              <td>{{ residente.programa }}</td>
+              <td>
+                <span [class]="claseBadge(residente.estado)">{{ residente.estado }}</span>
+              </td>
+              <td class="col-acciones">
+                <button
+                  type="button"
+                  class="btn btn--navy"
+                  disabled
+                  title="Función pendiente de implementación"
+                >
+                  Editar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="tabla__vacia" colspan="7">No hay residentes registrados</td>
+            </tr>
+          }
         }
-      }
-</tbody>
+      </tbody>
     </table>
   </div>
 
   <!-- ===================== PAGINACIÓN ===================== -->
-  <app-paginacion [paginaActual]="paginaActual()" [totalPaginas]="totalPaginas()" (cambio)="irAPagina($event)" />
+  <app-paginacion
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    (cambio)="irAPagina($event)"
+  />
 </section>

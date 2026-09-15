@@ -20,8 +20,11 @@
     }
 
     @if (detalle(); as punto) {
-      <span class="tendencia__punto tendencia__punto--activo"
-        [style.left.%]="punto.x" [style.top.%]="punto.y"></span>
+      <span
+        class="tendencia__punto tendencia__punto--activo"
+        [style.left.%]="punto.x"
+        [style.top.%]="punto.y"
+      ></span>
       <span class="tendencia__globo" [style.left.%]="punto.x">
         <strong>{{ punto.valor }}</strong> {{ punto.etiqueta }}
       </span>
@@ -38,7 +41,8 @@
           (mouseenter)="activo.set(i)"
           (mouseleave)="activo.set(null)"
           (focus)="activo.set(i)"
-          (blur)="activo.set(null)"></button>
+          (blur)="activo.set(null)"
+        ></button>
       }
     </div>
   </div>

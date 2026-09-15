@@ -12,9 +12,8 @@ describe('ListadoUsuarios', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
-      imports: [ListadoUsuarios]
-    })
-    .compileComponents();
+      imports: [ListadoUsuarios],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ListadoUsuarios);
     component = fixture.componentInstance;

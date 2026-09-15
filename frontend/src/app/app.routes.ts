@@ -1,4 +1,4 @@
-import { ListadoRotaciones } from './features/admin/rotaciones/listado-rotaciones';
+import { ListadoRotaciones } from './features/admin/rotaciones/listado-rotaciones/listado-rotaciones';
 import { ListadoUniversidades } from './features/admin/universidades/listado-universidades/listado-universidades';
 import { Routes } from '@angular/router';
 import { Landing } from './features/public/landing/pages/landing/landing';
@@ -20,15 +20,15 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        component: Landing
+        component: Landing,
       },
       {
         path: 'login',
         component: Login,
         // Invierte los colores del header y el footer en esta pantalla.
-        data: { theme: 'invert' }
-      }
-    ]
+        data: { theme: 'invert' },
+      },
+    ],
   },
   {
     path: 'admin',
@@ -39,23 +39,23 @@ export const routes: Routes = [
       { path: 'universidades/:universidadId/programas', component: ListadoProgramas },
       {
         path: 'dashboard',
-        component: PanelDashboard
+        component: PanelDashboard,
       },
       {
         path: 'programas',
-        component: ListadoProgramas
+        component: ListadoProgramas,
       },
       {
         path: 'servicios',
-        component: ListadoServicios
+        component: ListadoServicios,
       },
       {
         path: 'usuarios',
-        component: ListadoUsuarios
+        component: ListadoUsuarios,
       },
       {
-              path: 'historial',
-        component: Historial
+        path: 'historial',
+        component: Historial,
       },
       {
         path: 'residentes',
@@ -63,8 +63,8 @@ export const routes: Routes = [
       },
       {
         path: 'ajustes',
-        component: Ajustes
+        component: Ajustes,
       },
-    ]
-  }
+    ],
+  },
 ];

@@ -1,8 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Pagina, Parametros } from './consulta';
-import { UniversidadService } from './universidad.service';
+import { Pagina, Parametros } from '../models/pagina.model';
 import { API_URL } from './api.config';
 import { Programa, ProgramaRequest } from '../models/programa.model';
 import { FilaImportacion, ResultadoImportacion } from '../models/importacion-programas.model';
@@ -17,13 +16,15 @@ export class ProgramaService {
   private readonly http = inject(HttpClient);
   private readonly url = `${API_URL}/programas`;
 
-  private readonly universidadesApi = inject(UniversidadService);
-  buscar(params: Parametros = {}) { return this.http.get<Pagina<Programa>>(`${this.url}/buscar`, {params}); }
-  universidades() { return this.universidadesApi.listar(); }
-  consultarUniversidad(id: number) { return this.universidadesApi.consultar(id); }
-  listarUniversidad(id: number, params: Parametros) { return this.http.get<Pagina<Programa>>(`${API_URL}/universidades/${id}/programas`, {params}); }
-  cambiarEstado(id: number, estado: string) { return this.http.patch<Programa>(`${this.url}/${id}/estado`, {estado}); }
-  eliminarDefinitivamente(id: number) { return this.http.delete<void>(`${this.url}/${id}/definitivo`); }
+  buscar(params: Parametros = {}) {
+    return this.http.get<Pagina<Programa>>(`${this.url}/buscar`, { params });
+  }
+  cambiarEstado(id: number, estado: string) {
+    return this.http.patch<Programa>(`${this.url}/${id}/estado`, { estado });
+  }
+  eliminarDefinitivamente(id: number) {
+    return this.http.delete<void>(`${this.url}/${id}/definitivo`);
+  }
 
   /** GET /programas — solo programas activos. */
   listar(): Observable<Programa[]> {
