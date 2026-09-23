@@ -10,7 +10,7 @@
     </nav>
   </div>
 
-  <button type="button" class="btn btn--add" disabled title="Función pendiente de implementación">
+  <button type="button" class="btn btn--add" [disabled]="guardando()" (click)="abrir()">
     <span class="btn__plus" aria-hidden="true">+</span>
     Agregar servicio
   </button>
@@ -89,8 +89,8 @@
           <th class="col-descripcion" scope="col">Descripción</th>
           <th class="col-cupo" scope="col">Cupo simultáneo</th>
           <th class="col-cupo" scope="col">Cupo máximo instalado</th>
-          <th class="col-estado" scope="col">Estado</th>
-          <th class="col-acciones" scope="col">Acciones</th>
+
+          <th class="col-acciones-registro" scope="col">Acciones</th>
         </tr>
       </thead>
 
@@ -130,33 +130,39 @@
               </td>
               <td class="col-cupo">{{ servicio.cupoSimultaneo }}</td>
               <td class="col-cupo">{{ servicio.cupoMaximoInstalado }}</td>
-              <td>
-                <!-- TODO: activar/inactivar se hará desde este mismo distintivo,
-                   abriendo un pop up de confirmación. -->
-                <span
-                  class="badge"
-                  [class.badge--activo]="servicio.activo"
-                  [class.badge--inactivo]="!servicio.activo"
-                >
-                  {{ servicio.activo ? 'ACTIVO' : 'INACTIVO' }}
-                </span>
-              </td>
-              <td class="col-acciones">
-                <div class="acciones">
+
+              <td class="col-acciones-registro">
+                <div class="acciones-registro">
                   <button
-                    type="button"
-                    class="btn btn--navy"
-                    disabled
-                    title="Función pendiente de implementación"
+                    class="btn estado-directo"
+                    [class.estado-directo--activo]="servicio.activo"
+                    [class.estado-directo--inactivo]="!servicio.activo"
+                    [disabled]="guardando()"
+                    (click)="cambiarEstado(servicio)"
+                    [attr.aria-label]="
+                      (servicio.activo ? 'Desactivar ' : 'Activar ') + servicio.nombre
+                    "
                   >
+                    {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+                  </button>
+                  <button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(servicio)">
                     Editar
+                  </button>
+                  <button
+                    class="btn papelera"
+                    [disabled]="guardando()"
+                    (click)="solicitarEliminar(servicio)"
+                    [attr.aria-label]="'Eliminar definitivamente ' + servicio.nombre"
+                    title="Eliminar definitivamente"
+                  >
+                    <app-icono-papelera />
                   </button>
                 </div>
               </td>
             </tr>
           } @empty {
             <tr>
-              <td class="tabla__vacia" colspan="7">No hay servicios cargados</td>
+              <td class="tabla__vacia" colspan="6">No hay servicios cargados</td>
             </tr>
           }
         }
@@ -170,3 +176,68 @@
     (cambio)="irAPagina($event)"
   />
 </section>
+
+@if (aviso()) {
+  <p class="mensaje exito" role="status">{{ aviso() }}</p>
+}
+@if (errorFormulario() && !formulario() && !pendienteEliminar()) {
+  <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+}
+
+@if (formulario()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+    <section
+      class="panel-modal"
+      appFocoModal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-servicio"
+    >
+      <header>
+        <h2 id="titulo-servicio">{{ edicionId ? 'Editar servicio' : 'Agregar servicio' }}</h2>
+      </header>
+      <app-formulario-servicio
+        [(datos)]="datos"
+        [guardando]="guardando()"
+        [errorFormulario]="errorFormulario()"
+        (guardar)="guardar()"
+        (cancelar)="formulario.set(false)"
+      />
+    </section>
+  </div>
+}
+@if (pendienteEliminar(); as fila) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && pendienteEliminar.set(null)">
+    <section
+      class="panel-modal confirmacion"
+      appFocoModal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-eliminar-servicio"
+    >
+      <h2 id="titulo-eliminar-servicio">¿Eliminar definitivamente este servicio?</h2>
+      <p>
+        <strong>{{ fila.nombre }}</strong>
+      </p>
+      <p>
+        Se eliminará completamente de la base de datos. Esta acción no se puede deshacer. Si tiene
+        registros asociados, se bloqueará la eliminación; puedes desactivarlo para conservar su
+        historial.
+      </p>
+      @if (errorFormulario()) {
+        <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+      }
+      <footer>
+        <button
+          class="btn btn--outline"
+          [disabled]="guardando()"
+          (click)="pendienteEliminar.set(null)"
+        >
+          Cancelar</button
+        ><button class="btn btn--danger" [disabled]="guardando()" (click)="confirmarEliminar()">
+          {{ guardando() ? 'Eliminando…' : 'Eliminar definitivamente' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}

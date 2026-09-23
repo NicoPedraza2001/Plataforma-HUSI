@@ -8,3 +8,11 @@ export interface Servicio {
   cupoMaximoInstalado: number;
   activo: boolean;
 }
+
+/** Cuerpo para crear o editar; el estado se cambia por separado. */
+export interface ServicioRequest {
+  nombre: string;
+  descripcion: string | null;
+  cupoSimultaneo: number | null;
+  cupoMaximoInstalado: number | null;
+}

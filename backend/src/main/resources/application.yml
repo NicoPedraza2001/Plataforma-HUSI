@@ -27,6 +27,9 @@ spring:
         format_sql: true
 
   jackson:
+    deserialization:
+      # No truncar decimales recibidos en campos enteros (cupos e identificadores).
+      accept-float-as-int: false
     datatype:
       datetime:
         # Fechas en formato ISO-8601 (2026-09-06) en lugar de timestamps.

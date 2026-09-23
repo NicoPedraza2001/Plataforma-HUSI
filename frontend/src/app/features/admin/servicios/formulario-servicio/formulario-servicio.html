@@ -1,0 +1,71 @@
+<form #form="ngForm" (ngSubmit)="form.valid && cuposValidos() && guardar.emit()">
+  <label for="servicio-nombre">Nombre del servicio</label
+  ><input
+    id="servicio-nombre"
+    name="nombre"
+    required
+    maxlength="150"
+    [(ngModel)]="datos().nombre"
+    [disabled]="guardando()"
+  />
+  <label for="servicio-descripcion">Descripción (opcional)</label
+  ><textarea
+    id="servicio-descripcion"
+    name="descripcion"
+    rows="3"
+    [(ngModel)]="datos().descripcion"
+    [disabled]="guardando()"
+  ></textarea>
+  <label for="servicio-maximo">Cupo máximo instalado</label
+  ><input
+    id="servicio-maximo"
+    name="maximo"
+    type="number"
+    required
+    min="0"
+    max="2147483647"
+    step="1"
+    [(ngModel)]="datos().cupoMaximoInstalado"
+    [disabled]="guardando()"
+  />
+  <label for="servicio-simultaneo">Cupo simultáneo</label
+  ><input
+    id="servicio-simultaneo"
+    name="simultaneo"
+    type="number"
+    required
+    min="0"
+    max="2147483647"
+    step="1"
+    [(ngModel)]="datos().cupoSimultaneo"
+    [disabled]="guardando()"
+  />
+  <p class="ayuda">
+    Usa números enteros. El cupo simultáneo no puede superar el máximo instalado. Los cambios no
+    modifican los cupos de rotaciones ya creadas.
+  </p>
+  @if (!cuposValidos() && form.dirty) {
+    <p class="mensaje error" role="alert">
+      Revisa los cupos: deben ser enteros no negativos y el simultáneo no debe superar el máximo.
+    </p>
+  }
+  @if (errorFormulario()) {
+    <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+  }
+  <footer>
+    <button
+      type="button"
+      class="btn btn--outline"
+      [disabled]="guardando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar</button
+    ><button
+      type="submit"
+      class="btn btn--navy"
+      [disabled]="guardando() || form.invalid || !cuposValidos()"
+    >
+      {{ guardando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </footer>
+</form>

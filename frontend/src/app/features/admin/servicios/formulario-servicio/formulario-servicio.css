@@ -1,0 +1,15 @@
+@import '../../../../shared/formularios/formulario.css';
+textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  color: var(--husi-text);
+  background: var(--husi-bg);
+  resize: vertical;
+}
+textarea:focus {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
