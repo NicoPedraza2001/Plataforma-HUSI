@@ -1,0 +1,75 @@
+<form #form="ngForm" (ngSubmit)="form.valid && guardar.emit()">
+  <label for="usuario-nombre">Nombre</label
+  ><input
+    id="usuario-nombre"
+    name="nombre"
+    type="text"
+    maxlength="100"
+    required
+    [disabled]="guardando()"
+    [(ngModel)]="datos().nombre"
+  />
+  <label for="usuario-apellido">Apellido</label
+  ><input
+    id="usuario-apellido"
+    name="apellido"
+    type="text"
+    maxlength="100"
+    required
+    [disabled]="guardando()"
+    [(ngModel)]="datos().apellido"
+  />
+  <label for="usuario-correo">Correo</label
+  ><input
+    id="usuario-correo"
+    name="correo"
+    type="email"
+    maxlength="150"
+    required
+    [disabled]="guardando()"
+    [(ngModel)]="datos().correo"
+  />
+  <label for="usuario-contrasena">Contraseña</label
+  ><input
+    id="usuario-contrasena"
+    name="contrasena"
+    type="password"
+    maxlength="72"
+    [required]="!edicion()"
+    minlength="8"
+    autocomplete="new-password"
+    [disabled]="guardando()"
+    [(ngModel)]="datos().contrasena"
+  />
+  <p class="ayuda">
+    Al menos 8 caracteres. Al editar, déjala vacía para conservar la contraseña actual.
+  </p>
+  <label for="usuario-rolId">Rol</label
+  ><select
+    id="usuario-rolId"
+    name="rolId"
+    required
+    [disabled]="guardando()"
+    [(ngModel)]="datos().rolId"
+  >
+    <option [ngValue]="null">Selecciona una opción</option>
+    @for (opcion of opciones(); track opcion.id) {
+      <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+    }
+  </select>
+  @if (errorFormulario()) {
+    <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+  }
+  <footer>
+    <button
+      type="button"
+      class="btn btn--outline"
+      [disabled]="guardando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar</button
+    ><button class="btn btn--navy" type="submit" [disabled]="guardando() || form.invalid">
+      {{ guardando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </footer>
+</form>

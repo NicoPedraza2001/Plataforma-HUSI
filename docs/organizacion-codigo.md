@@ -5,7 +5,7 @@ La organización conserva Angular standalone y las capas existentes de Spring Bo
 ## Frontend
 
 - `src/app/features/`: pantallas agrupadas por área y módulo. Cada pantalla tiene sus archivos TypeScript, HTML y CSS.
-- `features/admin/programas/formulario-programa/`, `universidades/formulario-universidad/` y `rotaciones/formulario-rotacion/`: formularios reutilizables dentro de cada módulo. Reciben datos y emiten guardar/cancelar; el listado coordina la operación con el servicio.
+- `features/admin/programas/formulario-programa/`, `universidades/formulario-universidad/` `residentes/formulario-residente/` y `usuarios/formulario-usuario/`: formularios reutilizables dentro de cada módulo. Reciben datos y emiten guardar/cancelar; el listado coordina la operación con el servicio.
 - `src/app/layout/`: estructura visual de administración y del sitio público.
 - `src/app/models/`: contratos de datos por dominio, paginación y errores.
 - `src/app/services/`: llamadas HTTP por dominio, con rutas y respuestas Observable explícitas. Los componentes consumen estos servicios.
@@ -19,7 +19,7 @@ Las consultas de listados provienen del backend. Las filas de previsualización 
 ## Backend
 
 - `controller/`: rutas HTTP y validación de entrada.
-- `dto/request/` y `dto/response/`: contratos de entrada y salida; la importación de rotaciones tiene una respuesta tipada que conserva las claves JSON existentes.
+- `dto/request/` y `dto/response/`: contratos de entrada y salida; residentes y usuarios tienen contratos específicos; las respuestas de usuario excluyen la contraseña.
 - `service/` y `service/impl/`: contratos y reglas de negocio.
 - `repository/`: acceso a datos; `support/ConsultaSql` concentra la ejecución común y `query/ListadoSql` las consultas de listados.
 - `mapper/`: conversión de entidades a respuestas.
@@ -38,7 +38,7 @@ Desde `frontend`: `npm start -- --port 4200`, `npm run build`, `npm test -- --wa
 
 Desde `backend`: `./mvnw.cmd spring-boot:run` y `./mvnw.cmd test`. Las pruebas de integración requieren PostgreSQL disponible con la configuración local del proyecto.
 
-La prueba real de importación se ejecuta desde frontend con `npx ng test --watch=false --ts-config=tsconfig.rotaciones-e2e.json --include=src/app/features/admin/rotaciones/importar-rotaciones/importar-rotaciones.real-test.ts`, con backend y PostgreSQL disponibles.
+Las pruebas de los CRUD de residentes y usuarios se describen en residentes-usuarios.md.
 
 ## Referencias
 
@@ -46,3 +46,5 @@ La prueba real de importación se ejecuta desde frontend con `npx ng test --watc
 - https://github.com/RoberthMendez/BiskitServer
 
 Se reutiliza la idea de organización, no se copia la arquitectura de autenticación ni código ajeno al dominio HUSI.
+
+El CRUD e importador de Rotaciones se retiraron; se conservan datos y lecturas históricas del dashboard. Detalles actuales en [residentes-usuarios.md](residentes-usuarios.md).

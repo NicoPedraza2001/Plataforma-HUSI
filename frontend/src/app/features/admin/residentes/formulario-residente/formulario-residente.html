@@ -1,0 +1,69 @@
+<form #form="ngForm" (ngSubmit)="form.valid && guardar.emit()">
+  <label for="residente-nombre">Nombre completo</label
+  ><input
+    id="residente-nombre"
+    name="nombre"
+    type="text"
+    maxlength="200"
+    required
+    [disabled]="guardando()"
+    [(ngModel)]="datos().nombre"
+  />
+  <label for="residente-tipoDocumento">Tipo de documento</label
+  ><input
+    id="residente-tipoDocumento"
+    name="tipoDocumento"
+    type="text"
+    maxlength="30"
+    required
+    [disabled]="guardando()"
+    [(ngModel)]="datos().tipoDocumento"
+  />
+  <label for="residente-numeroDocumento">Número de documento</label
+  ><input
+    id="residente-numeroDocumento"
+    name="numeroDocumento"
+    type="text"
+    maxlength="50"
+    required
+    [disabled]="guardando()"
+    [(ngModel)]="datos().numeroDocumento"
+  />
+  <label for="residente-perfilAcademico">Perfil académico</label
+  ><input
+    id="residente-perfilAcademico"
+    name="perfilAcademico"
+    type="text"
+    maxlength="100"
+    [disabled]="guardando()"
+    [(ngModel)]="datos().perfilAcademico"
+  />
+  <label for="residente-programaId">Programa</label
+  ><select
+    id="residente-programaId"
+    name="programaId"
+    required
+    [disabled]="guardando()"
+    [(ngModel)]="datos().programaId"
+  >
+    <option [ngValue]="null">Selecciona una opción</option>
+    @for (opcion of opciones(); track opcion.id) {
+      <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+    }
+  </select>
+  @if (errorFormulario()) {
+    <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+  }
+  <footer>
+    <button
+      type="button"
+      class="btn btn--outline"
+      [disabled]="guardando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar</button
+    ><button class="btn btn--navy" type="submit" [disabled]="guardando() || form.invalid">
+      {{ guardando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </footer>
+</form>

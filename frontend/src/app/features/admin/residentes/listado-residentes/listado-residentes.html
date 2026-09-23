@@ -11,15 +11,7 @@
   </div>
 
   <div class="page-head__acciones">
-    <button
-      type="button"
-      class="btn btn--outline"
-      disabled
-      title="Función pendiente de implementación"
-    >
-      Importar
-    </button>
-    <button type="button" class="btn btn--add" disabled title="Función pendiente de implementación">
+    <button type="button" class="btn btn--add" [disabled]="guardando()" (click)="abrir()">
       <span class="btn__plus" aria-hidden="true">+</span>
       Agregar Residente
     </button>
@@ -130,8 +122,8 @@
           <th scope="col">Documento</th>
           <th scope="col">Universidad</th>
           <th scope="col">Programa</th>
-          <th scope="col">Estado</th>
-          <th class="col-acciones" scope="col">Acciones</th>
+
+          <th class="col-acciones-registro" scope="col">Acciones</th>
         </tr>
       </thead>
 
@@ -144,23 +136,41 @@
               <td>{{ residente.documento }}</td>
               <td>{{ residente.universidad }}</td>
               <td>{{ residente.programa }}</td>
-              <td>
-                <span [class]="claseBadge(residente.estado)">{{ residente.estado }}</span>
-              </td>
-              <td class="col-acciones">
-                <button
-                  type="button"
-                  class="btn btn--navy"
-                  disabled
-                  title="Función pendiente de implementación"
-                >
-                  Editar
-                </button>
+              <td class="col-acciones-registro">
+                <div class="acciones-registro">
+                  <button
+                    class="btn estado-directo"
+                    [class.estado-directo--activo]="residente.estado.toLowerCase() === 'activo'"
+                    [class.estado-directo--inactivo]="
+                      !(residente.estado.toLowerCase() === 'activo')
+                    "
+                    [disabled]="guardando()"
+                    (click)="cambiarEstado(residente)"
+                    [attr.aria-label]="
+                      (residente.estado.toLowerCase() === 'activo' ? 'Desactivar ' : 'Activar ') +
+                      residente.nombre
+                    "
+                  >
+                    {{ residente.estado.toLowerCase() === 'activo' ? 'Activo' : 'Inactivo' }}
+                  </button>
+                  <button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(residente)">
+                    Editar
+                  </button>
+                  <button
+                    class="btn papelera"
+                    [disabled]="guardando()"
+                    (click)="solicitarEliminar(residente)"
+                    [attr.aria-label]="'Eliminar definitivamente ' + residente.nombre"
+                    title="Eliminar definitivamente"
+                  >
+                    <app-icono-papelera />
+                  </button>
+                </div>
               </td>
             </tr>
           } @empty {
             <tr>
-              <td class="tabla__vacia" colspan="7">No hay residentes registrados</td>
+              <td class="tabla__vacia" colspan="6">No hay residentes registrados</td>
             </tr>
           }
         }
@@ -175,3 +185,70 @@
     (cambio)="irAPagina($event)"
   />
 </section>
+
+@if (aviso()) {
+  <p class="mensaje exito" role="status">{{ aviso() }}</p>
+}
+@if (errorFormulario() && !formulario() && !pendienteEliminar()) {
+  <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+}
+
+@if (formulario()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+    <section
+      class="panel-modal"
+      appFocoModal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-residente"
+    >
+      <header>
+        <h2 id="titulo-residente">{{ edicionId ? 'Editar residente' : 'Agregar residente' }}</h2>
+      </header>
+      <app-formulario-residente
+        [(datos)]="datos"
+        [opciones]="opciones()"
+        [edicion]="!!edicionId"
+        [guardando]="guardando()"
+        [errorFormulario]="errorFormulario()"
+        (guardar)="guardar()"
+        (cancelar)="formulario.set(false)"
+      />
+    </section>
+  </div>
+}
+@if (pendienteEliminar(); as fila) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && pendienteEliminar.set(null)">
+    <section
+      class="panel-modal confirmacion"
+      appFocoModal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-eliminar-residente"
+    >
+      <h2 id="titulo-eliminar-residente">¿Eliminar definitivamente este residente?</h2>
+      <p>
+        <strong>{{ fila.nombre }}</strong>
+      </p>
+      <p>
+        Se eliminará completamente de la base de datos. Esta acción no se puede deshacer. Si tiene
+        registros asociados, se bloqueará la eliminación; puedes desactivarlo para conservar su
+        historial.
+      </p>
+      @if (errorFormulario()) {
+        <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+      }
+      <footer>
+        <button
+          class="btn btn--outline"
+          [disabled]="guardando()"
+          (click)="pendienteEliminar.set(null)"
+        >
+          Cancelar</button
+        ><button class="btn btn--danger" [disabled]="guardando()" (click)="confirmarEliminar()">
+          {{ guardando() ? 'Eliminando…' : 'Eliminar definitivamente' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}

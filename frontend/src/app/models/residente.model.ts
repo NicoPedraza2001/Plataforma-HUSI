@@ -8,3 +8,16 @@ export interface Residente {
   estado: string;
   periodo: string;
 }
+
+/** Datos editables; la respuesta de usuario nunca incluye contraseña. */
+export interface ResidenteRequest {
+  nombre: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  perfilAcademico: string;
+  programaId: number | null;
+}
+export interface ResidenteDetalle extends Omit<ResidenteRequest, 'contrasena'> {
+  id: number;
+  estado: string;
+}

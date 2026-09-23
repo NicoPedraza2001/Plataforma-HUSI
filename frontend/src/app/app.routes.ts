@@ -1,4 +1,3 @@
-import { ListadoRotaciones } from './features/admin/rotaciones/listado-rotaciones/listado-rotaciones';
 import { ListadoUniversidades } from './features/admin/universidades/listado-universidades/listado-universidades';
 import { Routes } from '@angular/router';
 import { Landing } from './features/public/landing/pages/landing/landing';
@@ -34,7 +33,8 @@ export const routes: Routes = [
     path: 'admin',
     component: AdminLayout,
     children: [
-      { path: 'rotaciones', component: ListadoRotaciones },
+      { path: '', redirectTo: 'residentes', pathMatch: 'full' },
+      { path: 'rotaciones', redirectTo: 'residentes', pathMatch: 'full' },
       { path: 'universidades', component: ListadoUniversidades },
       { path: 'universidades/:universidadId/programas', component: ListadoProgramas },
       {

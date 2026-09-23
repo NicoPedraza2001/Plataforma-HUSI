@@ -1,3 +1,11 @@
+import { firstValueFrom } from 'rxjs';
+import { ResidenteRequest } from '../../../../models/residente.model';
+import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
+import { mensajeError } from '../../../../services/api-error';
+import { FormularioResidente } from '../formulario-residente/formulario-residente';
+import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
+import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
+import { ProgramaService } from '../../../../services/programa.service';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ResidenteService } from '../../../../services/residente.service';
 import { Residente } from '../../../../models/residente.model';
@@ -8,7 +16,7 @@ import { CatalogoService } from '../../../../services/catalogo.service';
 import { Paginacion } from '../../../../shared/paginacion/paginacion';
 @Component({
   selector: 'app-listado-residentes',
-  imports: [Paginacion],
+  imports: [Paginacion, FormularioResidente, IconoPapelera, FocoModal],
   templateUrl: './listado-residentes.html',
   styleUrl: './listado-residentes.css',
 })
@@ -48,9 +56,6 @@ export class ListadoResidentes {
     ...(this.catalogos.datos()?.periodos ?? []),
   ]);
   protected readonly estados = ['Todos', 'ACTIVO', 'INACTIVO'];
-  protected claseBadge(estado: string) {
-    return estado === 'ACTIVO' ? 'badge badge--activo' : 'badge badge--inactivo';
-  }
   constructor() {
     this.cargar();
     this.catalogos.cargar();
@@ -97,5 +102,116 @@ export class ListadoResidentes {
     if (pagina < 1 || pagina > this.totalPaginas() || this.cargando()) return;
     this.paginaSolicitada.set(pagina);
     this.cargar();
+  }
+
+  private readonly opcionesApi = inject(ProgramaService);
+  protected readonly formulario = signal(false);
+  protected readonly guardando = signal(false);
+  protected readonly aviso = signal('');
+  protected readonly errorFormulario = signal('');
+  protected readonly opciones = signal<OpcionCatalogo[]>([]);
+  protected readonly pendienteEliminar = signal<Residente | null>(null);
+  protected edicionId: number | null = null;
+  protected datos: ResidenteRequest = {
+    nombre: '',
+    tipoDocumento: 'CC',
+    numeroDocumento: '',
+    perfilAcademico: '',
+    programaId: null,
+  };
+  protected async abrir(fila: Residente | null = null) {
+    if (this.guardando()) return;
+    this.guardando.set(true);
+    this.errorFormulario.set('');
+    this.aviso.set('');
+    try {
+      const opciones = (await firstValueFrom(this.opcionesApi.listar())).map((p) => ({
+        id: p.id,
+        nombre: p.nombre + ' — ' + p.universidad,
+      }));
+      this.edicionId = fila?.id ?? null;
+      if (fila) {
+        const detalle = await firstValueFrom(this.api.consultar(fila.id));
+        if (!opciones.some((o) => o.id === detalle.programaId)) {
+          const p = await firstValueFrom(this.opcionesApi.consultar(detalle.programaId!));
+          opciones.push({ id: p.id, nombre: p.nombre + ' — ' + p.universidad + ' (actual)' });
+        }
+        this.datos = { ...detalle };
+      } else
+        this.datos = {
+          nombre: '',
+          tipoDocumento: 'CC',
+          numeroDocumento: '',
+          perfilAcademico: '',
+          programaId: null,
+        };
+      this.opciones.set(opciones);
+      this.formulario.set(true);
+    } catch (e) {
+      this.errorFormulario.set(mensajeError(e));
+    } finally {
+      this.guardando.set(false);
+    }
+  }
+  protected async guardar() {
+    if (this.guardando()) return;
+    this.guardando.set(true);
+    this.errorFormulario.set('');
+    try {
+      await firstValueFrom(
+        this.edicionId
+          ? this.api.actualizar(this.edicionId, this.datos)
+          : this.api.crear(this.datos),
+      );
+      this.formulario.set(false);
+      this.aviso.set('Residente guardado correctamente.');
+      this.cargar();
+      this.catalogos.cargar();
+    } catch (e) {
+      this.errorFormulario.set(mensajeError(e));
+    } finally {
+      this.guardando.set(false);
+    }
+  }
+  protected async cambiarEstado(fila: Residente) {
+    if (this.guardando()) return;
+    this.guardando.set(true);
+    this.errorFormulario.set('');
+    this.aviso.set('');
+    try {
+      await firstValueFrom(
+        this.api.cambiarEstado(
+          fila.id,
+          fila.estado.toLowerCase() === 'activo' ? 'Inactivo' : 'Activo',
+        ),
+      );
+      this.aviso.set('Estado actualizado correctamente.');
+      this.cargar();
+    } catch (e) {
+      this.errorFormulario.set(mensajeError(e));
+    } finally {
+      this.guardando.set(false);
+    }
+  }
+  protected solicitarEliminar(fila: Residente) {
+    this.errorFormulario.set('');
+    this.pendienteEliminar.set(fila);
+  }
+  protected async confirmarEliminar() {
+    const fila = this.pendienteEliminar();
+    if (!fila || this.guardando()) return;
+    this.guardando.set(true);
+    this.errorFormulario.set('');
+    try {
+      await firstValueFrom(this.api.eliminarDefinitivamente(fila.id));
+      this.pendienteEliminar.set(null);
+      this.aviso.set('Residente eliminado definitivamente.');
+      this.cargar();
+      this.catalogos.cargar();
+    } catch (e) {
+      this.errorFormulario.set(mensajeError(e));
+    } finally {
+      this.guardando.set(false);
+    }
   }
 }

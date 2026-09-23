@@ -6,3 +6,16 @@ export interface Usuario {
   rol: string;
   activo: boolean;
 }
+
+/** Datos editables; la respuesta de usuario nunca incluye contraseña. */
+export interface UsuarioRequest {
+  nombre: string;
+  apellido: string;
+  correo: string;
+  contrasena: string;
+  rolId: number | null;
+}
+export interface UsuarioDetalle extends Omit<UsuarioRequest, 'contrasena'> {
+  id: number;
+  estado: string;
+}

@@ -1,0 +1,20 @@
+package co.edu.javeriana.husi.repository;
+
+import co.edu.javeriana.husi.model.entity.Residente;
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.*;
+
+public interface ResidenteRepository extends JpaRepository<Residente, Integer> {
+  boolean existsByNumeroDocumentoIgnoreCaseAndIdNot(String valor, Integer id);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select e from Residente e where e.id=:id")
+  Optional<Residente> bloquearPorId(Integer id);
+
+  @Query(
+    value = "select count(*) from rotacion_residente where id_residente=:id",
+    nativeQuery = true
+  )
+  long contarReferencias(Integer id);
+}

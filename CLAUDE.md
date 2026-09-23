@@ -144,4 +144,4 @@ El link del sidebar (`admin-layout.ts`) normalmente ya existe apuntando a la rut
 
 ## Organización ampliada
 
-Consultar docs/organizacion-codigo.md. Los formularios de programas, universidades y rotaciones viven en su propia carpeta del módulo. Consulta está en shared/consulta y sus tipos de paginación en models. Los estilos comunes de formularios están en shared/formularios.
+Consultar docs/organizacion-codigo.md. Los formularios de programas, universidades, residentes y usuarios viven en su propia carpeta del módulo. Consulta está en shared/consulta y sus tipos de paginación en models. Los estilos comunes de formularios están en shared/formularios.

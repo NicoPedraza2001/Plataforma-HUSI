@@ -1,3 +1,5 @@
+> DOCUMENTO HISTÓRICO: el módulo CRUD e importador fue retirado. Las tablas y datos se conservan. Consulta residentes-usuarios.md para el estado actual.
+
 # Rotaciones: administración e importación
 
 Implementación y verificación: 14 de septiembre de 2026.

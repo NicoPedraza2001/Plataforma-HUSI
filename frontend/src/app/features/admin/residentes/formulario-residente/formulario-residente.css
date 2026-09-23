@@ -1,0 +1,4 @@
+@import '../../../../shared/formularios/formulario.css';
+:host {
+  display: contents;
+}

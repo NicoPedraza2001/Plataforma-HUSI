@@ -30,7 +30,6 @@ export class AdminLayout {
     {
       id: 'gestion',
       items: [
-        { label: 'Rotaciones', link: '/admin/rotaciones' },
         { label: 'Dashboard', link: '/admin/dashboard' },
         { label: 'Residentes', link: '/admin/residentes' },
         { label: 'Universidades', link: '/admin/universidades' },

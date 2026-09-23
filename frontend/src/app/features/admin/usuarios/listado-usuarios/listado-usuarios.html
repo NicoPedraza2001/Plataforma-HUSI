@@ -10,7 +10,7 @@
     </nav>
   </div>
 
-  <button type="button" class="btn btn--add" disabled title="Función pendiente de implementación">
+  <button type="button" class="btn btn--add" [disabled]="guardando()" (click)="abrir()">
     <span class="btn__plus" aria-hidden="true">+</span>
     Agregar usuario
   </button>
@@ -112,8 +112,8 @@
           <th scope="col">Nombre</th>
           <th scope="col">Correo</th>
           <th scope="col">Rol</th>
-          <th scope="col">Estado</th>
-          <th class="col-acciones" scope="col">Acciones</th>
+
+          <th class="col-acciones-registro" scope="col">Acciones</th>
         </tr>
       </thead>
 
@@ -125,35 +125,38 @@
               <td>{{ usuario.nombre }}</td>
               <td class="col-correo">{{ usuario.correo }}</td>
               <td>{{ usuario.rol }}</td>
-              <td>
-                <span class="badge" [class]="usuario.activo ? 'badge--activo' : 'badge--inactivo'">
-                  {{ usuario.activo ? 'ACTIVO' : 'INACTIVO' }}
-                </span>
-              </td>
-              <td class="col-acciones">
-                <div class="acciones">
+              <td class="col-acciones-registro">
+                <div class="acciones-registro">
                   <button
-                    type="button"
-                    class="btn btn--navy"
-                    disabled
-                    title="Función pendiente de implementación"
+                    class="btn estado-directo"
+                    [class.estado-directo--activo]="usuario.activo"
+                    [class.estado-directo--inactivo]="!usuario.activo"
+                    [disabled]="guardando()"
+                    (click)="cambiarEstado(usuario)"
+                    [attr.aria-label]="
+                      (usuario.activo ? 'Desactivar ' : 'Activar ') + usuario.nombre
+                    "
                   >
+                    {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+                  </button>
+                  <button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(usuario)">
                     Editar
                   </button>
                   <button
-                    type="button"
-                    class="btn btn--green"
-                    disabled
-                    title="Función pendiente de implementación"
+                    class="btn papelera"
+                    [disabled]="guardando()"
+                    (click)="solicitarEliminar(usuario)"
+                    [attr.aria-label]="'Eliminar definitivamente ' + usuario.nombre"
+                    title="Eliminar definitivamente"
                   >
-                    Permisos
+                    <app-icono-papelera />
                   </button>
                 </div>
               </td>
             </tr>
           } @empty {
             <tr>
-              <td class="tabla__vacia" colspan="6">
+              <td class="tabla__vacia" colspan="5">
                 No hay usuarios que coincidan con la búsqueda
               </td>
             </tr>
@@ -169,3 +172,70 @@
     (cambio)="irAPagina($event)"
   />
 </section>
+
+@if (aviso()) {
+  <p class="mensaje exito" role="status">{{ aviso() }}</p>
+}
+@if (errorFormulario() && !formulario() && !pendienteEliminar()) {
+  <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+}
+
+@if (formulario()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+    <section
+      class="panel-modal"
+      appFocoModal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-usuario"
+    >
+      <header>
+        <h2 id="titulo-usuario">{{ edicionId ? 'Editar usuario' : 'Agregar usuario' }}</h2>
+      </header>
+      <app-formulario-usuario
+        [(datos)]="datos"
+        [opciones]="opciones()"
+        [edicion]="!!edicionId"
+        [guardando]="guardando()"
+        [errorFormulario]="errorFormulario()"
+        (guardar)="guardar()"
+        (cancelar)="formulario.set(false)"
+      />
+    </section>
+  </div>
+}
+@if (pendienteEliminar(); as fila) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && pendienteEliminar.set(null)">
+    <section
+      class="panel-modal confirmacion"
+      appFocoModal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-eliminar-usuario"
+    >
+      <h2 id="titulo-eliminar-usuario">¿Eliminar definitivamente este usuario?</h2>
+      <p>
+        <strong>{{ fila.nombre }}</strong>
+      </p>
+      <p>
+        Se eliminará completamente de la base de datos. Esta acción no se puede deshacer. Si tiene
+        registros asociados, se bloqueará la eliminación; puedes desactivarlo para conservar su
+        historial.
+      </p>
+      @if (errorFormulario()) {
+        <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+      }
+      <footer>
+        <button
+          class="btn btn--outline"
+          [disabled]="guardando()"
+          (click)="pendienteEliminar.set(null)"
+        >
+          Cancelar</button
+        ><button class="btn btn--danger" [disabled]="guardando()" (click)="confirmarEliminar()">
+          {{ guardando() ? 'Eliminando…' : 'Eliminar definitivamente' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}
