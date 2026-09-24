@@ -141,7 +141,17 @@ class ServicioIntegrationTests {
       )
     ).isEqualTo(2);
   }
-  @Autowired tools.jackson.databind.json.JsonMapper json;
-  @Test void jsonRechazaCuposDecimales() {
-    assertThatThrownBy(() -> json.readValue("{\"nombre\":\"Prueba\",\"cupoSimultaneo\":1.5,\"cupoMaximoInstalado\":5}", ServicioRequest.class)).isInstanceOf(tools.jackson.core.JacksonException.class);
-  }}
+
+  @Autowired
+  tools.jackson.databind.json.JsonMapper json;
+
+  @Test
+  void jsonRechazaCuposDecimales() {
+    assertThatThrownBy(() ->
+      json.readValue(
+        "{\"nombre\":\"Prueba\",\"cupoSimultaneo\":1.5,\"cupoMaximoInstalado\":5}",
+        ServicioRequest.class
+      )
+    ).isInstanceOf(tools.jackson.core.JacksonException.class);
+  }
+}
