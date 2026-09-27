@@ -12,6 +12,16 @@ public class RolRepository {
 
   private final JdbcTemplate jdbc;
 
+  public boolean esCoordinador(Integer id) {
+    return Boolean.TRUE.equals(
+      jdbc.queryForObject(
+        "select exists(select 1 from rol where id_rol=? and lower(nombre_rol)='coordinador')",
+        Boolean.class,
+        id
+      )
+    );
+  }
+
   public boolean existe(Integer id) {
     return Boolean.TRUE.equals(
       jdbc.queryForObject(

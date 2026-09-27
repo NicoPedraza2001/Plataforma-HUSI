@@ -1,0 +1,39 @@
+:host {
+  display: block;
+  padding: 26px 34px 44px;
+}
+.filtros {
+  align-items: end;
+  flex-wrap: wrap;
+}
+.filtro {
+  min-width: 180px;
+}
+@media (max-width: 720px) {
+  :host {
+    padding: 22px 18px 34px;
+  }
+}
+
+.filtro > span {
+  font-weight: 600;
+  color: var(--husi-navy);
+}
+.search__input {
+  padding-left: 16px;
+}
+.resumen {
+  margin: 18px 0;
+  color: var(--husi-muted);
+}
+.tabla td:first-child {
+  min-width: 180px;
+}
+
+.tabla td:nth-child(2) {
+  max-width: 260px;
+  overflow-wrap: anywhere;
+}
+.tabla td:nth-child(3) {
+  min-width: 130px;
+}

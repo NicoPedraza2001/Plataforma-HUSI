@@ -70,6 +70,21 @@ public class ServicioServiceImpl implements ServicioService {
     // La base conserva el cupo de las rotaciones existentes; no se recalcula aquí.
   }
 
+  public java.util.List<co.edu.javeriana.husi.dto.response.CatalogoResponse> catalogo(
+    boolean soloActivos
+  ) {
+    return servicios
+      .catalogo(soloActivos)
+      .stream()
+      .map(s ->
+        new co.edu.javeriana.husi.dto.response.CatalogoResponse(
+          s.getId(),
+          s.getNombre()
+        )
+      )
+      .toList();
+  }
+
   public ServicioResponse consultar(Integer id) {
     return mapper.response(obtener(id, false));
   }

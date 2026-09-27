@@ -39,6 +39,15 @@ public class UsuarioServiceImpl implements UsuarioService {
       HttpStatus.BAD_REQUEST,
       "El rol no existe."
     );
+    if (
+      e.getId() != null &&
+      !java.util.Objects.equals(e.getRolId(), d.rolId()) &&
+      usuarios.tieneCoordinacion(e.getId()) &&
+      !roles.esCoordinador(d.rolId())
+    ) throw new NegocioException(
+      HttpStatus.CONFLICT,
+      "El usuario tiene una asignación de coordinador. Retírala antes de cambiar su rol."
+    );
     String correo = d.correo().strip().toLowerCase(Locale.ROOT);
     if (
       usuarios.existsByCorreoIgnoreCaseAndIdNot(

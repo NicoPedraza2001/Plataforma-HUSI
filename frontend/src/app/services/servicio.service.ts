@@ -1,3 +1,4 @@
+import { OpcionCatalogo } from '../models/opcion-catalogo.model';
 import { Observable } from 'rxjs';
 import { API_URL } from './api.config';
 import { Servicio, ServicioRequest } from '../models/servicio.model';
@@ -8,6 +9,11 @@ import { Pagina, Parametros } from '../models/pagina.model';
 @Injectable({ providedIn: 'root' })
 export class ServicioService {
   private readonly http = inject(HttpClient);
+  catalogo(soloActivos = true): Observable<OpcionCatalogo[]> {
+    return this.http.get<OpcionCatalogo[]>(`${API_URL}/servicios/catalogo`, {
+      params: { soloActivos },
+    });
+  }
   /** GET /api/servicios */
   listar(params: Parametros): Observable<Pagina<Servicio>> {
     return this.http.get<Pagina<Servicio>>(`${API_URL}/servicios`, { params });

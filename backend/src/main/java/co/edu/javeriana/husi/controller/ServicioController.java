@@ -15,6 +15,13 @@ public class ServicioController {
 
   private final ServicioService service;
 
+  @GetMapping("/catalogo")
+  public java.util.List<CatalogoResponse> catalogo(
+    @RequestParam(defaultValue = "true") boolean soloActivos
+  ) {
+    return service.catalogo(soloActivos);
+  }
+
   @GetMapping("/{id}")
   public ServicioResponse consultar(@PathVariable Integer id) {
     return service.consultar(id);

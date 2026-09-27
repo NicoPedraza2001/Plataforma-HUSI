@@ -48,6 +48,7 @@ public class ConsultaServiceImpl implements ConsultaService {
           "estado",
           "periodo"
         );
+        case "asignaturas", "coordinadores" -> Set.of("estado", "servicioId");
         case "usuarios" -> Set.of("rol", "estado");
         case "servicios", "universidades" -> Set.of("estado");
         case "historial" -> Set.of("modulo", "accion", "desde", "hasta");
@@ -77,6 +78,11 @@ public class ConsultaServiceImpl implements ConsultaService {
     });
     if (filtros.containsKey("universidadId")) numero(
       filtros.get("universidadId"),
+      1,
+      Integer.MAX_VALUE
+    );
+    if (filtros.containsKey("servicioId")) numero(
+      filtros.get("servicioId"),
       1,
       Integer.MAX_VALUE
     );

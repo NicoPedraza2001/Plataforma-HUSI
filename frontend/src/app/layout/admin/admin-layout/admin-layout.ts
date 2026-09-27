@@ -30,11 +30,13 @@ export class AdminLayout {
     {
       id: 'gestion',
       items: [
+        { label: 'Rotaciones', link: '/admin/rotaciones' },
         { label: 'Dashboard', link: '/admin/dashboard' },
         { label: 'Residentes', link: '/admin/residentes' },
         { label: 'Universidades', link: '/admin/universidades' },
         { label: 'Programa', link: '/admin/programas' },
         { label: 'Servicios', link: '/admin/servicios' },
+        { label: 'Asignaturas', link: '/admin/asignaturas' },
       ],
     },
     {
@@ -42,6 +44,7 @@ export class AdminLayout {
       title: 'Administración',
       items: [
         { label: 'Usuarios', link: '/admin/usuarios' },
+        { label: 'Coordinadores', link: '/admin/coordinadores' },
         { label: 'Historial', link: '/admin/historial' },
         { label: 'Ajustes', link: '/admin/ajustes' },
       ],

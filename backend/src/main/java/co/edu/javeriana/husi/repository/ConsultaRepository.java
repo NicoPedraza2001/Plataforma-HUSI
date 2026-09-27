@@ -27,6 +27,8 @@ public class ConsultaRepository {
     var parametros = new HashMap<String, Object>();
     StringBuilder where = new StringBuilder(" where 1=1");
     String campos = switch (dominio) {
+      case "asignaturas" -> "concat(nombre,' ',servicio)";
+      case "coordinadores" -> "concat(nombre,' ',correo,' ',servicio)";
       case "programas" -> "concat(nombre,' ',universidad)";
       case "residentes" -> "concat(nombre,' ',documento)";
       case "usuarios" -> "concat(nombre,' ',correo)";
@@ -38,6 +40,7 @@ public class ConsultaRepository {
     };
     filtros.forEach((clave, valor) -> {
       switch (clave) {
+        case "servicioId" -> where.append(" and \"servicioId\"=:servicioId");
         case "universidadId" -> where.append(
           " and \"universidadId\"=:universidadId"
         );
@@ -67,7 +70,9 @@ public class ConsultaRepository {
       }
       if (!clave.equals("proximas")) parametros.put(
         clave,
-        clave.equals("universidadId") ? Integer.valueOf(valor) : valor
+        clave.equals("universidadId") || clave.equals("servicioId")
+          ? Integer.valueOf(valor)
+          : valor
       );
     });
     String consulta = " from (" + base(dominio) + ") datos" + where;

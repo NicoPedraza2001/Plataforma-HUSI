@@ -6,6 +6,11 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.*;
 
 public interface ServicioRepository extends JpaRepository<Servicio, Integer> {
+  @Query(
+    "select s from Servicio s where s.estado<>'Eliminado' and (:soloActivos=false or s.estado='Activo') order by lower(s.nombre),s.id"
+  )
+  java.util.List<Servicio> catalogo(boolean soloActivos);
+
   boolean existsByNombreIgnoreCaseAndIdNot(String nombre, Integer id);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)

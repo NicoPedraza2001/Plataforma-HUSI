@@ -19,6 +19,8 @@ public final class ListadoSql {
 
   public static String base(String dominio) {
     return switch (dominio) {
+      case "asignaturas" -> "select a.id_asignatura as id,a.nombre_asignatura as nombre,s.id_servicio as \"servicioId\",s.nombre as servicio,a.estado,a.estado='Activo' as activo from asignatura a join servicio s using(id_servicio) where a.estado<>'Eliminado'";
+      case "coordinadores" -> "select c.id_coordinador as id,u.id_usuario as \"usuarioId\",concat(u.nombre,' ',u.apellido) as nombre,u.correo,s.id_servicio as \"servicioId\",s.nombre as servicio,c.estado,c.estado='Activo' as activo from coordinador c join usuario u using(id_usuario) join servicio s using(id_servicio) where c.estado<>'Eliminado'";
       case "programas" -> "select p.id_programa as id,p.nombre_programa as nombre,u.id_universidad as \"universidadId\",u.nombre_universidad as universidad,p.estado from programa p join universidad u using(id_universidad) where p.estado<>'Eliminado'";
       case "universidades" -> "select id_universidad as id,nombre_universidad as nombre,pais,perfil,estado from universidad where estado<>'Eliminado'";
       case "servicios" -> "select id_servicio as id,nombre,descripcion,cupo_simultaneo as \"cupoSimultaneo\",cupo_maximo_instalado as \"cupoMaximoInstalado\",estado='Activo' as activo,estado from servicio where estado<>'Eliminado'";

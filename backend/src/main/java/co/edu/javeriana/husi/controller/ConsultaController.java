@@ -15,6 +15,8 @@ public class ConsultaController {
   @GetMapping({
     "/residentes",
     "/servicios",
+    "/asignaturas",
+    "/coordinadores",
     "/usuarios",
     "/historial",
     "/rotaciones",

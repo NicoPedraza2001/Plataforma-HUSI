@@ -1,8 +1,6 @@
-> DOCUMENTO HISTÓRICO: el módulo CRUD e importador fue retirado. Las tablas y datos se conservan. Consulta residentes-usuarios.md para el estado actual.
-
 # Rotaciones: administración e importación
 
-Implementación y verificación: 14 de septiembre de 2026.
+Actualización: 27 de septiembre de 2026. Módulo reactivado en Desarrollo_Santi, integrado con Asignaturas, Servicios y Residentes.
 
 ## Modelo encontrado y decisiones
 
@@ -125,3 +123,22 @@ La prueba exige que no exista previamente la rotación de prueba de fechas `2094
 - El dashboard existente sigue mostrando asignaciones; desactivar una rotación no elimina ni cancela esas asignaciones.
 - Persisten advertencias previas de tamaño de estilos. ExcelJS produce una advertencia CommonJS, sin impedir compilación.
 - No se hizo commit ni push.
+
+
+## Gestión de residentes (27/09/2026)
+
+La columna Asociados abre `residentes-rotacion/`, con búsqueda de residentes activos en backend y paginación de asignaciones. Cada combinación residente/rotación es única. Al agregar, los triggers asignan cupo o colocan al residente en espera. Desde el panel puede asignarse un cupo libre o cancelarse una asignación; las canceladas se conservan y pueden reactivarse si la rotación está activa y hay cupo. No hay borrado en cascada ni edición manual del cupo.
+
+Endpoints bajo `/api/rotaciones/gestion/{asignatura}/{inicio}/{fin}`:
+- `GET /residentes?pagina=1`: asignaciones paginadas.
+- `GET /candidatos?q=...`: hasta 30 residentes activos sin relación previa, búsqueda por nombre/documento.
+- `POST /residentes` con `{residenteId}`: asignación o espera automática.
+- `PATCH /residentes/{residente}/estado` con `{estado:"Asignado"|"Cancelado"}`.
+
+Capas nuevas: RotacionResidenteController, RotacionResidenteService/Impl y RotacionResidenteRepository, con DTO específicos. Se conserva el GET histórico `/api/rotaciones` del dashboard.
+
+### Migración para instalaciones existentes
+
+Ejecutar `database/migrations/20260927_liberar_cupo_congelado.sql` sobre la base existente (ya aplicada en el entorno local). En instalaciones nuevas se ejecuta automáticamente `database/init/12_liberar_cupo_congelado.sql`. La función libera un cupo solamente al salir de Asignado; no lo compara con la capacidad actual del servicio porque la capacidad de una rotación se congela al abrirla. No cambia registros, tablas ni fechas existentes.
+
+La importación Excel crea rotaciones (asignatura, servicio, inicio, fin); la asignación de residentes se gestiona desde el panel Asociados. No crea usuarios, servicios ni asignaturas implícitamente.

@@ -1,0 +1,142 @@
+<div class="fondo-modal" (keydown.escape)="!guardando() && cerrar.emit()">
+  <section
+    class="panel-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="residentes-titulo"
+    appFocoModal
+  >
+    <header><h2 id="residentes-titulo">Residentes de la rotación</h2></header>
+    <div class="contenido">
+      <p>
+        <strong>{{ rotacion().asignatura }}</strong> · {{ rotacion().servicio }}<br />{{
+          rotacion().inicio
+        }}
+        a {{ rotacion().fin }}
+      </p>
+      @if (rotacion().activa) {
+        <form (ngSubmit)="asignar()">
+          <label for="buscar-residente">Buscar residente por nombre o documento</label
+          ><input
+            id="buscar-residente"
+            name="busqueda"
+            type="search"
+            maxlength="200"
+            [(ngModel)]="termino"
+            (ngModelChange)="buscar()"
+            [disabled]="guardando()"
+          />
+          <p class="ayuda">
+            Se muestran hasta 30 residentes activos sin relación con esta rotación. Escribe para
+            acotar la búsqueda.
+          </p>
+          <label for="residente">Residente</label
+          ><select
+            id="residente"
+            name="residente"
+            [(ngModel)]="seleccionado"
+            [disabled]="guardando() || candidatos.cargando()"
+          >
+            <option [ngValue]="0">Selecciona un residente</option>
+            @for (r of candidatos.datos() ?? []; track r.id) {
+              <option [ngValue]="r.id">{{ r.nombre }}</option>
+            }
+          </select>
+          @if (candidatos.cargando()) {
+            <p role="status">Buscando residentes…</p>
+          } @else if (candidatos.error()) {
+            <p role="alert">
+              {{ candidatos.error() }}
+              <button type="button" class="btn btn--outline" (click)="buscar()">Reintentar</button>
+            </p>
+          } @else if (!candidatos.datos()?.length) {
+            <p>No hay residentes disponibles con esa búsqueda.</p>
+          }
+          <button
+            class="btn btn--navy"
+            type="submit"
+            [disabled]="!seleccionado || guardando() || candidatos.cargando()"
+          >
+            Agregar residente
+          </button>
+        </form>
+      } @else {
+        <p class="mensaje">
+          La rotación está inactiva. Puedes consultar o cancelar asignaciones existentes.
+        </p>
+      }
+      @if (error()) {
+        <p role="alert" class="mensaje error">{{ error() }}</p>
+      }
+      @if (aviso()) {
+        <p role="status" class="mensaje exito">{{ aviso() }}</p>
+      }
+      @if (consulta.cargando()) {
+        <p role="status">Cargando residentes…</p>
+      } @else if (consulta.error()) {
+        <p role="alert">
+          {{ consulta.error() }}
+          <button class="btn btn--outline" (click)="cargar()">Reintentar</button>
+        </p>
+      } @else {
+        <div class="table-wrap">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Residente / Documento</th>
+                <th>Programa</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of consulta.datos()?.contenido ?? []; track r.residenteId) {
+                <tr>
+                  <td>
+                    {{ r.nombre }}<small>{{ r.documento }}</small>
+                  </td>
+                  <td>{{ r.programa }}</td>
+                  <td>{{ r.estado }}</td>
+                  <td>
+                    @if (r.estado !== 'Asignado' && rotacion().activa) {
+                      <button
+                        class="btn btn--navy"
+                        [disabled]="guardando()"
+                        (click)="estado(r, 'Asignado')"
+                      >
+                        Asignar cupo
+                      </button>
+                    }
+                    @if (r.estado !== 'Cancelado') {
+                      <button
+                        class="btn btn--outline"
+                        [disabled]="guardando()"
+                        (click)="estado(r, 'Cancelado')"
+                      >
+                        Cancelar asignación
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4">Esta rotación todavía no tiene residentes.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacion
+          [paginaActual]="consulta.datos()?.pagina ?? 1"
+          [totalPaginas]="consulta.datos()?.totalPaginas ?? 1"
+          (cambio)="cargar($event)"
+        />
+      }
+      <footer>
+        <button class="btn btn--outline" [disabled]="guardando()" (click)="cerrar.emit()">
+          Cerrar
+        </button>
+      </footer>
+    </div>
+  </section>
+</div>
