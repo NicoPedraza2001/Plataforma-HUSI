@@ -2,7 +2,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ImportarRotaciones } from './importar-rotaciones';
-import { CAMPOS_CARGA, detectarColumnas, prepararCarga } from './campos-carga';
+import {
+  CAMPOS_CARGA,
+  detectarColumnas,
+  prepararCarga,
+  PLANTILLA_FINAL,
+  esPlantillaFinal,
+} from './campos-carga';
 describe('Carga inicial guiada', () => {
   const resultado = {
     validacion: 'huella',
@@ -126,5 +132,58 @@ describe('Carga inicial guiada', () => {
     expect(c.resultado()).toBeNull();
     expect(c.error()).toContain('Cupos cambiaron');
     http.verify();
+  });
+});
+
+describe('Plantilla institucional definitiva', () => {
+  it('reconoce las doce columnas y preserva perfil, documento y campos presentes', () => {
+    const columnas = detectarColumnas(PLANTILLA_FINAL),
+      comunes = CAMPOS_CARGA.map(() => '');
+    comunes[0] = 'Universidad común';
+    comunes[4] = 'CC';
+    const filas = prepararCarga(
+      [
+        PLANTILLA_FINAL,
+        [
+          'Docencia Servicio',
+          'Medicina',
+          '00123',
+          'Residente ficticio',
+          'Posgrado',
+          'Universidad específica',
+          'Colombia',
+          'Asignatura',
+          'HUSI_1',
+          'Servicio',
+          '2098-01-01',
+          '2098-01-31',
+        ],
+        [
+          '',
+          'Medicina',
+          '00456',
+          'Otro residente',
+          '',
+          '',
+          '',
+          'Asignatura',
+          '',
+          'Servicio',
+          '',
+          '',
+        ],
+        [],
+      ],
+      1,
+      columnas,
+      comunes,
+    );
+    expect(esPlantillaFinal(PLANTILLA_FINAL)).toBe(true);
+    expect(filas).toHaveLength(2);
+    expect(filas[0].perfilAcademico).toBe('Posgrado');
+    expect(filas[0].documento).toBe('00123');
+    expect(filas[0].universidad).toBe('Universidad específica');
+    expect(filas[1].universidad).toBe('Universidad común');
+    expect(filas[1].inicio).toBe('');
   });
 });

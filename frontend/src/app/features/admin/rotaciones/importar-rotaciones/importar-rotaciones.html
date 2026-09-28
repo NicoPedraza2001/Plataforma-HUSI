@@ -59,10 +59,23 @@
   }
   @if (paso() === 1) {
     <h2>2. Relaciona las columnas</h2>
+    @if (plantillaReconocida()) {
+      <p class="mensaje exito">
+        Plantilla institucional reconocida. Programa, Documento, Name, Perfil, Universidad, País,
+        Asignatura, Servicio_HUSI y fechas ya están relacionados. Categoría e id_sede son
+        informativos y no se guardan porque no tienen campos equivalentes en el modelo actual.
+      </p>
+      <p class="ayuda">
+        Completa el tipo de documento. Los cupos se toman del servicio existente; solo debes
+        indicarlos para crear un servicio nuevo. Las filas incompletas se mostrarán en la
+        validación.
+      </p>
+    }
     <p class="ayuda">
-      Elige una columna o escribe un valor común cuando el dato sea igual para todo el archivo. Los
-      datos opcionales pueden quedar vacíos. Los documentos deben conservar sus ceros iniciales:
-      guárdalos como texto en Excel.
+      Elige una columna o escribe un valor común cuando el dato sea igual para todo el archivo. Si
+      eliges una columna, el valor común solo completa sus celdas vacías; no reemplaza datos
+      presentes. Los datos opcionales pueden quedar vacíos. Los documentos deben conservar sus ceros
+      iniciales: guárdalos como texto en Excel.
     </p>
     <fieldset [disabled]="ocupado()">
       <legend>Origen y datos</legend>
@@ -96,13 +109,17 @@
                 <option [ngValue]="$index">{{ $index + 1 }} · {{ h || 'Sin encabezado' }}</option>
               }
             </select>
-            @if (columnas[i] < 0) {
+            @if (true) {
               <input
                 [(ngModel)]="comunes[i]"
                 (ngModelChange)="invalidar(true)"
                 [maxlength]="c.max"
                 [attr.aria-label]="'Valor común de ' + c.nombre"
-                placeholder="Escribe el valor si corresponde"
+                [placeholder]="
+                  columnas[i] >= 0
+                    ? 'Solo para celdas vacías (opcional)'
+                    : 'Escribe el valor si corresponde'
+                "
               />
             }
             @if (c.ayuda) {

@@ -44,7 +44,7 @@ export const CAMPOS_CARGA: {
     clave: 'perfilAcademico',
     nombre: 'Perfil académico',
     max: 100,
-    alias: ['perfil academico'],
+    alias: ['perfil academico', 'perfil'],
     ayuda: 'Opcional.',
   },
   { clave: 'servicio', nombre: 'Servicio', max: 150, alias: ['servicio', 'servicio_husi'] },
@@ -108,9 +108,31 @@ export function prepararCarga(
       CAMPOS_CARGA.forEach(
         (campo, n) =>
           (datos[campo.clave] = (
-            columnas[n] >= 0 ? (f[columnas[n]] ?? '') : (comunes[n] ?? '')
+            columnas[n] >= 0
+              ? (f[columnas[n]] ?? '').trim() || (comunes[n] ?? '')
+              : (comunes[n] ?? '')
           ).trim()),
       );
       return datos;
     });
+}
+
+/** Encabezados de la plantilla institucional recibida; categoría y sede son informativos. */
+export const PLANTILLA_FINAL = [
+  'Categoría',
+  'Programa',
+  'Documento',
+  'Name',
+  'Perfil',
+  'Universidad',
+  'País',
+  'Rotaciones /asignaturas',
+  'id_sede',
+  'Servicio_HUSI',
+  'Fecha inicial',
+  'Fecha final',
+];
+export function esPlantillaFinal(encabezados: string[]): boolean {
+  const disponibles = new Set(encabezados.map(normalizar));
+  return PLANTILLA_FINAL.every((c) => disponibles.has(normalizar(c)));
 }

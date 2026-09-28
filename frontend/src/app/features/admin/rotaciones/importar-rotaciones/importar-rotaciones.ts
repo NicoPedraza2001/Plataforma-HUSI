@@ -6,7 +6,13 @@ import { mensajeError } from '../../../../services/api-error';
 import { CargaInicialService } from '../../../../services/carga-inicial.service';
 import { descargarLibro, HojaExcel, leerExcel } from '../../../../shared/excel/excel';
 import { RevisarCarga } from '../revisar-carga/revisar-carga';
-import { CAMPOS_CARGA, detectarColumnas, prepararCarga } from './campos-carga';
+import {
+  CAMPOS_CARGA,
+  detectarColumnas,
+  prepararCarga,
+  esPlantillaFinal,
+  PLANTILLA_FINAL,
+} from './campos-carga';
 
 @Component({
   selector: 'app-importar-rotaciones',
@@ -40,7 +46,7 @@ export class ImportarRotaciones {
   protected hoja = 0;
   protected encabezado = 1;
   protected columnas = CAMPOS_CARGA.map(() => -1);
-  protected comunes = CAMPOS_CARGA.map(() => '');
+  protected comunes = CAMPOS_CARGA.map((c) => (c.clave === 'tipoDocumento' ? 'CC' : ''));
   protected crearFaltantes = true;
   private mapeoPendiente = true;
   protected readonly filtradas = computed(
@@ -54,6 +60,9 @@ export class ImportarRotaciones {
     this.filtradas().slice((this.detallePagina() - 1) * 20, this.detallePagina() * 20),
   );
   protected readonly resumen = computed(() => Object.entries(this.resultado()?.nuevos ?? {}));
+  protected plantillaReconocida() {
+    return esPlantillaFinal(this.encabezados());
+  }
   protected encabezados() {
     return this.hojas()[this.hoja]?.filas[this.encabezado - 1] ?? [];
   }
@@ -103,7 +112,7 @@ export class ImportarRotaciones {
     this.hoja = 0;
     this.encabezado = 1;
     this.columnas = this.campos.map(() => -1);
-    this.comunes = this.campos.map(() => '');
+    this.comunes = this.campos.map((c) => (c.clave === 'tipoDocumento' ? 'CC' : ''));
     this.invalidar(true);
     this.paso.set(0);
   }
@@ -122,6 +131,7 @@ export class ImportarRotaciones {
     this.ocupado.set(true);
     try {
       const hojas = await leerExcel(file, 5100);
+      this.comunes = this.campos.map((c) => (c.clave === 'tipoDocumento' ? 'CC' : ''));
       this.hojas.set(hojas);
       this.archivo.set(file.name);
       this.hoja = 0;
@@ -222,7 +232,7 @@ export class ImportarRotaciones {
         reporte ? 'resultado-carga-inicial.xlsx' : 'plantilla-carga-inicial.xlsx',
         'Rotaciones',
         [
-          ...this.campos.map((c) => c.nombre),
+          ...(reporte ? this.campos.map((c) => c.nombre) : PLANTILLA_FINAL),
           ...(reporte ? ['Fila original', 'Resultado', 'Detalle'] : []),
         ],
         filas,
