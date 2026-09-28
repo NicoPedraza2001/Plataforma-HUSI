@@ -30,7 +30,7 @@ public class RotacionResidenteRepository {
     int paginas = Math.max(1, (int) Math.ceil(total / 10.0));
     int actual = Math.min(pagina, paginas);
     var filas = jdbc.query(
-      "select rr.id_residente,r.nombre_completo,concat(r.tipo_documento,' ',r.numero_documento) as documento,p.nombre_programa,rr.estado from rotacion_residente rr join residente r using(id_residente) join programa p using(id_programa) where rr.id_asignatura=? and rr.fecha_inicio=? and rr.fecha_fin=? order by lower(r.nombre_completo),rr.id_residente limit 10 offset ?",
+      "select rr.id_residente,r.nombre_completo,concat(r.tipo_documento,' ',r.numero_documento) as documento,p.nombre_programa,rr.estado from rotacion_residente rr join residente r using(id_residente) join programa p on p.id_programa=r.id_programa where rr.id_asignatura=? and rr.fecha_inicio=? and rr.fecha_fin=? order by lower(r.nombre_completo),rr.id_residente limit 10 offset ?",
       (rs, n) ->
         new ResidenteRotacionResponse(
           rs.getInt(1),
@@ -49,7 +49,7 @@ public class RotacionResidenteRepository {
 
   public List<CatalogoResponse> candidatos(RotacionId id, String q) {
     return jdbc.query(
-      "select r.id_residente,concat(r.nombre_completo,' — ',r.tipo_documento,' ',r.numero_documento) from residente r where r.estado='Activo' and strpos(lower(concat(r.nombre_completo,' ',r.numero_documento)),lower(?))>0 and not exists(select 1 from rotacion_residente rr where rr.id_residente=r.id_residente and rr.id_asignatura=? and rr.fecha_inicio=? and rr.fecha_fin=?) order by lower(r.nombre_completo),r.id_residente limit 30",
+      "select r.id_residente,concat(r.nombre_completo,' — ',r.tipo_documento,' ',r.numero_documento) from residente r where r.estado='Activo' and position(lower(?) in lower(concat(r.nombre_completo,' ',r.numero_documento)))>0 and not exists(select 1 from rotacion_residente rr where rr.id_residente=r.id_residente and rr.id_asignatura=? and rr.fecha_inicio=? and rr.fecha_fin=?) order by lower(r.nombre_completo),r.id_residente limit 30",
       (rs, n) -> new CatalogoResponse(rs.getInt(1), rs.getString(2)),
       q,
       id.getAsignaturaId(),

@@ -1,16 +1,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { GraficoBarras } from '../componentes/grafico-barras/grafico-barras';
-import { GraficoApilado } from '../componentes/grafico-apilado/grafico-apilado';
-import { GraficoTendencia } from '../componentes/grafico-tendencia/grafico-tendencia';
-import { Paginacion } from '../../../../shared/paginacion/paginacion';
-import { Consulta } from '../../../../shared/consulta/consulta';
-import { Pagina, Parametros } from '../../../../models/pagina.model';
 import { Catalogos } from '../../../../models/catalogos.model';
+import { DashboardDatos } from '../../../../models/dashboard.model';
+import { Pagina, Parametros } from '../../../../models/pagina.model';
+import { Rotacion } from '../../../../models/rotacion.model';
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { DashboardService } from '../../../../services/dashboard.service';
-import { DashboardDatos } from '../../../../models/dashboard.model';
 import { RotacionService } from '../../../../services/rotacion.service';
-import { Rotacion } from '../../../../models/rotacion.model';
+import { Consulta } from '../../../../shared/consulta/consulta';
+import { Paginacion } from '../../../../shared/paginacion/paginacion';
+import { GraficoApilado } from '../componentes/grafico-apilado/grafico-apilado';
+import { GraficoBarras } from '../componentes/grafico-barras/grafico-barras';
+import { GraficoTendencia } from '../componentes/grafico-tendencia/grafico-tendencia';
+
 @Component({
   selector: 'app-panel-dashboard',
   imports: [GraficoBarras, GraficoApilado, GraficoTendencia, Paginacion],
@@ -18,9 +19,12 @@ import { Rotacion } from '../../../../models/rotacion.model';
   styleUrl: './panel-dashboard.css',
 })
 export class PanelDashboard {
+  // Dependencias
   private readonly api = inject(DashboardService);
   private readonly rotacionesApi = inject(RotacionService);
   private readonly catalogosApi = inject(CatalogoService);
+
+  // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<DashboardDatos>((params) =>
     this.api.consultar(params),
   );
@@ -70,19 +74,24 @@ export class PanelDashboard {
   protected readonly rotacionesProximas = computed(() => this.rotaciones.datos()?.contenido ?? []);
   protected readonly paginaActual = computed(() => this.rotaciones.datos()?.pagina ?? 1);
   protected readonly totalPaginas = computed(() => this.rotaciones.datos()?.totalPaginas ?? 1);
+
   constructor() {
     this.catalogos.cargar();
     this.actualizar();
   }
+
   protected elegirPeriodo(valor: string) {
     this.periodoElegido.set(valor);
   }
+
   protected elegirUniversidad(valor: string) {
     this.universidadElegida.set(valor);
   }
+
   protected elegirServicio(valor: string) {
     this.servicioElegido.set(valor);
   }
+
   protected actualizar() {
     this.corte.set({
       periodo: this.periodoElegido(),
@@ -92,10 +101,20 @@ export class PanelDashboard {
     this.consulta.cargar(this.parametros());
     this.irAPagina(1);
   }
+
   protected reintentar() {
     this.catalogos.cargar();
     this.actualizar();
   }
+
+  protected irAPagina(pagina: number) {
+    this.rotaciones.cargar({ ...this.parametros(), pagina, tamano: 10, proximas: true });
+  }
+
+  protected etiquetaEstado(estado: string) {
+    return estado;
+  }
+
   private parametros(): Parametros {
     const p: Parametros = {};
     const corte = this.corte();
@@ -103,11 +122,5 @@ export class PanelDashboard {
     if (corte.universidad !== 'Todas') p['universidad'] = corte.universidad;
     if (corte.servicio !== 'Todos') p['servicio'] = corte.servicio;
     return p;
-  }
-  protected irAPagina(pagina: number) {
-    this.rotaciones.cargar({ ...this.parametros(), pagina, tamano: 10, proximas: true });
-  }
-  protected etiquetaEstado(estado: string) {
-    return estado;
   }
 }

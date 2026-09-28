@@ -1,19 +1,19 @@
-import { ListadoRotaciones } from './features/admin/rotaciones/listado-rotaciones/listado-rotaciones';
-import { ListadoUniversidades } from './features/admin/universidades/listado-universidades/listado-universidades';
+import { Routes } from '@angular/router';
+import { Ajustes } from './features/admin/ajustes/ajustes';
 import { ListadoAsignaturas } from './features/admin/asignaturas/listado-asignaturas/listado-asignaturas';
 import { ListadoCoordinadores } from './features/admin/coordinadores/listado-coordinadores/listado-coordinadores';
-import { Routes } from '@angular/router';
-import { Landing } from './features/public/landing/pages/landing/landing';
-import { PublicLayout } from './layout/public/public-layout/public-layout';
-import { Login } from './features/auth/login/login';
-import { AdminLayout } from './layout/admin/admin-layout/admin-layout';
-import { ListadoProgramas } from './features/admin/programas/listado-programas/listado-programas';
-import { ListadoUsuarios } from './features/admin/usuarios/listado-usuarios/listado-usuarios';
 import { PanelDashboard } from './features/admin/dashboard/panel-dashboard/panel-dashboard';
-import { ListadoServicios } from './features/admin/servicios/listado-servicios/listado-servicios';
-import { ListadoResidentes } from './features/admin/residentes/listado-residentes/listado-residentes';
 import { Historial } from './features/admin/historial/historial';
-import { Ajustes } from './features/admin/ajustes/ajustes';
+import { ListadoProgramas } from './features/admin/programas/listado-programas/listado-programas';
+import { ListadoResidentes } from './features/admin/residentes/listado-residentes/listado-residentes';
+import { ListadoRotaciones } from './features/admin/rotaciones/listado-rotaciones/listado-rotaciones';
+import { ListadoServicios } from './features/admin/servicios/listado-servicios/listado-servicios';
+import { ListadoUniversidades } from './features/admin/universidades/listado-universidades/listado-universidades';
+import { ListadoUsuarios } from './features/admin/usuarios/listado-usuarios/listado-usuarios';
+import { Login } from './features/auth/login/login';
+import { Landing } from './features/public/landing/pages/landing/landing';
+import { AdminLayout } from './layout/admin/admin-layout/admin-layout';
+import { PublicLayout } from './layout/public/public-layout/public-layout';
 
 export const routes: Routes = [
   {

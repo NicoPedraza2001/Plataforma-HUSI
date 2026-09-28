@@ -1,4 +1,4 @@
-<form (ngSubmit)="guardar.emit()" #form="ngForm">
+<form (ngSubmit)="form.valid && guardar.emit()" #form="ngForm">
   <h3>Información básica</h3>
   <label for="nombre-programa">Nombre del programa <span aria-hidden="true">*</span></label>
   <input
@@ -35,6 +35,12 @@
   }
   @if (errorFormulario()) {
     <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+  }
+  @if (form.invalid && form.touched) {
+    <p class="mensaje error" role="alert">
+      Revisa los campos obligatorios, el formato y las longitudes permitidas. No se admiten campos
+      obligatorios con solo espacios.
+    </p>
   }
   <footer>
     <button

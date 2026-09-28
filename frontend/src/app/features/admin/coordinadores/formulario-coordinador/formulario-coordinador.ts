@@ -1,7 +1,8 @@
-import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
 import { Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CoordinadorRequest } from '../../../../models/coordinador.model';
+import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
+
 @Component({
   selector: 'app-formulario-coordinador',
   imports: [FormsModule],

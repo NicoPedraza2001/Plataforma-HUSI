@@ -29,6 +29,12 @@
   @if (errorFormulario()) {
     <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
   }
+  @if (form.invalid && form.touched) {
+    <p class="mensaje error" role="alert">
+      Revisa los campos obligatorios, el formato y las longitudes permitidas. No se admiten campos
+      obligatorios con solo espacios.
+    </p>
+  }
   <footer>
     <button
       type="button"

@@ -1,24 +1,39 @@
 <header class="page-head">
   <div>
-    <h1 class="page-head__title">Importar rotaciones</h1>
+    <h1 class="page-head__title">Importar carga inicial</h1>
     <p class="breadcrumb">Inicio &gt; Rotaciones &gt; Importar Excel</p>
   </div>
 </header>
-<section class="card">
-  <h2>Carga inicial de rotaciones</h2>
-  <p class="ayuda">
-    Cada fila crea una rotación para una asignatura y un período. La asignatura y su servicio deben
-    existir y estar activos. Esta carga no crea residentes, universidades ni programas y no asigna
-    residentes.
-  </p>
-  <p class="ayuda">
-    1. Selecciona el archivo · 2. Elige las columnas · 3. Valida · 4. Confirma la importación
-  </p>
+<section class="card" [attr.aria-busy]="ocupado()">
+  <nav class="pasos" aria-label="Pasos de importación">
+    @for (nombre of pasos; track $index; let i = $index) {
+      <button
+        type="button"
+        [class.actual]="paso() === i"
+        [attr.aria-current]="paso() === i ? 'step' : null"
+        [disabled]="!disponible(i)"
+        (click)="ir(i)"
+      >
+        <span>{{ i + 1 }}</span
+        >{{ nombre }}
+      </button>
+    }
+  </nav>
   @if (error()) {
-    <p role="alert" class="mensaje error">{{ error() }}</p>
+    <p class="mensaje error" role="alert">{{ error() }}</p>
   }
-  @if (!terminado()) {
+  @if (ocupado()) {
+    <p class="mensaje" role="status">Procesando los datos… Espera a que termine.</p>
+  }
+  @if (paso() === 0) {
+    <h2>1. Selecciona tu archivo</h2>
+    <p class="ayuda">
+      Carga residentes y sus rotaciones desde un solo Excel. Podrás revisar y corregir los datos
+      antes de guardar. Se respetan las relaciones Universidad → Programa → Residente y Servicio →
+      Asignatura → Rotación.
+    </p>
     <div class="zona-archivo" (dragover)="$event.preventDefault()" (drop)="soltar($event)">
+      <span class="excel-icon" aria-hidden="true">X</span>
       <h3>Arrastra tu archivo Excel aquí</h3>
       <p>o selecciona un archivo de tu equipo</p>
       <input #file type="file" accept=".xlsx" hidden (change)="seleccionar($event)" /><button
@@ -28,22 +43,30 @@
       >
         Seleccionar archivo
       </button>
-      <p class="ayuda">Solo .xlsx · Hasta 5 MB · Máximo 1000 filas</p>
+      <p class="ayuda">.xlsx · Hasta 5 MB · Hasta 5000 registros por hoja</p>
     </div>
     @if (archivo()) {
       <div class="mensaje exito archivo">
-        <span>{{ archivo() }}</span
-        ><button
-          class="btn btn--outline"
-          aria-label="Quitar archivo"
-          [disabled]="ocupado()"
-          (click)="reiniciar()"
-        >
-          ✕ Quitar archivo
+        <span>{{ archivo() }} · {{ hojas().length }} hojas disponibles</span
+        ><button class="btn btn--outline" [disabled]="ocupado()" (click)="reiniciar()">
+          Quitar archivo
         </button>
       </div>
-      <fieldset [disabled]="ocupado()">
-        <legend>Selecciona los datos que se importarán</legend>
+    }
+    <button class="btn btn--outline" [disabled]="ocupado()" (click)="descargar()">
+      ↓ Descargar plantilla
+    </button>
+  }
+  @if (paso() === 1) {
+    <h2>2. Relaciona las columnas</h2>
+    <p class="ayuda">
+      Elige una columna o escribe un valor común cuando el dato sea igual para todo el archivo. Los
+      datos opcionales pueden quedar vacíos. Los documentos deben conservar sus ceros iniciales:
+      guárdalos como texto en Excel.
+    </p>
+    <fieldset [disabled]="ocupado()">
+      <legend>Origen y datos</legend>
+      <div class="campos">
         <label
           >Hoja<select [(ngModel)]="hoja" (ngModelChange)="cambiarHoja()">
             @for (h of hojas(); track $index) {
@@ -56,96 +79,219 @@
             min="1"
             [max]="hojas()[hoja].filas.length"
             [(ngModel)]="encabezado"
-            (ngModelChange)="invalidar()"
+            (ngModelChange)="detectar()"
         /></label>
-        <p class="ayuda">
-          Relaciona cada campo con su columna del Excel. Fechas: celdas de fecha de Excel o texto
-          AAAA-MM-DD. Usa los nombres exactos de asignatura y servicio.
-        </p>
-        @for (c of campos; track $index; let i = $index) {
+      </div>
+      <p class="ayuda">
+        Si cambias el mapeo o un valor común, se reconstruirán las filas y deberás validar de nuevo.
+        Volver sin cambiar nada conserva tus correcciones.
+      </p>
+      <div class="campos">
+        @for (c of campos; track c.clave; let i = $index) {
           <label
-            >{{ c
-            }}<select [(ngModel)]="columnas[i]" (ngModelChange)="invalidar()">
-              <option [ngValue]="-1">Seleccionar columna</option>
+            >{{ c.nombre
+            }}<select [(ngModel)]="columnas[i]" (ngModelChange)="invalidar(true)">
+              <option [ngValue]="-1">Valor común / sin columna</option>
               @for (h of encabezados(); track $index) {
-                <option [ngValue]="$index">
-                  Columna {{ $index + 1 }} · {{ h || 'Sin encabezado' }}
-                </option>
+                <option [ngValue]="$index">{{ $index + 1 }} · {{ h || 'Sin encabezado' }}</option>
               }
-            </select></label
-          >
+            </select>
+            @if (columnas[i] < 0) {
+              <input
+                [(ngModel)]="comunes[i]"
+                (ngModelChange)="invalidar(true)"
+                [maxlength]="c.max"
+                [attr.aria-label]="'Valor común de ' + c.nombre"
+                placeholder="Escribe el valor si corresponde"
+              />
+            }
+            @if (c.ayuda) {
+              <small>{{ c.ayuda }}</small>
+            }
+          </label>
         }
-      </fieldset>
-      <button class="btn btn--navy" [disabled]="ocupado()" (click)="validar()">
-        Validar datos
-      </button>
-    }
-    <p>
-      <button class="btn btn--outline" [disabled]="ocupado()" (click)="descargar()">
-        ↓ Descargar plantilla
-      </button>
-    </p>
+      </div>
+    </fieldset>
   }
-  @if (ocupado()) {
-    <p role="status">Procesando… Espera a que termine para continuar.</p>
+  @if (paso() === 2) {
+    <h2>3. Revisa y ordena {{ filas().length }} filas</h2>
+    <label class="opcion"
+      ><input
+        type="checkbox"
+        [(ngModel)]="crearFaltantes"
+        (ngModelChange)="invalidar()"
+        [disabled]="ocupado()"
+      />Crear universidades, programas, residentes, servicios y asignaturas que falten, con los
+      datos indicados.</label
+    >
+    <p class="ayuda">
+      Los registros existentes se reutilizan sin sobrescribirlos. Los datos incompatibles o
+      inactivos se señalan para corregirlos. Esta carga no crea usuarios ni coordinadores.
+    </p>
+    <app-revisar-carga
+      [filas]="filas()"
+      [bloqueado]="ocupado()"
+      (cambiar)="cambiarFilas($event)"
+      (edicion)="editando.set($event)"
+    />
   }
   @if (resultado(); as r) {
-    <h2>{{ terminado() ? 'Importación finalizada' : 'Resultado de validación' }}</h2>
-    <p class="mensaje" role="status">
-      {{ r.total }} filas: {{ terminado() ? r.CREADO : r.VALIDO }}
-      {{ terminado() ? 'creadas' : 'válidas' }}, {{ r.OMITIDO }} omitidas, {{ r.ERROR }} con
-      errores.
-    </p>
-    <p>Los duplicados se omiten. Solo se guardan las filas válidas; las demás se detallan aquí.</p>
-    <div class="table-wrap">
-      <table class="tabla">
-        <thead>
-          <tr>
-            <th>Fila del Excel</th>
-            <th>Estado</th>
-            <th>Mensaje</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (f of detalle(); track f.fila) {
-            <tr>
-              <td>{{ f.fila }}</td>
-              <td>{{ f.estado }}</td>
-              <td>{{ f.mensaje }}</td>
-            </tr>
+    @if (paso() >= 3) {
+      <h2>
+        {{
+          paso() === 5
+            ? 'Importación completada'
+            : paso() === 4
+              ? '5. Confirma la carga'
+              : '4. Resultado de validación'
+        }}
+      </h2>
+      <div class="resumen" role="status">
+        <div class="exito">
+          <strong>{{ r.validos }}</strong
+          >{{ terminado() ? 'Asignaciones creadas' : 'Filas válidas' }}
+        </div>
+        <div>
+          <strong>{{ r.advertencias }}</strong
+          >Sin cupo
+        </div>
+        <div class="error">
+          <strong>{{ r.errores }}</strong
+          >Con errores
+        </div>
+        <div>
+          <strong>{{ r.omitidos }}</strong
+          >Omitidas
+        </div>
+      </div>
+      @if (paso() === 4 || paso() === 5) {
+        <p class="ayuda">
+          {{
+            terminado()
+              ? 'Registros creados en la base de datos:'
+              : 'Estos son los registros nuevos que se crearán al confirmar:'
+          }}
+        </p>
+        <div class="resumen entidades">
+          @for (item of resumen(); track item[0]) {
+            <div>
+              <strong>{{ item[1] }}</strong
+              >{{ item[0] === 'rotacion_residente' ? 'Asignaciones de residentes' : item[0] }}
+            </div>
           }
-        </tbody>
-      </table>
-    </div>
-    <div class="acciones">
-      <button
-        class="btn btn--outline"
-        [disabled]="detallePagina() <= 1"
-        (click)="detallePagina.set(detallePagina() - 1)"
-      >
-        Anterior</button
-      ><span>{{ detallePagina() }} / {{ paginas() }}</span
-      ><button
-        class="btn btn--outline"
-        [disabled]="detallePagina() >= paginas()"
-        (click)="detallePagina.set(detallePagina() + 1)"
-      >
-        Siguiente</button
-      ><button class="btn btn--outline" (click)="descargar(true)">Descargar resultado</button>
-    </div>
-    @if (!terminado()) {
-      <p class="ayuda">
-        Todavía no se ha guardado nada. Al confirmar se volverán a validar los datos contra la base
-        de datos.
-      </p>
-      <button class="btn btn--add" [disabled]="ocupado() || !r.VALIDO" (click)="importar()">
-        Confirmar importación de {{ r.VALIDO }} rotaciones válidas
-      </button>
+        </div>
+        <p class="mensaje">
+          {{ terminado() ? 'La carga terminó.' : 'Todavía no se ha guardado nada.' }} Las filas con
+          errores, sin cupo o duplicadas no se crean. El reporte incluye sus datos para corregirlos
+          y volver a importarlos.
+        </p>
+      }
+      @if (paso() === 3 || paso() === 5) {
+        <label
+          >Mostrar<select
+            [ngModel]="filtro()"
+            (ngModelChange)="filtro.set($event); detallePagina.set(1)"
+          >
+            <option>Todos</option>
+            <option [value]="terminado() ? 'CREADO' : 'VALIDO'">
+              {{ terminado() ? 'Creados' : 'Válidos' }}
+            </option>
+            <option value="ADVERTENCIA">Sin cupo</option>
+            <option value="ERROR">Errores</option>
+            <option value="OMITIDO">Omitidos</option>
+          </select></label
+        >
+        <div class="table-wrap">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Fila del Excel</th>
+                <th>Resultado</th>
+                <th>Detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (f of detalle(); track f.fila) {
+                <tr>
+                  <td>{{ f.fila }}</td>
+                  <td>{{ f.estado }}</td>
+                  <td>{{ f.mensaje }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3">No hay filas con este resultado.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="acciones">
+          <button
+            class="btn btn--outline"
+            [disabled]="detallePagina() <= 1"
+            (click)="detallePagina.set(detallePagina() - 1)"
+          >
+            Anterior</button
+          ><span>{{ detallePagina() }} / {{ paginas() }}</span
+          ><button
+            class="btn btn--outline"
+            [disabled]="detallePagina() >= paginas()"
+            (click)="detallePagina.set(detallePagina() + 1)"
+          >
+            Siguiente</button
+          ><button class="btn btn--outline" (click)="descargar(true)">
+            ↓ Descargar reporte con los datos
+          </button>
+        </div>
+      }
+      @if (paso() === 3) {
+        <p class="ayuda">
+          Los cupos se revisan por rotación y período, según las reglas actuales. Puedes regresar a
+          «Revisar y ordenar» para corregir una fila o cambiar su prioridad y volver a validar.
+        </p>
+      }
     }
+  }
+  @if (editando()) {
+    <p class="ayuda" role="status">Guarda o cancela la corrección de la fila antes de continuar.</p>
   }
   <footer>
     <button class="btn btn--outline" [disabled]="ocupado()" (click)="cerrar.emit()">
-      {{ terminado() ? 'Ver rotaciones' : 'Cancelar' }}
+      {{ terminado() ? 'Ver rotaciones' : 'Cancelar importación' }}
     </button>
+    @if (paso() > 0 && !terminado()) {
+      <button class="btn btn--outline" [disabled]="ocupado()" (click)="ir(paso() - 1)">
+        Atrás
+      </button>
+    }
+    @if (paso() === 0) {
+      <button class="btn btn--navy" [disabled]="!disponible(1)" (click)="ir(1)">
+        Continuar: columnas
+      </button>
+    }
+    @if (paso() === 1) {
+      <button class="btn btn--navy" [disabled]="ocupado()" (click)="preparar()">
+        Continuar: revisar filas
+      </button>
+    }
+    @if (paso() === 2) {
+      <button class="btn btn--navy" [disabled]="ocupado() || editando()" (click)="validar()">
+        Validar con la base de datos
+      </button>
+    }
+    @if (paso() === 3) {
+      <button class="btn btn--navy" [disabled]="!disponible(4)" (click)="ir(4)">
+        Continuar: resumen final
+      </button>
+    }
+    @if (paso() === 4) {
+      <button
+        class="btn btn--add"
+        [disabled]="ocupado() || !resultado()?.validos"
+        (click)="importar()"
+      >
+        Confirmar y guardar {{ resultado()?.validos }} asignaciones
+      </button>
+    }
   </footer>
 </section>

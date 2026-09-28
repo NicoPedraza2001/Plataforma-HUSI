@@ -1,9 +1,9 @@
+import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, HttpClient } from '@angular/common/http';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { Consulta } from './consulta';
 import { Pagina } from '../../models/pagina.model';
 import { ProgramaService } from '../../services/programa.service';
+import { Consulta } from './consulta';
 describe('Consultas remotas', () => {
   beforeEach(() =>
     TestBed.configureTestingModule({

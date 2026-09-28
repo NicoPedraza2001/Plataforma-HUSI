@@ -1,0 +1,22 @@
+@import '../importar-rotaciones/importar-rotaciones.css';
+.editor {
+  border: 1px solid var(--husi-border);
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+small {
+  display: block;
+  color: var(--husi-muted);
+  margin-top: 6px;
+}
+td {
+  min-width: 100px;
+}
+.acciones {
+  justify-content: center;
+  gap: 8px;
+}
+.acciones button {
+  padding: 8px 12px;
+}

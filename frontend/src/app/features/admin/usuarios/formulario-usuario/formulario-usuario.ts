@@ -1,10 +1,15 @@
 import { Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { UsuarioRequest } from '../../../../models/usuario.model';
 import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
+import { UsuarioRequest } from '../../../../models/usuario.model';
+import {
+  ClaveBcrypt,
+  TextoObligatorio,
+} from '../../../../shared/formularios/restricciones-entrada';
+
 @Component({
   selector: 'app-formulario-usuario',
-  imports: [FormsModule],
+  imports: [TextoObligatorio, ClaveBcrypt, FormsModule],
   templateUrl: './formulario-usuario.html',
   styleUrl: './formulario-usuario.css',
 })

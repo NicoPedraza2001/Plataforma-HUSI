@@ -1,10 +1,12 @@
 import { Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Universidad } from '../../../../models/universidad.model';
+import { TextoObligatorio } from '../../../../shared/formularios/restricciones-entrada';
+
 /** Formulario de presentación; el listado conserva la coordinación con el backend. */
 @Component({
   selector: 'app-formulario-programa',
-  imports: [FormsModule],
+  imports: [TextoObligatorio, FormsModule],
   templateUrl: './formulario-programa.html',
   styleUrl: './formulario-programa.css',
 })

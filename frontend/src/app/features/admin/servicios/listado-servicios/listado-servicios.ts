@@ -1,15 +1,15 @@
-import { firstValueFrom } from 'rxjs';
-import { ServicioRequest } from '../../../../models/servicio.model';
-import { mensajeError } from '../../../../services/api-error';
-import { FormularioServicio } from '../formulario-servicio/formulario-servicio';
-import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
-import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 import { Component, computed, inject, signal } from '@angular/core';
-import { ServicioService } from '../../../../services/servicio.service';
-import { Servicio } from '../../../../models/servicio.model';
-import { Consulta } from '../../../../shared/consulta/consulta';
+import { firstValueFrom } from 'rxjs';
 import { Pagina, Parametros } from '../../../../models/pagina.model';
+import { Servicio, ServicioRequest } from '../../../../models/servicio.model';
+import { mensajeError } from '../../../../services/api-error';
+import { ServicioService } from '../../../../services/servicio.service';
+import { Consulta } from '../../../../shared/consulta/consulta';
+import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
+import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Paginacion } from '../../../../shared/paginacion/paginacion';
+import { FormularioServicio } from '../formulario-servicio/formulario-servicio';
+
 @Component({
   selector: 'app-listado-servicios',
   imports: [Paginacion, FormularioServicio, IconoPapelera, FocoModal],
@@ -17,7 +17,10 @@ import { Paginacion } from '../../../../shared/paginacion/paginacion';
   styleUrl: './listado-servicios.css',
 })
 export class ListadoServicios {
+  // Dependencias
   private readonly api = inject(ServicioService);
+
+  // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<Servicio>>((params) => this.api.listar(params));
   protected readonly termino = signal('');
   protected readonly paginaActual = computed(
@@ -30,33 +33,6 @@ export class ListadoServicios {
   protected readonly cargando = computed(() => this.consulta.cargando());
   protected readonly error = computed(() => this.consulta.error());
   protected readonly estado = signal('todos');
-  constructor() {
-    this.cargar();
-  }
-  protected reintentar() {
-    this.cargar();
-  }
-  protected cargar(espera = 0) {
-    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 10 };
-    if (this.estado() !== 'todos')
-      params['estado'] = this.estado() === 'activos' ? 'Activo' : 'Inactivo';
-    this.consulta.cargar(params, espera);
-  }
-  protected buscar(valor: string) {
-    this.termino.set(valor);
-    this.paginaSolicitada.set(1);
-    this.cargar(300);
-  }
-  protected filtrarPorEstado(valor: string) {
-    this.estado.set(valor);
-    this.paginaSolicitada.set(1);
-    this.cargar();
-  }
-  protected irAPagina(pagina: number) {
-    if (pagina < 1 || pagina > this.totalPaginas() || this.cargando()) return;
-    this.paginaSolicitada.set(pagina);
-    this.cargar();
-  }
   protected readonly formulario = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
@@ -69,6 +45,40 @@ export class ListadoServicios {
     cupoSimultaneo: null,
     cupoMaximoInstalado: null,
   };
+
+  constructor() {
+    this.cargar();
+  }
+
+  protected reintentar() {
+    this.cargar();
+  }
+
+  protected cargar(espera = 0) {
+    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 10 };
+    if (this.estado() !== 'todos')
+      params['estado'] = this.estado() === 'activos' ? 'Activo' : 'Inactivo';
+    this.consulta.cargar(params, espera);
+  }
+
+  protected buscar(valor: string) {
+    this.termino.set(valor);
+    this.paginaSolicitada.set(1);
+    this.cargar(300);
+  }
+
+  protected filtrarPorEstado(valor: string) {
+    this.estado.set(valor);
+    this.paginaSolicitada.set(1);
+    this.cargar();
+  }
+
+  protected irAPagina(pagina: number) {
+    if (pagina < 1 || pagina > this.totalPaginas() || this.cargando()) return;
+    this.paginaSolicitada.set(pagina);
+    this.cargar();
+  }
+
   protected async abrir(fila: Servicio | null = null) {
     if (this.guardando()) return;
     this.guardando.set(true);
@@ -98,6 +108,7 @@ export class ListadoServicios {
       this.guardando.set(false);
     }
   }
+
   protected async guardar() {
     if (this.guardando()) return;
     this.guardando.set(true);
@@ -117,6 +128,7 @@ export class ListadoServicios {
       this.guardando.set(false);
     }
   }
+
   protected async cambiarEstado(fila: Servicio) {
     if (this.guardando()) return;
     this.guardando.set(true);
@@ -132,10 +144,12 @@ export class ListadoServicios {
       this.guardando.set(false);
     }
   }
+
   protected solicitarEliminar(fila: Servicio) {
     this.errorFormulario.set('');
     this.pendienteEliminar.set(fila);
   }
+
   protected async confirmarEliminar() {
     const fila = this.pendienteEliminar();
     if (!fila || this.guardando()) return;

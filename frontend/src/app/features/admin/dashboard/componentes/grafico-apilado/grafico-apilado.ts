@@ -17,13 +17,11 @@ const MAXIMO_SEGMENTOS = 4;
 })
 export class GraficoApilado {
   readonly datos = input.required<readonly SegmentoApilado[]>();
-
   /**
    * El color se asigna por posición y nunca se recicla: si un filtro deja
    * fuera una entidad, las demás conservan su tono.
    */
   protected readonly segmentos = computed(() => this.datos().slice(0, MAXIMO_SEGMENTOS));
-
   /** Descripción textual de la barra para lectores de pantalla. */
   protected readonly resumen = computed(() =>
     this.segmentos()

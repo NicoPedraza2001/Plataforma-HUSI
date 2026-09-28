@@ -1,17 +1,18 @@
-import { ResidentesRotacion } from '../residentes-rotacion/residentes-rotacion';
-import { FormularioRotacion } from '../formulario-rotacion/formulario-rotacion';
-import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { RotacionService } from '../../../../services/rotacion.service';
-import { RotacionGestion, CatalogosRotacion } from '../../../../models/rotacion.model';
-import { Consulta } from '../../../../shared/consulta/consulta';
 import { Pagina, Parametros } from '../../../../models/pagina.model';
+import { CatalogosRotacion, RotacionGestion } from '../../../../models/rotacion.model';
 import { mensajeError } from '../../../../services/api-error';
-import { Paginacion } from '../../../../shared/paginacion/paginacion';
+import { RotacionService } from '../../../../services/rotacion.service';
+import { Consulta } from '../../../../shared/consulta/consulta';
 import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
+import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
+import { Paginacion } from '../../../../shared/paginacion/paginacion';
+import { FormularioRotacion } from '../formulario-rotacion/formulario-rotacion';
 import { ImportarRotaciones } from '../importar-rotaciones/importar-rotaciones';
+import { ResidentesRotacion } from '../residentes-rotacion/residentes-rotacion';
+
 @Component({
   selector: 'app-listado-rotaciones',
   imports: [
@@ -27,7 +28,10 @@ import { ImportarRotaciones } from '../importar-rotaciones/importar-rotaciones';
   styleUrl: './listado-rotaciones.css',
 })
 export class ListadoRotaciones {
+  // Dependencias
   private readonly api = inject(RotacionService);
+
+  // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<RotacionGestion>>((p) => this.api.gestionar(p));
   protected readonly catalogos = new Consulta<CatalogosRotacion>(() => this.api.catalogos());
   protected readonly filas = computed(() => this.consulta.datos()?.contenido ?? []);
@@ -47,16 +51,19 @@ export class ListadoRotaciones {
   protected asignaturaId = 0;
   protected inicio = '';
   protected fin = '';
+
   constructor() {
     this.cargar();
     this.catalogos.cargar();
   }
+
   protected cargar(pagina = 1, espera = 0) {
     const params: Parametros = { q: this.termino, pagina, tamano: 10 };
     if (this.estado) params['activa'] = this.estado;
     if (this.servicio) params['servicioId'] = this.servicio;
     this.consulta.cargar(params, espera);
   }
+
   protected async abrir(fila: RotacionGestion | null = null) {
     if (this.guardando()) return;
     this.guardando.set(true);
@@ -74,6 +81,7 @@ export class ListadoRotaciones {
       this.guardando.set(false);
     }
   }
+
   protected async guardar() {
     if (this.guardando()) return;
     if (!this.asignaturaId || !this.inicio || !this.fin || this.fin < this.inicio) {
@@ -98,6 +106,7 @@ export class ListadoRotaciones {
       this.guardando.set(false);
     }
   }
+
   protected async cambiarEstado(fila: RotacionGestion) {
     if (this.guardando()) return;
     this.guardando.set(true);
@@ -115,10 +124,12 @@ export class ListadoRotaciones {
       this.guardando.set(false);
     }
   }
+
   protected solicitar(fila: RotacionGestion, eliminar = true) {
     this.error.set('');
     this.pendiente.set({ fila, eliminar });
   }
+
   protected async confirmar() {
     const accion = this.pendiente();
     if (!accion || this.guardando()) return;
@@ -135,6 +146,7 @@ export class ListadoRotaciones {
       this.guardando.set(false);
     }
   }
+
   protected cerrarImportacion() {
     this.importando.set(false);
     this.cargar();

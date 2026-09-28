@@ -1,62 +1,111 @@
-import { mapearFilas } from './mapear-filas';
 import { Component, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { RotacionService } from '../../../../services/rotacion.service';
-import { FilaRotacion, ResultadoRotaciones } from '../../../../models/rotacion.model';
+import { FilaCargaInicial, ResultadoCargaInicial } from '../../../../models/carga-inicial.model';
 import { mensajeError } from '../../../../services/api-error';
-import { leerExcel, descargarLibro, HojaExcel } from '../../../../shared/excel/excel';
+import { CargaInicialService } from '../../../../services/carga-inicial.service';
+import { descargarLibro, HojaExcel, leerExcel } from '../../../../shared/excel/excel';
+import { RevisarCarga } from '../revisar-carga/revisar-carga';
+import { CAMPOS_CARGA, detectarColumnas, prepararCarga } from './campos-carga';
+
 @Component({
   selector: 'app-importar-rotaciones',
-  imports: [FormsModule],
+  imports: [FormsModule, RevisarCarga],
   templateUrl: './importar-rotaciones.html',
   styleUrl: './importar-rotaciones.css',
 })
 export class ImportarRotaciones {
+  private readonly api = inject(CargaInicialService);
   readonly cerrar = output<void>();
-  private readonly api = inject(RotacionService);
+  protected readonly campos = CAMPOS_CARGA;
+  protected readonly pasos = [
+    'Archivo',
+    'Columnas',
+    'Revisar y ordenar',
+    'Validar',
+    'Confirmar',
+    'Resultado',
+  ];
+  protected readonly paso = signal(0);
   protected readonly ocupado = signal(false);
+  protected readonly editando = signal(false);
   protected readonly error = signal('');
-  protected readonly hojas = signal<HojaExcel[]>([]);
   protected readonly archivo = signal('');
-  protected readonly resultado = signal<ResultadoRotaciones | null>(null);
+  protected readonly hojas = signal<HojaExcel[]>([]);
+  protected readonly filas = signal<FilaCargaInicial[]>([]);
+  protected readonly resultado = signal<ResultadoCargaInicial | null>(null);
   protected readonly terminado = signal(false);
+  protected readonly filtro = signal('Todos');
+  protected readonly detallePagina = signal(1);
   protected hoja = 0;
   protected encabezado = 1;
-  protected columnas = [-1, -1, -1, -1];
-  protected readonly campos = ['Asignatura', 'Servicio', 'Fecha de inicio', 'Fecha de fin'];
-  private validadas: FilaRotacion[] = [];
-  protected readonly detallePagina = signal(1);
-  protected readonly detalle = computed(
+  protected columnas = CAMPOS_CARGA.map(() => -1);
+  protected comunes = CAMPOS_CARGA.map(() => '');
+  protected crearFaltantes = true;
+  private mapeoPendiente = true;
+  protected readonly filtradas = computed(
     () =>
-      this.resultado()?.filas.slice((this.detallePagina() - 1) * 20, this.detallePagina() * 20) ??
-      [],
+      this.resultado()?.filas.filter(
+        (f) => this.filtro() === 'Todos' || f.estado === this.filtro(),
+      ) ?? [],
   );
-  protected readonly paginas = computed(() =>
-    Math.max(1, Math.ceil((this.resultado()?.total ?? 0) / 20)),
+  protected readonly paginas = computed(() => Math.max(1, Math.ceil(this.filtradas().length / 20)));
+  protected readonly detalle = computed(() =>
+    this.filtradas().slice((this.detallePagina() - 1) * 20, this.detallePagina() * 20),
   );
+  protected readonly resumen = computed(() => Object.entries(this.resultado()?.nuevos ?? {}));
   protected encabezados() {
     return this.hojas()[this.hoja]?.filas[this.encabezado - 1] ?? [];
+  }
+  protected disponible(p: number) {
+    if (this.ocupado() || this.editando()) return false;
+    if (this.terminado()) return p === 5;
+    return (
+      p === 0 ||
+      (p === 1 && !!this.archivo()) ||
+      (p === 2 && this.filas().length > 0 && !this.mapeoPendiente) ||
+      (p === 3 && !!this.resultado()) ||
+      (p === 4 && !!this.resultado()?.validos)
+    );
+  }
+  protected ir(p: number) {
+    if (this.disponible(p)) {
+      this.paso.set(p);
+      this.error.set('');
+    }
+  }
+  protected invalidar(mapeo = false) {
+    this.resultado.set(null);
+    this.detallePagina.set(1);
+    this.filtro.set('Todos');
+    if (mapeo) this.mapeoPendiente = true;
+  }
+  protected cambiarFilas(filas: FilaCargaInicial[]) {
+    if (this.ocupado()) return;
+    this.filas.set(filas);
+    this.invalidar();
+  }
+  protected cambiarHoja() {
+    this.encabezado = 1;
+    this.detectar();
+  }
+  protected detectar() {
+    this.columnas = detectarColumnas(this.encabezados());
+    this.invalidar(true);
   }
   protected reiniciar() {
     if (this.ocupado()) return;
     this.hojas.set([]);
     this.archivo.set('');
-    this.resultado.set(null);
-    this.terminado.set(false);
-    this.validadas = [];
+    this.filas.set([]);
     this.error.set('');
-    this.columnas = [-1, -1, -1, -1];
-  }
-  protected invalidar() {
-    this.resultado.set(null);
-    this.validadas = [];
-    this.detallePagina.set(1);
-  }
-  protected cambiarHoja() {
+    this.terminado.set(false);
+    this.hoja = 0;
     this.encabezado = 1;
-    this.columnas = [-1, -1, -1, -1];
-    this.invalidar();
+    this.columnas = this.campos.map(() => -1);
+    this.comunes = this.campos.map(() => '');
+    this.invalidar(true);
+    this.paso.set(0);
   }
   protected async seleccionar(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -69,56 +118,62 @@ export class ImportarRotaciones {
   }
   protected async cargar(file: File) {
     if (this.ocupado()) return;
-    this.reiniciar();
+    this.error.set('');
     this.ocupado.set(true);
     try {
-      this.hojas.set(await leerExcel(file));
+      const hojas = await leerExcel(file, 5100);
+      this.hojas.set(hojas);
       this.archivo.set(file.name);
       this.hoja = 0;
       this.encabezado = 1;
-      const h = this.encabezados().map((x) =>
-        x
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .toLowerCase()
-          .trim(),
-      );
-      this.columnas = [
-        h.indexOf('asignatura'),
-        h.indexOf('servicio'),
-        h.findIndex((x) => ['inicio', 'fecha de inicio', 'fecha inicio'].includes(x)),
-        h.findIndex((x) => ['fin', 'fecha de fin', 'fecha fin'].includes(x)),
-      ];
+      this.filas.set([]);
+      this.terminado.set(false);
+      this.detectar();
+      this.paso.set(0);
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'No se pudo leer el Excel.');
     } finally {
       this.ocupado.set(false);
     }
   }
-  protected async validar() {
+  protected preparar() {
     if (this.ocupado()) return;
     this.error.set('');
-    this.invalidar();
-    const filas = this.hojas()[this.hoja]?.filas ?? [];
+    const datos = this.hojas()[this.hoja]?.filas ?? [];
+    const elegidas = this.columnas.filter((c) => c >= 0);
     if (
       !Number.isInteger(this.encabezado) ||
       this.encabezado < 1 ||
-      this.encabezado > filas.length ||
-      new Set(this.columnas).size !== 4 ||
-      this.columnas.some((c) => c < 0 || c >= this.encabezados().length)
+      this.encabezado > datos.length ||
+      !elegidas.length ||
+      new Set(elegidas).size !== elegidas.length ||
+      elegidas.some((c) => c >= this.encabezados().length)
     ) {
-      this.error.set('Selecciona la fila de encabezados y cuatro columnas diferentes.');
+      this.error.set(
+        'Selecciona una fila de encabezados válida y columnas diferentes para cada campo.',
+      );
       return;
     }
-    const datos = mapearFilas(filas, this.encabezado, this.columnas);
-    if (!datos.length || datos.length > 1000) {
-      this.error.set('Elige entre 1 y 1000 filas. Las filas vacías se ignoran.');
-      return;
+    if (this.mapeoPendiente) {
+      const filas = prepararCarga(datos, this.encabezado, this.columnas, this.comunes);
+      if (!filas.length || filas.length > 5000) {
+        this.error.set('El archivo debe contener entre 1 y 5000 filas de datos.');
+        return;
+      }
+      this.filas.set(filas);
+      this.invalidar();
+      this.mapeoPendiente = false;
     }
+    this.paso.set(2);
+  }
+  protected async validar() {
+    if (this.ocupado() || this.editando() || !this.filas().length || this.terminado()) return;
     this.ocupado.set(true);
+    this.error.set('');
+    this.invalidar();
     try {
-      this.resultado.set(await firstValueFrom(this.api.validar(datos)));
-      this.validadas = datos;
+      this.resultado.set(await firstValueFrom(this.api.validar(this.filas(), this.crearFaltantes)));
+      this.paso.set(3);
     } catch (e) {
       this.error.set(mensajeError(e));
     } finally {
@@ -126,33 +181,52 @@ export class ImportarRotaciones {
     }
   }
   protected async importar() {
-    if (this.ocupado() || !this.resultado()?.VALIDO || this.terminado()) return;
+    const r = this.resultado();
+    if (this.ocupado() || !r?.validos || this.terminado() || this.paso() !== 4) return;
     this.ocupado.set(true);
     this.error.set('');
     try {
-      this.resultado.set(await firstValueFrom(this.api.importar(this.validadas)));
+      this.resultado.set(
+        await firstValueFrom(this.api.confirmar(this.filas(), this.crearFaltantes, r.validacion)),
+      );
       this.terminado.set(true);
+      this.paso.set(5);
       this.detallePagina.set(1);
+      this.filtro.set('Todos');
     } catch (e) {
+      this.invalidar();
+      this.paso.set(2);
       this.error.set(
         mensajeError(e) +
-          ' Si se perdió la conexión, vuelve a validar: las rotaciones ya guardadas se omitirán.',
+          ' Vuelve a validar antes de reintentar. Las relaciones existentes se reconocerán sin duplicarlas.',
       );
-      this.invalidar();
     } finally {
       this.ocupado.set(false);
     }
   }
-  protected async descargar(errores = false) {
+  protected async descargar(reporte = false) {
     try {
-      if (errores)
-        await descargarLibro(
-          'resultado-rotaciones.xlsx',
-          'Resultado',
-          ['Fila', 'Estado', 'Mensaje'],
-          (this.resultado()?.filas ?? []).map((f) => [f.fila, f.estado, f.mensaje]),
-        );
-      else await descargarLibro('plantilla-rotaciones.xlsx', 'Rotaciones', this.campos, []);
+      const resultado = this.resultado();
+      const filas = reporte
+        ? this.filas().map((f) => {
+            const d = resultado?.filas.find((d) => d.fila === f.fila);
+            return [
+              ...this.campos.map((c) => f[c.clave]),
+              f.fila,
+              d?.estado ?? '',
+              d?.mensaje ?? '',
+            ];
+          })
+        : [];
+      await descargarLibro(
+        reporte ? 'resultado-carga-inicial.xlsx' : 'plantilla-carga-inicial.xlsx',
+        'Rotaciones',
+        [
+          ...this.campos.map((c) => c.nombre),
+          ...(reporte ? ['Fila original', 'Resultado', 'Detalle'] : []),
+        ],
+        filas,
+      );
     } catch {
       this.error.set('No se pudo descargar el archivo.');
     }

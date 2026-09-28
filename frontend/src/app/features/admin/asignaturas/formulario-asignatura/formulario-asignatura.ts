@@ -1,10 +1,12 @@
-import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
 import { Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AsignaturaRequest } from '../../../../models/asignatura.model';
+import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
+import { TextoObligatorio } from '../../../../shared/formularios/restricciones-entrada';
+
 @Component({
   selector: 'app-formulario-asignatura',
-  imports: [FormsModule],
+  imports: [TextoObligatorio, FormsModule],
   templateUrl: './formulario-asignatura.html',
   styleUrl: './formulario-asignatura.css',
 })

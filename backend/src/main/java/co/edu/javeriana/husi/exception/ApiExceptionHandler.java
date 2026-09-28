@@ -47,6 +47,25 @@ public class ApiExceptionHandler {
   public ResponseEntity<ErrorResponse> integridad(
     DataIntegrityViolationException e
   ) {
+    Throwable causa = e;
+    while (
+        causa.getCause() != null && !(causa instanceof java.sql.SQLException)
+      )
+      causa = causa.getCause();
+    String estado =
+      causa instanceof java.sql.SQLException sql ? sql.getSQLState() : "";
+    if (
+      Set.of("23502", "23514", "22001", "22003", "22018").contains(
+        estado == null ? "" : estado
+      )
+    ) {
+      return ResponseEntity.badRequest().body(
+        new ErrorResponse(
+          "Revisa los campos obligatorios, los tipos, las longitudes y los valores permitidos.",
+          Map.of()
+        )
+      );
+    }
     return ResponseEntity.status(HttpStatus.CONFLICT).body(
       new ErrorResponse(
         "No se pudo guardar: existe un registro duplicado o una referencia dejó de estar disponible. Actualiza el listado e intenta de nuevo.",

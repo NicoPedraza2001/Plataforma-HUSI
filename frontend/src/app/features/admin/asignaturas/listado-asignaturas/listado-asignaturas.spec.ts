@@ -1,9 +1,9 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { ListadoAsignaturas } from './listado-asignaturas';
 import { AsignaturaService } from '../../../../services/asignatura.service';
 import { ServicioService } from '../../../../services/servicio.service';
-import { HttpErrorResponse } from '@angular/common/http';
+import { ListadoAsignaturas } from './listado-asignaturas';
 describe('ListadoAsignaturas', () => {
   function preparar(error = false) {
     const api = {

@@ -15,7 +15,12 @@ public class Universidad {
   @Column(name = "id_universidad")
   private Integer id;
 
-  @Column(name = "nombre_universidad", nullable = false, length = 150)
+  @Column(
+    name = "nombre_universidad",
+    nullable = false,
+    length = 150,
+    unique = true
+  )
   private String nombre;
 
   @Column(nullable = false, length = 100)

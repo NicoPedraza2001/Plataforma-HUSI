@@ -16,11 +16,10 @@ const DIVISIONES = 2;
   styleUrl: './grafico-tendencia.css',
 })
 export class GraficoTendencia {
+  // Estado de la pantalla y datos del formulario
   readonly datos = input.required<readonly PuntoTendencia[]>();
-
   /** Punto sobre el que está el puntero o el foco del teclado. */
   protected readonly activo = signal<number | null>(null);
-
   /** Techo del eje redondeado hacia arriba para que las marcas queden limpias. */
   protected readonly techo = computed(() => {
     const maximo = Math.max(0, ...this.datos().map((punto) => punto.valor));
@@ -28,14 +27,12 @@ export class GraficoTendencia {
 
     return Math.max(paso, Math.ceil(maximo / paso) * paso);
   });
-
   /** Marcas del eje vertical, de arriba hacia abajo. */
   protected readonly marcas = computed(() =>
     Array.from({ length: DIVISIONES + 1 }, (_, indice) =>
       Math.round((this.techo() / DIVISIONES) * (DIVISIONES - indice)),
     ),
   );
-
   /** Coordenadas en porcentaje: el SVG se estira con el contenedor. */
   protected readonly puntos = computed(() => {
     const datos = this.datos();
@@ -47,18 +44,14 @@ export class GraficoTendencia {
       y: 100 - (punto.valor / techo) * 100,
     }));
   });
-
   protected readonly linea = computed(() =>
     this.puntos()
       .map((punto, indice) => `${indice === 0 ? 'M' : 'L'}${punto.x} ${punto.y}`)
       .join(' '),
   );
-
   /** El área cierra contra la base para dar volumen a la serie. */
   protected readonly area = computed(() => `${this.linea()} L100 100 L0 100 Z`);
-
   protected readonly ultimo = computed(() => this.puntos().at(-1) ?? null);
-
   protected readonly detalle = computed(() => {
     const indice = this.activo();
 

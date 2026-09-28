@@ -1,9 +1,9 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { ListadoCoordinadores } from './listado-coordinadores';
 import { CoordinadorService } from '../../../../services/coordinador.service';
 import { ServicioService } from '../../../../services/servicio.service';
-import { HttpErrorResponse } from '@angular/common/http';
+import { ListadoCoordinadores } from './listado-coordinadores';
 describe('ListadoCoordinadores', () => {
   function preparar(error = false) {
     const api = {

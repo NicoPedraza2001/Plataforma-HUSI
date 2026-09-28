@@ -1,10 +1,12 @@
 import { Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ResidenteRequest } from '../../../../models/residente.model';
 import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
+import { ResidenteRequest } from '../../../../models/residente.model';
+import { TextoObligatorio } from '../../../../shared/formularios/restricciones-entrada';
+
 @Component({
   selector: 'app-formulario-residente',
-  imports: [FormsModule],
+  imports: [TextoObligatorio, FormsModule],
   templateUrl: './formulario-residente.html',
   styleUrl: './formulario-residente.css',
 })

@@ -1,15 +1,15 @@
-import { FormularioUniversidad } from '../formulario-universidad/formulario-universidad';
-import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { UniversidadService } from '../../../../services/universidad.service';
-import { UniversidadDetalle } from '../../../../models/universidad.model';
-import { Consulta } from '../../../../shared/consulta/consulta';
 import { Pagina, Parametros } from '../../../../models/pagina.model';
+import { UniversidadDetalle } from '../../../../models/universidad.model';
 import { mensajeError } from '../../../../services/api-error';
-import { Paginacion } from '../../../../shared/paginacion/paginacion';
+import { UniversidadService } from '../../../../services/universidad.service';
+import { Consulta } from '../../../../shared/consulta/consulta';
 import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
+import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
+import { Paginacion } from '../../../../shared/paginacion/paginacion';
+import { FormularioUniversidad } from '../formulario-universidad/formulario-universidad';
 
 @Component({
   selector: 'app-listado-universidades',
@@ -18,7 +18,10 @@ import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
   styleUrl: './listado-universidades.css',
 })
 export class ListadoUniversidades {
+  // Dependencias
   private readonly api = inject(UniversidadService);
+
+  // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<UniversidadDetalle>>((params) =>
     this.api.buscar(params),
   );
@@ -43,26 +46,31 @@ export class ListadoUniversidades {
   constructor() {
     this.cargar();
   }
+
   protected cargar(espera = 0) {
     const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 10 };
     if (this.estado() !== 'Todos') params['estado'] = this.estado();
     this.consulta.cargar(params, espera);
   }
+
   protected buscar(valor: string) {
     this.termino.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar(300);
   }
+
   protected filtrarEstado(valor: string) {
     this.estado.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
+
   protected irAPagina(pagina: number) {
     if (this.consulta.cargando() || pagina < 1 || pagina > this.totalPaginas()) return;
     this.paginaSolicitada.set(pagina);
     this.cargar();
   }
+
   protected abrir(universidad: UniversidadDetalle | null = null) {
     this.edicion = universidad;
     this.nombre = universidad?.nombre ?? '';
@@ -72,6 +80,7 @@ export class ListadoUniversidades {
     this.aviso.set('');
     this.formulario.set(true);
   }
+
   protected async guardar() {
     if (this.guardando()) return;
     const datos = {
@@ -110,6 +119,7 @@ export class ListadoUniversidades {
       this.guardando.set(false);
     }
   }
+
   protected async cambiarEstado(universidad: UniversidadDetalle) {
     if (this.guardando()) return;
     this.guardando.set(true);
@@ -138,10 +148,12 @@ export class ListadoUniversidades {
       this.guardando.set(false);
     }
   }
+
   protected solicitarEliminar(universidad: UniversidadDetalle) {
     this.errorFormulario.set('');
     this.pendienteEliminar.set(universidad);
   }
+
   protected async confirmarEliminar() {
     const universidad = this.pendienteEliminar();
     if (!universidad || this.guardando()) return;

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { ResidentesRotacion } from './residentes-rotacion';
 import { RotacionService } from '../../../../services/rotacion.service';
+import { ResidentesRotacion } from './residentes-rotacion';
 describe('ResidentesRotacion', () => {
   it('permite consultar una rotación inactiva sin ofrecer nuevas asignaciones', async () => {
     TestBed.configureTestingModule({

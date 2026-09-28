@@ -15,21 +15,26 @@ public class Residente {
   @Column(name = "id_residente")
   private Integer id;
 
-  @Column(name = "id_programa")
+  @Column(name = "id_programa", nullable = false)
   private Integer programaId;
 
-  @Column(name = "nombre_completo")
+  @Column(name = "nombre_completo", nullable = false, length = 200)
   private String nombre;
 
-  @Column(name = "tipo_documento")
+  @Column(name = "tipo_documento", nullable = false, length = 30)
   private String tipoDocumento;
 
-  @Column(name = "numero_documento")
+  @Column(
+    name = "numero_documento",
+    nullable = false,
+    length = 50,
+    unique = true
+  )
   private String numeroDocumento;
 
-  @Column(name = "perfil_academico")
+  @Column(name = "perfil_academico", length = 100)
   private String perfilAcademico;
 
-  @Column
+  @Column(nullable = false, length = 20)
   private String estado = "Activo";
 }

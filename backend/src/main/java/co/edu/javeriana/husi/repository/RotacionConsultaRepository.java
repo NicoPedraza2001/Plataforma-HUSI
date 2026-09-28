@@ -20,7 +20,7 @@ public class RotacionConsultaRepository {
   a.nombre_asignatura as asignatura,s.nombre as servicio,s.id_servicio as "servicioId",
   r.activa,r.estado as disponibilidad,r.cupo_disponible as "cupoDisponible",
   (select count(*) from rotacion_residente rr where rr.id_asignatura=r.id_asignatura and rr.fecha_inicio=r.fecha_inicio and rr.fecha_fin=r.fecha_fin) as relaciones
-  from rotacion r join asignatura a using(id_asignatura) join servicio s using(id_servicio)
+  from rotacion r join asignatura a on a.id_asignatura=r.id_asignatura join servicio s on s.id_servicio=a.id_servicio
   """;
 
   public PaginaResponse<Map<String, Object>> listar(
@@ -33,7 +33,7 @@ public class RotacionConsultaRepository {
     Map<String, Object> params = new HashMap<>();
     params.put("q", q);
     String where =
-      " where strpos(lower(concat(asignatura,' ',servicio)),lower(:q))>0";
+      " where position(lower(:q) in lower(concat(asignatura,' ',servicio)))>0";
     if (activa != null) {
       where += " and activa=:activa";
       params.put("activa", activa);
@@ -114,7 +114,7 @@ public class RotacionConsultaRepository {
 
   public List<Map<String, Object>> asignaturas() {
     return consultas.consultar(
-      "select a.id_asignatura as id,a.nombre_asignatura as nombre,s.nombre as servicio,s.id_servicio as \"servicioId\" from asignatura a join servicio s using(id_servicio) where a.estado='Activo' and s.estado='Activo' order by s.nombre,a.nombre_asignatura",
+      "select a.id_asignatura as id,a.nombre_asignatura as nombre,s.nombre as servicio,s.id_servicio as \"servicioId\" from asignatura a join servicio s on s.id_servicio=a.id_servicio where a.estado='Activo' and s.estado='Activo' order by s.nombre,a.nombre_asignatura",
       Map.of()
     );
   }
@@ -130,7 +130,7 @@ public class RotacionConsultaRepository {
     return (
       (
         (Number) consultas.escalar(
-          "select count(*) from asignatura a join servicio s using(id_servicio) where a.id_asignatura=:id and a.estado='Activo' and s.estado='Activo'",
+          "select count(*) from asignatura a join servicio s on s.id_servicio=a.id_servicio where a.id_asignatura=:id and a.estado='Activo' and s.estado='Activo'",
           Map.of("id", id)
         )
       ).intValue() == 1
@@ -142,7 +142,7 @@ public class RotacionConsultaRepository {
     String servicio
   ) {
     return consultas.consultar(
-      "select a.id_asignatura as id from asignatura a join servicio s using(id_servicio) where lower(a.nombre_asignatura)=lower(:a) and lower(s.nombre)=lower(:s) and a.estado='Activo' and s.estado='Activo'",
+      "select a.id_asignatura as id from asignatura a join servicio s on s.id_servicio=a.id_servicio where lower(a.nombre_asignatura)=lower(:a) and lower(s.nombre)=lower(:s) and a.estado='Activo' and s.estado='Activo'",
       Map.of("a", asignatura, "s", servicio)
     );
   }

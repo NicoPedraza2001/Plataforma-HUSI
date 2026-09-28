@@ -23,10 +23,8 @@ const MAXIMO_SIN_CORTES = 2 * VENTANA + 5;
 export class Paginacion {
   readonly paginaActual = input.required<number>();
   readonly totalPaginas = input.required<number>();
-
   /** Página solicitada; el contenedor decide si la acepta. */
   readonly cambio = output<number>();
-
   /**
    * Primera y última siempre visibles, la actual con sus vecinas, y un corte
    * donde se salten páginas. Así el número de botones queda acotado por

@@ -24,6 +24,7 @@
     id="usuario-correo"
     name="correo"
     type="email"
+    email
     maxlength="150"
     required
     [disabled]="guardando()"
@@ -42,7 +43,8 @@
     [(ngModel)]="datos().contrasena"
   />
   <p class="ayuda">
-    Al menos 8 caracteres. Al editar, déjala vacía para conservar la contraseña actual.
+    Al menos 8 caracteres y hasta 72 bytes (acentos y símbolos pueden ocupar más de un byte). Al
+    editar, déjala vacía para conservar la contraseña actual.
   </p>
   <label for="usuario-rolId">Rol</label
   ><select
@@ -59,6 +61,12 @@
   </select>
   @if (errorFormulario()) {
     <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
+  }
+  @if (form.invalid && form.touched) {
+    <p class="mensaje error" role="alert">
+      Revisa los campos obligatorios, el formato y las longitudes permitidas. No se admiten campos
+      obligatorios con solo espacios.
+    </p>
   }
   <footer>
     <button

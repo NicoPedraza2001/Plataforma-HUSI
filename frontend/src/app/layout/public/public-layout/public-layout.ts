@@ -18,6 +18,7 @@ import { filter, map, startWith } from 'rxjs';
   host: { '[class.inverted]': 'inverted()' },
 })
 export class PublicLayout {
+  // Dependencias
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 

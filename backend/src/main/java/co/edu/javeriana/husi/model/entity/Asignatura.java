@@ -5,7 +5,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "asignatura")
+@Table(
+  name = "asignatura",
+  uniqueConstraints = @UniqueConstraint(
+    columnNames = { "id_servicio", "nombre_asignatura" }
+  )
+)
 @Getter
 @Setter
 public class Asignatura {
@@ -22,6 +27,6 @@ public class Asignatura {
   @JoinColumn(name = "id_servicio", nullable = false)
   private Servicio servicio;
 
-  @Column
+  @Column(nullable = false, length = 20)
   private String estado = "Activo";
 }

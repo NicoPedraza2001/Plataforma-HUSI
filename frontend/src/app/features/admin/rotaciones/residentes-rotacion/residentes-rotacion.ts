@@ -1,14 +1,15 @@
-import { Component, input, output, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { RotacionService } from '../../../../services/rotacion.service';
-import { RotacionGestion, ResidenteRotacion } from '../../../../models/rotacion.model';
 import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
 import { Pagina } from '../../../../models/pagina.model';
+import { ResidenteRotacion, RotacionGestion } from '../../../../models/rotacion.model';
+import { mensajeError } from '../../../../services/api-error';
+import { RotacionService } from '../../../../services/rotacion.service';
 import { Consulta } from '../../../../shared/consulta/consulta';
 import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 import { Paginacion } from '../../../../shared/paginacion/paginacion';
-import { mensajeError } from '../../../../services/api-error';
+
 @Component({
   selector: 'app-residentes-rotacion',
   imports: [FormsModule, FocoModal, Paginacion],
@@ -16,9 +17,12 @@ import { mensajeError } from '../../../../services/api-error';
   styleUrl: './residentes-rotacion.css',
 })
 export class ResidentesRotacion implements OnInit {
+  // Dependencias
+  private readonly api = inject(RotacionService);
+
+  // Estado de la pantalla y datos del formulario
   readonly rotacion = input.required<RotacionGestion>();
   readonly cerrar = output<void>();
-  private readonly api = inject(RotacionService);
   protected readonly consulta = new Consulta<Pagina<ResidenteRotacion>>((p) =>
     this.api.residentes(this.rotacion(), Number(p['pagina'] ?? 1)),
   );
@@ -30,17 +34,21 @@ export class ResidentesRotacion implements OnInit {
   protected readonly aviso = signal('');
   protected termino = '';
   protected seleccionado = 0;
+
   ngOnInit() {
     this.cargar();
     this.buscar();
   }
+
   protected cargar(pagina = 1) {
     this.consulta.cargar({ pagina });
   }
+
   protected buscar() {
     this.seleccionado = 0;
     this.candidatos.cargar({ q: this.termino }, 300);
   }
+
   protected async asignar() {
     if (!this.seleccionado || this.guardando()) return;
     await this.ejecutar(
@@ -48,12 +56,14 @@ export class ResidentesRotacion implements OnInit {
       'Residente registrado. Si no había cupos, quedó en espera.',
     );
   }
+
   protected async estado(fila: ResidenteRotacion, estado: string) {
     await this.ejecutar(
       () => firstValueFrom(this.api.estadoResidente(this.rotacion(), fila.residenteId, estado)),
       estado === 'Cancelado' ? 'Asignación cancelada; se conserva el historial.' : 'Cupo asignado.',
     );
   }
+
   private async ejecutar(accion: () => Promise<void>, mensaje: string) {
     if (this.guardando()) return;
     this.guardando.set(true);

@@ -15,7 +15,7 @@ public class Servicio {
   @Column(name = "id_servicio")
   private Integer id;
 
-  @Column(nullable = false, length = 150)
+  @Column(nullable = false, length = 150, unique = true)
   private String nombre;
 
   @Column(columnDefinition = "text")

@@ -13,6 +13,5 @@ HELP.md
 .settings/
 .vscode/
 
-# Configuracion local con credenciales propias de cada integrante.
-# No se versiona: cada quien la crea si necesita sobreescribir algo.
-src/main/resources/application-local.yml
+# Overrides personales; application-local.yml contiene el perfil H2 compartido, sin secretos.
+src/main/resources/application-personal.yml

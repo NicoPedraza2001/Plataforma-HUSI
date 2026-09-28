@@ -1,12 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { HistorialService } from '../../../services/historial.service';
-import { RegistroHistorial } from '../../../models/historial.model';
-import { Consulta } from '../../../shared/consulta/consulta';
-import { Pagina, Parametros } from '../../../models/pagina.model';
-import { Catalogos } from '../../../models/catalogos.model';
-import { CatalogoService } from '../../../services/catalogo.service';
-import { Paginacion } from '../../../shared/paginacion/paginacion';
 import { DatePipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
+import { Catalogos } from '../../../models/catalogos.model';
+import { RegistroHistorial } from '../../../models/historial.model';
+import { Pagina, Parametros } from '../../../models/pagina.model';
+import { CatalogoService } from '../../../services/catalogo.service';
+import { HistorialService } from '../../../services/historial.service';
+import { Consulta } from '../../../shared/consulta/consulta';
+import { Paginacion } from '../../../shared/paginacion/paginacion';
+
 @Component({
   selector: 'app-historial',
   imports: [Paginacion, DatePipe],
@@ -14,8 +15,11 @@ import { DatePipe } from '@angular/common';
   styleUrl: './historial.css',
 })
 export class Historial {
+  // Dependencias
   private readonly api = inject(HistorialService);
   private readonly catalogosApi = inject(CatalogoService);
+
+  // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<RegistroHistorial>>((params) =>
     this.api.listar(params),
   );
@@ -44,6 +48,12 @@ export class Historial {
     'Todas',
     ...(this.catalogos.datos()?.acciones ?? []),
   ]);
+
+  constructor() {
+    this.cargar();
+    this.catalogos.cargar();
+  }
+
   protected claseBadge(accion: string) {
     return ['CREÓ', 'ACTIVÓ'].includes(accion)
       ? 'badge badge--activo'
@@ -51,14 +61,12 @@ export class Historial {
         ? 'badge badge--inactivo'
         : 'badge badge--info';
   }
-  constructor() {
-    this.cargar();
-    this.catalogos.cargar();
-  }
+
   protected reintentar() {
     this.cargar();
     this.catalogos.cargar();
   }
+
   protected cargar(espera = 0) {
     const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 8 };
     if (this.moduloSeleccionado() !== 'Todos') params['modulo'] = this.moduloSeleccionado();
@@ -67,31 +75,37 @@ export class Historial {
     if (this.fechaFinal() !== '') params['hasta'] = this.fechaFinal();
     this.consulta.cargar(params, espera);
   }
+
   protected buscar(valor: string) {
     this.termino.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar(300);
   }
+
   protected onModuloChange(valor: string) {
     this.moduloSeleccionado.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
+
   protected onAccionChange(valor: string) {
     this.accionSeleccionada.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
+
   protected onFechaInicialChange(valor: string) {
     this.fechaInicial.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
+
   protected onFechaFinalChange(valor: string) {
     this.fechaFinal.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
+
   protected irAPagina(pagina: number) {
     if (pagina < 1 || pagina > this.totalPaginas() || this.cargando()) return;
     this.paginaSolicitada.set(pagina);

@@ -92,3 +92,102 @@ footer {
 input[type='file'][hidden] {
   display: none;
 }
+
+.pasos {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.pasos button {
+  border: 1px solid var(--husi-border);
+  border-radius: 12px;
+  padding: 14px 8px;
+  background: var(--husi-bg);
+  color: var(--husi-navy);
+  font: inherit;
+}
+.pasos span {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.pasos .actual {
+  background: var(--husi-navy);
+  color: var(--husi-bg);
+}
+.campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+}
+small {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--husi-muted);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.opcion input {
+  width: auto;
+  margin: 0;
+}
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+.resumen div {
+  padding: 20px;
+  border: 1px solid var(--husi-border);
+  border-radius: 12px;
+  text-align: center;
+  background: var(--husi-surface);
+}
+.resumen strong {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+.entidades {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.excel-icon {
+  display: inline-grid;
+  place-items: center;
+  background: var(--husi-green);
+  color: var(--husi-bg);
+  font-weight: 700;
+  font-size: 40px;
+  border-radius: 14px;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 20px;
+}
+button:focus-visible {
+  outline: 3px solid var(--husi-teal-dark);
+  outline-offset: 3px;
+}
+@media (max-width: 900px) {
+  .pasos {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .resumen {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .campos {
+    grid-template-columns: 1fr;
+  }
+  footer .btn {
+    width: 100%;
+  }
+}

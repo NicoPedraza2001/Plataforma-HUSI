@@ -23,6 +23,6 @@ public class Coordinador {
   @JoinColumn(name = "id_servicio", nullable = false)
   private Servicio servicio;
 
-  @Column
+  @Column(nullable = false, length = 20)
   private String estado = "Activo";
 }

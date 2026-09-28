@@ -1,10 +1,10 @@
-import { UniversidadService } from '../../../../services/universidad.service';
-import { provideRouter } from '@angular/router';
-import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ListadoProgramas } from './listado-programas';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { of, throwError } from 'rxjs';
 import { ProgramaService } from '../../../../services/programa.service';
+import { UniversidadService } from '../../../../services/universidad.service';
+import { ListadoProgramas } from './listado-programas';
 describe('Programas conectado', () => {
   const programa = {
     id: 1,

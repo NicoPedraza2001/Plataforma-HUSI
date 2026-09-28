@@ -1,19 +1,19 @@
-import { firstValueFrom } from 'rxjs';
-import { UsuarioRequest } from '../../../../models/usuario.model';
-import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
-import { mensajeError } from '../../../../services/api-error';
-import { FormularioUsuario } from '../formulario-usuario/formulario-usuario';
-import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
-import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
-import { RolService } from '../../../../services/rol.service';
 import { Component, computed, inject, signal } from '@angular/core';
-import { UsuarioService } from '../../../../services/usuario.service';
-import { Usuario } from '../../../../models/usuario.model';
-import { Consulta } from '../../../../shared/consulta/consulta';
-import { Pagina, Parametros } from '../../../../models/pagina.model';
+import { firstValueFrom } from 'rxjs';
 import { Catalogos } from '../../../../models/catalogos.model';
+import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
+import { Pagina, Parametros } from '../../../../models/pagina.model';
+import { Usuario, UsuarioRequest } from '../../../../models/usuario.model';
+import { mensajeError } from '../../../../services/api-error';
 import { CatalogoService } from '../../../../services/catalogo.service';
+import { RolService } from '../../../../services/rol.service';
+import { UsuarioService } from '../../../../services/usuario.service';
+import { Consulta } from '../../../../shared/consulta/consulta';
+import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
+import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Paginacion } from '../../../../shared/paginacion/paginacion';
+import { FormularioUsuario } from '../formulario-usuario/formulario-usuario';
+
 @Component({
   selector: 'app-listado-usuarios',
   imports: [Paginacion, FormularioUsuario, IconoPapelera, FocoModal],
@@ -21,8 +21,12 @@ import { Paginacion } from '../../../../shared/paginacion/paginacion';
   styleUrl: './listado-usuarios.css',
 })
 export class ListadoUsuarios {
+  // Dependencias
   private readonly api = inject(UsuarioService);
   private readonly catalogosApi = inject(CatalogoService);
+  private readonly opcionesApi = inject(RolService);
+
+  // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<Usuario>>((params) => this.api.listar(params));
   protected readonly catalogos = new Consulta<Catalogos>(() => this.catalogosApi.listar());
   protected readonly termino = signal('');
@@ -40,43 +44,6 @@ export class ListadoUsuarios {
   protected readonly rol = signal('todos');
   protected readonly estado = signal('todos');
   protected readonly roles = computed(() => this.catalogos.datos()?.roles ?? []);
-  constructor() {
-    this.cargar();
-    this.catalogos.cargar();
-  }
-  protected reintentar() {
-    this.cargar();
-    this.catalogos.cargar();
-  }
-  protected cargar(espera = 0) {
-    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 8 };
-    if (this.rol() !== 'todos') params['rol'] = this.rol();
-    if (this.estado() !== 'todos')
-      params['estado'] = this.estado() === 'activos' ? 'Activo' : 'Inactivo';
-    this.consulta.cargar(params, espera);
-  }
-  protected buscar(valor: string) {
-    this.termino.set(valor);
-    this.paginaSolicitada.set(1);
-    this.cargar(300);
-  }
-  protected filtrarPorRol(valor: string) {
-    this.rol.set(valor);
-    this.paginaSolicitada.set(1);
-    this.cargar();
-  }
-  protected filtrarPorEstado(valor: string) {
-    this.estado.set(valor);
-    this.paginaSolicitada.set(1);
-    this.cargar();
-  }
-  protected irAPagina(pagina: number) {
-    if (pagina < 1 || pagina > this.totalPaginas() || this.cargando()) return;
-    this.paginaSolicitada.set(pagina);
-    this.cargar();
-  }
-
-  private readonly opcionesApi = inject(RolService);
   protected readonly formulario = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
@@ -91,6 +58,49 @@ export class ListadoUsuarios {
     contrasena: '',
     rolId: null,
   };
+
+  constructor() {
+    this.cargar();
+    this.catalogos.cargar();
+  }
+
+  protected reintentar() {
+    this.cargar();
+    this.catalogos.cargar();
+  }
+
+  protected cargar(espera = 0) {
+    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 8 };
+    if (this.rol() !== 'todos') params['rol'] = this.rol();
+    if (this.estado() !== 'todos')
+      params['estado'] = this.estado() === 'activos' ? 'Activo' : 'Inactivo';
+    this.consulta.cargar(params, espera);
+  }
+
+  protected buscar(valor: string) {
+    this.termino.set(valor);
+    this.paginaSolicitada.set(1);
+    this.cargar(300);
+  }
+
+  protected filtrarPorRol(valor: string) {
+    this.rol.set(valor);
+    this.paginaSolicitada.set(1);
+    this.cargar();
+  }
+
+  protected filtrarPorEstado(valor: string) {
+    this.estado.set(valor);
+    this.paginaSolicitada.set(1);
+    this.cargar();
+  }
+
+  protected irAPagina(pagina: number) {
+    if (pagina < 1 || pagina > this.totalPaginas() || this.cargando()) return;
+    this.paginaSolicitada.set(pagina);
+    this.cargar();
+  }
+
   protected async abrir(fila: Usuario | null = null) {
     if (this.guardando()) return;
     this.guardando.set(true);
@@ -111,6 +121,7 @@ export class ListadoUsuarios {
       this.guardando.set(false);
     }
   }
+
   protected async guardar() {
     if (this.guardando()) return;
     this.guardando.set(true);
@@ -131,6 +142,7 @@ export class ListadoUsuarios {
       this.guardando.set(false);
     }
   }
+
   protected async cambiarEstado(fila: Usuario) {
     if (this.guardando()) return;
     this.guardando.set(true);
@@ -146,10 +158,12 @@ export class ListadoUsuarios {
       this.guardando.set(false);
     }
   }
+
   protected solicitarEliminar(fila: Usuario) {
     this.errorFormulario.set('');
     this.pendienteEliminar.set(fila);
   }
+
   protected async confirmarEliminar() {
     const fila = this.pendienteEliminar();
     if (!fila || this.guardando()) return;

@@ -1,0 +1,7 @@
+-- Datos ficticios exclusivos de H2 para recorrer los módulos.
+INSERT INTO rol(nombre_rol) VALUES ('Administrador'),('Coordinador');
+INSERT INTO universidad(nombre_universidad,pais,perfil) VALUES ('Universidad de demostración','Colombia','Nacional');
+INSERT INTO programa(id_universidad,nombre_programa) VALUES (1,'Programa de demostración');
+INSERT INTO servicio(nombre,cupo_maximo_instalado,cupo_simultaneo) VALUES ('Servicio de demostración',3,2);
+INSERT INTO asignatura(id_servicio,nombre_asignatura) VALUES (1,'Asignatura de demostración');
+INSERT INTO residente(id_programa,nombre_completo,numero_documento) VALUES (1,'Residente de demostración','LOCAL-001');

@@ -5,7 +5,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "programa")
+@Table(
+  name = "programa",
+  uniqueConstraints = @UniqueConstraint(
+    columnNames = { "id_universidad", "nombre_programa" }
+  )
+)
 @Getter
 @Setter
 public class Programa {
@@ -16,7 +21,7 @@ public class Programa {
   private Integer id;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "id_universidad")
+  @JoinColumn(name = "id_universidad", nullable = false)
   private Universidad universidad;
 
   @Column(name = "nombre_programa", nullable = false, length = 150)

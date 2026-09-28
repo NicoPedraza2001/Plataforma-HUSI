@@ -30,7 +30,7 @@ export function letraColumna(indice: number): string {
 }
 
 /** Lee todas las hojas de un .xlsx. Lanza `Error` con un mensaje listo para mostrar. */
-export async function leerExcel(file: File): Promise<HojaExcel[]> {
+export async function leerExcel(file: File, maxFilas = 1100): Promise<HojaExcel[]> {
   if (!/\.xlsx$/i.test(file.name))
     throw new Error(
       'Selecciona un archivo .xlsx. Si es .xls, guárdalo como Libro de Excel (.xlsx).',
@@ -48,9 +48,9 @@ export async function leerExcel(file: File): Promise<HojaExcel[]> {
   }
   if (!libro.worksheets.length) throw new Error('El libro no contiene hojas.');
   return libro.worksheets.map((hoja) => {
-    if (hoja.rowCount > 1100 || hoja.columnCount > 100)
+    if (hoja.rowCount > maxFilas || hoja.columnCount > 100)
       throw new Error(
-        'La hoja supera 1100 filas o 100 columnas. Usa un archivo con hasta 1000 registros y elimina filas o columnas sobrantes.',
+        `La hoja supera ${maxFilas} filas o 100 columnas. Divide el archivo o elimina filas y columnas sobrantes.`,
       );
     const filas: string[][] = [];
     for (let i = 1; i <= hoja.rowCount; i++) {

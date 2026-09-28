@@ -8,13 +8,13 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
   styleUrl: './login.css',
 })
 export class Login {
+  // Dependencias
   private readonly fb = inject(FormBuilder);
 
   protected readonly form = this.fb.nonNullable.group({
     usuario: ['', Validators.required],
     contrasena: ['', Validators.required],
   });
-
   protected readonly showErrors = signal(false);
 
   protected isInvalid(control: 'usuario' | 'contrasena'): boolean {

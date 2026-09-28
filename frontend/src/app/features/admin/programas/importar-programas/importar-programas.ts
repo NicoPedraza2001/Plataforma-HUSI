@@ -1,13 +1,13 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Universidad } from '../../../../models/universidad.model';
 import {
   FilaImportacion,
   ResultadoImportacion,
 } from '../../../../models/importacion-programas.model';
-import { ProgramaService } from '../../../../services/programa.service';
+import { Universidad } from '../../../../models/universidad.model';
 import { mensajeError } from '../../../../services/api-error';
+import { ProgramaService } from '../../../../services/programa.service';
 import {
   HojaExcel,
   MARCA_FORMULA,
@@ -16,6 +16,7 @@ import {
   letraColumna,
 } from '../../../../shared/excel/excel';
 import { mapearFilas } from './mapear-filas';
+
 @Component({
   selector: 'app-importar-programas',
   imports: [FormsModule],
@@ -23,9 +24,12 @@ import { mapearFilas } from './mapear-filas';
   styleUrl: './importar-programas.css',
 })
 export class ImportarProgramas {
+  // Dependencias
+  private readonly programaService = inject(ProgramaService);
+
+  // Estado de la pantalla y datos del formulario
   readonly universidades = input.required<Universidad[]>();
   readonly cerrar = output<void>();
-  private readonly programaService = inject(ProgramaService);
   protected readonly paso = signal(1);
   protected readonly ocupado = signal(false);
   protected readonly error = signal('');
@@ -82,6 +86,7 @@ export class ImportarProgramas {
   protected readonly detalle = computed(() =>
     this.detalleFiltrado().slice((this.paginaDetalle() - 1) * 20, this.paginaDetalle() * 20),
   );
+
   protected quitarArchivo(): void {
     if (this.ocupado()) return;
     this.hojas.set([]);
@@ -97,16 +102,19 @@ export class ImportarProgramas {
     this.paginaDetalle.set(1);
     this.paso.set(1);
   }
+
   protected async seleccionar(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files?.[0]) await this.cargar(input.files[0]);
     input.value = '';
   }
+
   protected async soltar(event: DragEvent) {
     event.preventDefault();
     if (!this.ocupado() && event.dataTransfer?.files[0])
       await this.cargar(event.dataTransfer.files[0]);
   }
+
   protected async cargar(file: File) {
     if (this.ocupado()) return;
     this.ocupado.set(true);
@@ -126,15 +134,18 @@ export class ImportarProgramas {
       this.ocupado.set(false);
     }
   }
+
   protected cambiarHoja(indice: number) {
     this.hojaIndice.set(Number(indice));
     this.encabezado.set(1);
     this.sugerirColumnas();
   }
+
   protected cambiarEncabezado(fila: number) {
     this.encabezado.set(Number(fila));
     this.sugerirColumnas();
   }
+
   protected sugerirColumnas() {
     const normalizar = (s: string) =>
       s
@@ -165,6 +176,7 @@ export class ImportarProgramas {
     this.resultado.set(null);
     this.error.set('');
   }
+
   protected async validar() {
     if (this.ocupado() || !this.mapeoValido()) return;
     this.error.set('');
@@ -196,6 +208,7 @@ export class ImportarProgramas {
       this.ocupado.set(false);
     }
   }
+
   protected async importar() {
     if (this.ocupado() || !this.resultado()?.validos || this.paso() !== 3) return;
     this.ocupado.set(true);
@@ -213,10 +226,12 @@ export class ImportarProgramas {
       this.ocupado.set(false);
     }
   }
+
   protected filtrar(estado: string) {
     this.filtro.set(estado);
     this.paginaDetalle.set(1);
   }
+
   protected async plantilla() {
     this.error.set('');
     try {
@@ -235,6 +250,7 @@ export class ImportarProgramas {
       this.error.set('No se pudo descargar la plantilla. Intenta de nuevo.');
     }
   }
+
   protected async descargarErrores() {
     this.error.set('');
     try {

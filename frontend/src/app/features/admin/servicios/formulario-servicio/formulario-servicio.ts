@@ -1,9 +1,14 @@
 import { Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ServicioRequest } from '../../../../models/servicio.model';
+import {
+  EnteroBaseDatos,
+  TextoObligatorio,
+} from '../../../../shared/formularios/restricciones-entrada';
+
 @Component({
   selector: 'app-formulario-servicio',
-  imports: [FormsModule],
+  imports: [TextoObligatorio, EnteroBaseDatos, FormsModule],
   templateUrl: './formulario-servicio.html',
   styleUrl: './formulario-servicio.css',
 })
@@ -13,6 +18,7 @@ export class FormularioServicio {
   readonly errorFormulario = input('');
   readonly guardar = output<void>();
   readonly cancelar = output<void>();
+
   protected cuposValidos() {
     const d = this.datos();
     return (

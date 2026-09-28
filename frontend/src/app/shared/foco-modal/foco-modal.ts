@@ -1,25 +1,20 @@
 import {
+  afterNextRender,
   Directive,
   ElementRef,
-  afterNextRender,
+  HostListener,
   inject,
   OnDestroy,
-  HostListener,
 } from '@angular/core';
 @Directive({ selector: '[appFocoModal]' })
 export class FocoModal implements OnDestroy {
   private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly anterior = document.activeElement as HTMLElement | null;
+
   constructor() {
     afterNextRender(() => this.controles()[0]?.focus());
   }
-  private controles() {
-    return Array.from(
-      this.elemento.querySelectorAll<HTMLElement>(
-        'input:not([disabled]),select:not([disabled]),button:not([disabled]),[tabindex="0"]',
-      ),
-    );
-  }
+
   @HostListener('keydown', ['$event']) tabular(event: KeyboardEvent) {
     if (event.key !== 'Tab') return;
     const elementos = this.controles();
@@ -37,7 +32,16 @@ export class FocoModal implements OnDestroy {
       primero.focus();
     }
   }
+
   ngOnDestroy() {
     this.anterior?.focus();
+  }
+
+  private controles() {
+    return Array.from(
+      this.elemento.querySelectorAll<HTMLElement>(
+        'input:not([disabled]),select:not([disabled]),button:not([disabled]),[tabindex="0"]',
+      ),
+    );
   }
 }

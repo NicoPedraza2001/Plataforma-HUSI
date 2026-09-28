@@ -7,4 +7,15 @@ public record ServicioRequest(
   String descripcion,
   @NotNull @Min(0) Integer cupoSimultaneo,
   @NotNull @Min(0) Integer cupoMaximoInstalado
-) {}
+) {
+  @AssertTrue(
+    message = "El cupo simultáneo no puede superar el máximo instalado."
+  )
+  public boolean isCuposCoherentes() {
+    return (
+      cupoSimultaneo == null ||
+      cupoMaximoInstalado == null ||
+      cupoSimultaneo <= cupoMaximoInstalado
+    );
+  }
+}

@@ -45,17 +45,17 @@ public class ConsultaRepository {
           " and \"universidadId\"=:universidadId"
         );
         case "q" -> where.append(
-          " and strpos(lower(" + campos + "),lower(:q))>0"
+          " and position(lower(:q) in lower(" + campos + "))>0"
         );
         case "desde" -> where.append(
-          " and cast(fecha as timestamptz)>=cast(:desde as date) at time zone 'America/Bogota'"
+          " and cast(fecha as timestamp with time zone)>=:desde"
         );
         case "hasta" -> where.append(
-          " and cast(fecha as timestamptz)<(cast(:hasta as date)+1) at time zone 'America/Bogota'"
+          " and cast(fecha as timestamp with time zone)<:hasta"
         );
         case "periodo" -> {
           if (dominio.equals("residentes")) where.append(
-            " and :periodo=any(string_to_array(periodo, ', '))"
+            " and position(concat(', ',:periodo,', ') in concat(', ',periodo,', '))>0"
           );
           else where.append(
             " and extract(year from inicio)::int::text || '-' || case when extract(month from inicio)<=6 then '1' else '2' end = :periodo"
@@ -72,7 +72,12 @@ public class ConsultaRepository {
         clave,
         clave.equals("universidadId") || clave.equals("servicioId")
           ? Integer.valueOf(valor)
-          : valor
+          : clave.equals("desde") || clave.equals("hasta")
+            ? java.time.LocalDate.parse(valor)
+                .plusDays(clave.equals("hasta") ? 1 : 0)
+                .atStartOfDay(java.time.ZoneId.of("America/Bogota"))
+                .toOffsetDateTime()
+            : valor
       );
     });
     String consulta = " from (" + base(dominio) + ") datos" + where;
@@ -82,7 +87,7 @@ public class ConsultaRepository {
     int paginas = Math.max(1, (int) Math.ceil((double) total / tamano));
     int actual = Math.min(pagina, paginas);
     String orden = dominio.equals("historial")
-      ? "cast(fecha as timestamptz) desc,id desc"
+      ? "cast(fecha as timestamp with time zone) desc,id desc"
       : dominio.equals("rotaciones")
         ? "inicio,id"
         : "lower(nombre),id";

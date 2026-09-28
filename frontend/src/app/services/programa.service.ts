@@ -1,10 +1,10 @@
-import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Pagina, Parametros } from '../models/pagina.model';
-import { API_URL } from './api.config';
-import { Programa, ProgramaRequest } from '../models/programa.model';
 import { FilaImportacion, ResultadoImportacion } from '../models/importacion-programas.model';
+import { Pagina, Parametros } from '../models/pagina.model';
+import { Programa, ProgramaRequest } from '../models/programa.model';
+import { API_URL } from './api.config';
 
 /**
  * Cliente HTTP de programas académicos.
@@ -13,17 +13,21 @@ import { FilaImportacion, ResultadoImportacion } from '../models/importacion-pro
  */
 @Injectable({ providedIn: 'root' })
 export class ProgramaService {
+  // Dependencias
   private readonly http = inject(HttpClient);
+
   private readonly url = `${API_URL}/programas`;
 
   /** GET /api/programas/buscar */
   buscar(params: Parametros = {}): Observable<Pagina<Programa>> {
     return this.http.get<Pagina<Programa>>(`${this.url}/buscar`, { params });
   }
+
   /** PATCH /api/programas/{id}/estado */
   cambiarEstado(id: number, estado: string): Observable<Programa> {
     return this.http.patch<Programa>(`${this.url}/${id}/estado`, { estado });
   }
+
   /** DELETE /api/programas/{id}/definitivo */
   eliminarDefinitivamente(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}/definitivo`);

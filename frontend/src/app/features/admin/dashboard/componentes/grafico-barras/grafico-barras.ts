@@ -20,19 +20,16 @@ type Nivel = 'base' | 'alerta' | 'critico';
 })
 export class GraficoBarras {
   readonly datos = input.required<readonly BarraDato[]>();
-
   /**
    * Qué se rotula al final de la barra: la cifra cruda o su porcentaje sobre
    * el máximo. En ocupación el porcentaje es lo que se compara entre servicios.
    */
   readonly formato = input<'valor' | 'porcentaje'>('valor');
-
   /**
    * Con severidad activa el color deja de ser identidad y pasa a indicar estado:
    * la ocupación alta se pinta como advertencia y la saturada como riesgo.
    */
   readonly severidad = input(false);
-
   protected readonly filas = computed(() =>
     this.datos().map((dato) => ({
       ...dato,
