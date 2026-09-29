@@ -1,0 +1,21 @@
+# Compilados de Maven: se regeneran dentro de la imagen a partir de src/
+target/
+
+# IDE
+*.iml
+.idea/
+.classpath
+.project
+.settings/
+.vscode/
+
+# Configuracion local con credenciales propias de cada integrante.
+src/main/resources/application-local.yml
+
+# Control de versiones, no debe llegar al contexto de build
+.git/
+.gitignore
+
+# Docs que no aportan a la imagen
+README.md
+HELP.md
