@@ -11,9 +11,9 @@ public class ResidenteMapper {
     return new ResidenteResponse(
       e.getId(),
       e.getNombre(),
-      e.getTipoDocumento(),
+      e.getTipoDocumento().getCodigo(),
       e.getNumeroDocumento(),
-      e.getPerfilAcademico(),
+      e.getPerfilAcademico() == null ? null : e.getPerfilAcademico().getNombre(),
       e.getProgramaId(),
       e.getEstado()
     );

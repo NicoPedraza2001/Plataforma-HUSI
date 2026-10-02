@@ -105,7 +105,7 @@ class AccionesDefinitivasIntegrationTests {
     int u = universidad();
     var p = programas.crear(new ProgramaRequest("Programa prueba", u));
     jdbc.update(
-      "insert into residente(id_programa,nombre_completo,numero_documento,estado) values(?,'Prueba',?,'Inactivo')",
+      "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento,estado) values(?,1,'Prueba',?,'Inactivo')",
       p.id(),
       UUID.randomUUID().toString()
     );

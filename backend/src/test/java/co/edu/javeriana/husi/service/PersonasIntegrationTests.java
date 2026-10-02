@@ -69,11 +69,12 @@ class PersonasIntegrationTests {
         "Editado CRUD",
         "CE",
         doc,
-        "Especialidad",
+        "Pregrado",
         programa()
       )
     );
     assertThat(editado.tipoDocumento()).isEqualTo("CE");
+    assertThat(editado.perfilAcademico()).isEqualTo("Pregrado");
     residentes.cambiarEstado(e.id(), "Inactivo");
     assertThat(
       consultas
@@ -102,6 +103,16 @@ class PersonasIntegrationTests {
     assertThatThrownBy(() ->
       residentes.crear(
         new ResidenteRequest("Prueba", "CC", "otro", null, Integer.MAX_VALUE)
+      )
+    ).isInstanceOf(NegocioException.class);
+    assertThatThrownBy(() ->
+      residentes.crear(
+        new ResidenteRequest("Prueba", "XX", "otro", null, programa())
+      )
+    ).isInstanceOf(NegocioException.class);
+    assertThatThrownBy(() ->
+      residentes.crear(
+        new ResidenteRequest("Prueba", "CC", "otro", "Doctorado", programa())
       )
     ).isInstanceOf(NegocioException.class);
   }

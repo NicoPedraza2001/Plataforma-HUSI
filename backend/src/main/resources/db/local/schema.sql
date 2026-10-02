@@ -89,20 +89,36 @@ CREATE TABLE servicio (
 
 
 
+CREATE TABLE tipo_documento (
+    id_tipo_documento  SERIAL PRIMARY KEY,
+    codigo             VARCHAR(10)  NOT NULL UNIQUE,
+    nombre             VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE perfil_academico (
+    id_perfil_academico  SERIAL PRIMARY KEY,
+    nombre               VARCHAR(50) NOT NULL UNIQUE
+);
+
 CREATE TABLE residente (
-    id_residente      SERIAL PRIMARY KEY,
-    id_programa       INTEGER NOT NULL,
+    id_residente         SERIAL PRIMARY KEY,
+    id_programa          INTEGER NOT NULL,
+    id_tipo_documento    INTEGER NOT NULL,
+    id_perfil_academico  INTEGER,
 
-    tipo_documento    VARCHAR(30)  NOT NULL DEFAULT 'CC',
-    nombre_completo   VARCHAR(200) NOT NULL,
-    numero_documento  VARCHAR(50)  NOT NULL UNIQUE,
+    nombre_completo      VARCHAR(200) NOT NULL,
+    numero_documento     VARCHAR(50)  NOT NULL UNIQUE,
 
-    perfil_academico  VARCHAR(100),
-
-    estado            VARCHAR(20) NOT NULL DEFAULT 'Activo',
+    estado               VARCHAR(20) NOT NULL DEFAULT 'Activo',
 
     CONSTRAINT fk_residente_programa
         FOREIGN KEY (id_programa) REFERENCES programa (id_programa),
+
+    CONSTRAINT fk_residente_tipo_documento
+        FOREIGN KEY (id_tipo_documento) REFERENCES tipo_documento (id_tipo_documento),
+
+    CONSTRAINT fk_residente_perfil_academico
+        FOREIGN KEY (id_perfil_academico) REFERENCES perfil_academico (id_perfil_academico),
 
     CONSTRAINT chk_residente_estado
         CHECK (estado IN ('Activo', 'Inactivo', 'Eliminado'))

@@ -52,7 +52,7 @@ class ProgramaIntegrationTests {
       universidad
     );
     jdbc.update(
-      "INSERT INTO residente(id_programa,nombre_completo,numero_documento) VALUES (?,?,?)",
+      "INSERT INTO residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) VALUES (?,1,?,?)",
       creado.id(),
       "Prueba transaccional",
       UUID.randomUUID().toString()

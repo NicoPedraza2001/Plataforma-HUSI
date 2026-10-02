@@ -63,7 +63,7 @@ class RotacionIntegrationTests {
       u
     );
     return jdbc.queryForObject(
-      "insert into residente(id_programa,nombre_completo,numero_documento) values(?,'Residente ficticio',?) returning id_residente",
+      "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values(?,1,'Residente ficticio',?) returning id_residente",
       Integer.class,
       p,
       UUID.randomUUID().toString()

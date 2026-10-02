@@ -21,8 +21,9 @@ public class Residente {
   @Column(name = "nombre_completo", nullable = false, length = 200)
   private String nombre;
 
-  @Column(name = "tipo_documento", nullable = false, length = 30)
-  private String tipoDocumento;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "id_tipo_documento", nullable = false)
+  private TipoDocumento tipoDocumento;
 
   @Column(
     name = "numero_documento",
@@ -32,8 +33,9 @@ public class Residente {
   )
   private String numeroDocumento;
 
-  @Column(name = "perfil_academico", length = 100)
-  private String perfilAcademico;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "id_perfil_academico")
+  private PerfilAcademico perfilAcademico;
 
   @Column(nullable = false, length = 20)
   private String estado = "Activo";

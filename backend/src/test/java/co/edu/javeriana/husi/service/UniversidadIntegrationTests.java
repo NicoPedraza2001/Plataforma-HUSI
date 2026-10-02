@@ -98,7 +98,7 @@ class UniversidadIntegrationTests {
       new ProgramaRequest("Programa conservación", u.id())
     );
     jdbc.update(
-      "insert into residente(id_programa,nombre_completo,numero_documento) values(?,?,?)",
+      "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values(?,1,?,?)",
       p.id(),
       "Prueba universidad",
       UUID.randomUUID().toString()

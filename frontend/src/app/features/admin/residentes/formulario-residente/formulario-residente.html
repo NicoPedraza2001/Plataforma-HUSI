@@ -10,15 +10,17 @@
     [(ngModel)]="datos().nombre"
   />
   <label for="residente-tipoDocumento">Tipo de documento</label
-  ><input
+  ><select
     id="residente-tipoDocumento"
     name="tipoDocumento"
-    type="text"
-    maxlength="30"
     required
     [disabled]="guardando()"
     [(ngModel)]="datos().tipoDocumento"
-  />
+  >
+    @for (tipo of tiposDocumento(); track tipo.id) {
+      <option [ngValue]="tipo.codigo">{{ tipo.codigo }} — {{ tipo.nombre }}</option>
+    }
+  </select>
   <label for="residente-numeroDocumento">Número de documento</label
   ><input
     id="residente-numeroDocumento"
@@ -30,14 +32,17 @@
     [(ngModel)]="datos().numeroDocumento"
   />
   <label for="residente-perfilAcademico">Perfil académico</label
-  ><input
+  ><select
     id="residente-perfilAcademico"
     name="perfilAcademico"
-    type="text"
-    maxlength="100"
     [disabled]="guardando()"
     [(ngModel)]="datos().perfilAcademico"
-  />
+  >
+    <option [ngValue]="''">Sin especificar</option>
+    @for (perfil of perfiles(); track perfil.id) {
+      <option [ngValue]="perfil.nombre">{{ perfil.nombre }}</option>
+    }
+  </select>
   <label for="residente-programaId">Programa</label
   ><select
     id="residente-programaId"

@@ -19,6 +19,8 @@ public class ResidenteServiceImpl implements ResidenteService {
 
   private final ResidenteRepository residentes;
   private final ProgramaRepository programas;
+  private final TipoDocumentoRepository tiposDocumento;
+  private final PerfilAcademicoRepository perfiles;
   private final ResidenteMapper mapper;
 
   private Residente obtener(Integer id) {
@@ -56,12 +58,30 @@ public class ResidenteServiceImpl implements ResidenteService {
       HttpStatus.CONFLICT,
       "Ya existe un residente con ese documento."
     );
+    var tipo = tiposDocumento
+      .findByCodigoIgnoreCase(d.tipoDocumento().strip())
+      .orElseThrow(() ->
+        new NegocioException(
+          HttpStatus.BAD_REQUEST,
+          "El tipo de documento no existe."
+        )
+      );
+    String perfil =
+      d.perfilAcademico() == null ? "" : d.perfilAcademico().strip();
+    var perfilAcademico = perfil.isEmpty()
+      ? null
+      : perfiles
+        .findByNombreIgnoreCase(perfil)
+        .orElseThrow(() ->
+          new NegocioException(
+            HttpStatus.BAD_REQUEST,
+            "El perfil académico no existe."
+          )
+        );
     e.setNombre(d.nombre().strip());
-    e.setTipoDocumento(d.tipoDocumento().strip());
+    e.setTipoDocumento(tipo);
     e.setNumeroDocumento(d.numeroDocumento().strip());
-    e.setPerfilAcademico(
-      d.perfilAcademico() == null ? null : d.perfilAcademico().strip()
-    );
+    e.setPerfilAcademico(perfilAcademico);
     e.setProgramaId(d.programaId());
   }
 

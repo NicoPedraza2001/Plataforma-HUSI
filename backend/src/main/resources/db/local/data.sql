@@ -4,4 +4,6 @@ INSERT INTO universidad(nombre_universidad,pais,perfil) VALUES ('Universidad de 
 INSERT INTO programa(id_universidad,nombre_programa) VALUES (1,'Programa de demostración');
 INSERT INTO servicio(nombre,cupo_maximo_instalado,cupo_simultaneo) VALUES ('Servicio de demostración',3,2);
 INSERT INTO asignatura(id_servicio,nombre_asignatura) VALUES (1,'Asignatura de demostración');
-INSERT INTO residente(id_programa,nombre_completo,numero_documento) VALUES (1,'Residente de demostración','LOCAL-001');
+INSERT INTO tipo_documento(codigo,nombre) VALUES ('CC','Cédula de ciudadanía'),('TI','Tarjeta de identidad'),('CE','Cédula de extranjería'),('PA','Pasaporte'),('RUT','Registro único tributario'),('PEP','Permiso especial de permanencia'),('PPT','Permiso por protección temporal');
+INSERT INTO perfil_academico(nombre) VALUES ('Pregrado'),('Posgrado');
+INSERT INTO residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) VALUES (1,1,'Residente de demostración','LOCAL-001');

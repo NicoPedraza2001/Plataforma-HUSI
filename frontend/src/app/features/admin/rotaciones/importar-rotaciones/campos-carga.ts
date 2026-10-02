@@ -32,7 +32,8 @@ export const CAMPOS_CARGA: {
     nombre: 'Tipo de documento',
     max: 30,
     alias: ['tipo documento', 'tipo de documento'],
-    ayuda: 'Indícalo explícitamente; no se deduce del número.',
+    ayuda:
+      'Código del catálogo (CC, TI, CE, PA, RUT, PEP, PPT) o su nombre; no se deduce del número.',
   },
   {
     clave: 'documento',
@@ -45,7 +46,7 @@ export const CAMPOS_CARGA: {
     nombre: 'Perfil académico',
     max: 100,
     alias: ['perfil academico', 'perfil'],
-    ayuda: 'Opcional.',
+    ayuda: 'Opcional: Pregrado o Posgrado.',
   },
   { clave: 'servicio', nombre: 'Servicio', max: 150, alias: ['servicio', 'servicio_husi'] },
   {

@@ -22,7 +22,9 @@ services:
       - ./database/init:/docker-entrypoint-initdb.d:ro
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U husi -d husi"]
+      # Por TCP: mientras corren los scripts de init Postgres solo escucha
+      # en el socket local, asi que no se reporta sano antes de tiempo.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U husi -d husi"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -48,6 +50,30 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./database/pgadmin/servers.json:/pgadmin4/servers.json
+
+    networks:
+      - husi_network
+
+
+  backend:
+    # Imagen construida desde backend/Dockerfile. Tras cambiar el codigo:
+    #   docker compose up -d --build backend
+    build: ./backend
+    image: husi-backend
+    container_name: husi-backend
+
+    environment:
+      # Perfil dev, pero apuntando al contenedor de Postgres en vez de localhost.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://husi-postgres:5432/husi
+
+    ports:
+      - "8080:8080"
+
+    # Espera a que la base termine los scripts de database/init; si no,
+    # Hibernate valida el esquema contra una base vacia y no arranca.
+    depends_on:
+      postgres:
+        condition: service_healthy
 
     networks:
       - husi_network

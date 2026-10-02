@@ -4,10 +4,13 @@ import { Catalogos } from '../../../../models/catalogos.model';
 import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
 import { Pagina, Parametros } from '../../../../models/pagina.model';
 import { Residente, ResidenteRequest } from '../../../../models/residente.model';
+import { TipoDocumento } from '../../../../models/tipo-documento.model';
 import { mensajeError } from '../../../../services/api-error';
 import { CatalogoService } from '../../../../services/catalogo.service';
+import { PerfilAcademicoService } from '../../../../services/perfil-academico.service';
 import { ProgramaService } from '../../../../services/programa.service';
 import { ResidenteService } from '../../../../services/residente.service';
+import { TipoDocumentoService } from '../../../../services/tipo-documento.service';
 import { Consulta } from '../../../../shared/consulta/consulta';
 import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
@@ -25,6 +28,8 @@ export class ListadoResidentes {
   private readonly api = inject(ResidenteService);
   private readonly catalogosApi = inject(CatalogoService);
   private readonly opcionesApi = inject(ProgramaService);
+  private readonly tiposDocumentoApi = inject(TipoDocumentoService);
+  private readonly perfilesApi = inject(PerfilAcademicoService);
 
   // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<Residente>>((params) =>
@@ -65,6 +70,8 @@ export class ListadoResidentes {
   protected readonly aviso = signal('');
   protected readonly errorFormulario = signal('');
   protected readonly opciones = signal<OpcionCatalogo[]>([]);
+  protected readonly tiposDocumento = signal<TipoDocumento[]>([]);
+  protected readonly perfiles = signal<OpcionCatalogo[]>([]);
   protected readonly pendienteEliminar = signal<Residente | null>(null);
   protected edicionId: number | null = null;
   protected datos: ResidenteRequest = {
@@ -137,7 +144,12 @@ export class ListadoResidentes {
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      const opciones = (await firstValueFrom(this.opcionesApi.listar())).map((p) => ({
+      const [programas, tipos, perfiles] = await Promise.all([
+        firstValueFrom(this.opcionesApi.listar()),
+        firstValueFrom(this.tiposDocumentoApi.listar()),
+        firstValueFrom(this.perfilesApi.listar()),
+      ]);
+      const opciones = programas.map((p) => ({
         id: p.id,
         nombre: p.nombre + ' — ' + p.universidad,
       }));
@@ -148,7 +160,8 @@ export class ListadoResidentes {
           const p = await firstValueFrom(this.opcionesApi.consultar(detalle.programaId!));
           opciones.push({ id: p.id, nombre: p.nombre + ' — ' + p.universidad + ' (actual)' });
         }
-        this.datos = { ...detalle };
+        // El backend omite los campos nulos: sin perfil llega undefined.
+        this.datos = { ...detalle, perfilAcademico: detalle.perfilAcademico ?? '' };
       } else
         this.datos = {
           nombre: '',
@@ -158,6 +171,8 @@ export class ListadoResidentes {
           programaId: null,
         };
       this.opciones.set(opciones);
+      this.tiposDocumento.set(tipos);
+      this.perfiles.set(perfiles);
       this.formulario.set(true);
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));

@@ -182,6 +182,21 @@ final class CargaInicialPlan {
     String documento = campo(f.documento(), "documento", 50, true),
       tipo = campo(f.tipoDocumento(), "tipo de documento", 30, true);
     String perfil = campo(f.perfilAcademico(), "perfil académico", 100, false);
+    // Los catálogos del residente no se crean desde el Excel: se aceptan el
+    // código (CC) o el nombre (Cédula de ciudadanía) y se guarda el código.
+    var td = buscar("tipo_documento", Map.of("codigo", tipo));
+    if (td == null) td = buscar("tipo_documento", Map.of("nombre", tipo));
+    if (td == null) fallo(
+      "Tipo de documento «" + tipo + "» no reconocido. Usa un código del catálogo (CC, TI, CE, PA…)."
+    );
+    tipo = texto(td.get("codigo"));
+    if (!perfil.isEmpty()) {
+      var pa = buscar("perfil_academico", Map.of("nombre", perfil));
+      if (pa == null) fallo(
+        "Perfil académico «" + perfil + "» no reconocido. Usa Pregrado o Posgrado."
+      );
+      perfil = texto(pa.get("nombre"));
+    }
     String servicio = campo(f.servicio(), "servicio", 150, true),
       asignatura = campo(f.asignatura(), "asignatura", 200, true);
     LocalDate inicio, fin;

@@ -25,11 +25,11 @@ public final class ListadoSql {
       case "universidades" -> "select id_universidad as id,nombre_universidad as nombre,pais,perfil,estado from universidad where estado<>'Eliminado'";
       case "servicios" -> "select id_servicio as id,nombre,descripcion,cupo_simultaneo as \"cupoSimultaneo\",cupo_maximo_instalado as \"cupoMaximoInstalado\",estado='Activo' as activo,estado from servicio where estado<>'Eliminado'";
       case "usuarios" -> "select u.id_usuario as id,concat(u.nombre,' ',u.apellido) as nombre,u.correo,r.nombre_rol as rol,u.estado='Activo' as activo,u.estado from usuario u join rol r using(id_rol) where u.estado<>'Eliminado'";
-      case "residentes" -> "select res.id_residente as id,res.nombre_completo as nombre,concat(res.tipo_documento,' ',res.numero_documento) as documento,u.nombre_universidad as universidad,p.nombre_programa as programa,upper(res.estado) as estado,coalesce((select string_agg(distinct " +
+      case "residentes" -> "select res.id_residente as id,res.nombre_completo as nombre,concat(td.codigo,' ',res.numero_documento) as documento,u.nombre_universidad as universidad,p.nombre_programa as programa,upper(res.estado) as estado,coalesce((select string_agg(distinct " +
         PERIODO +
         ", ', ' order by " +
         PERIODO +
-        ") from rotacion_residente where id_residente=res.id_residente and estado<>'Cancelado'),'—') as periodo from residente res join programa p on p.id_programa=res.id_programa join universidad u on u.id_universidad=p.id_universidad where res.estado<>'Eliminado'";
+        ") from rotacion_residente where id_residente=res.id_residente and estado<>'Cancelado'),'—') as periodo from residente res join tipo_documento td on td.id_tipo_documento=res.id_tipo_documento join programa p on p.id_programa=res.id_programa join universidad u on u.id_universidad=p.id_universidad where res.estado<>'Eliminado'";
       case "historial" -> "select h.id_historial as id,to_char(h.fecha at time zone 'America/Bogota','YYYY-MM-DD\"T\"HH24:MI:SS') || '-05:00' as fecha,concat(u.nombre,' ',u.apellido) as usuario,h.entidad_modificada as modulo,h.accion_realizada as accion,'—' as registro,h.detalle from historial_auditoria h join usuario u using(id_usuario)";
       case "rotaciones" -> ROTACIONES;
       default -> throw new IllegalArgumentException("Dominio no disponible");
