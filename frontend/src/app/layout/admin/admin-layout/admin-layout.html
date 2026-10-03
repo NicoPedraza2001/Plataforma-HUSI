@@ -7,6 +7,15 @@
   </div>
 
   <nav class="sidebar__nav" aria-label="Navegación del administrador">
+    <!-- Acceso destacado al flujo principal: la carga de rotaciones desde Excel. -->
+    <a class="nav-cta" routerLink="/admin/importar-excel" routerLinkActive="nav-cta--active">
+      <svg class="nav-cta__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+        <path d="M14 3v5h5M12 11v6M9 14l3 3 3-3" />
+      </svg>
+      <span class="nav-cta__label">Importar Excel</span>
+    </a>
+
     @for (grupo of navGroups; track grupo.id) {
       @if (grupo.title) {
         <h2 class="sidebar__group-title">{{ grupo.title }}</h2>

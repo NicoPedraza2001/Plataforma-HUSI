@@ -1,5 +1,6 @@
-import { Component, computed, inject, output, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { FilaCargaInicial, ResultadoCargaInicial } from '../../../../models/carga-inicial.model';
 import { mensajeError } from '../../../../services/api-error';
@@ -22,7 +23,7 @@ import {
 })
 export class ImportarRotaciones {
   private readonly api = inject(CargaInicialService);
-  readonly cerrar = output<void>();
+  private readonly router = inject(Router);
   protected readonly campos = CAMPOS_CARGA;
   protected readonly pasos = [
     'Archivo',
@@ -240,5 +241,10 @@ export class ImportarRotaciones {
     } catch {
       this.error.set('No se pudo descargar el archivo.');
     }
+  }
+
+  /** Sale del asistente hacia el listado de rotaciones. */
+  protected volver() {
+    this.router.navigate(['/admin/rotaciones']);
   }
 }

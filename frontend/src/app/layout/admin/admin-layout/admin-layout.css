@@ -80,6 +80,69 @@
   gap: 10px;
 }
 
+/* Botón destacado: la importación de Excel es el flujo central del panel,
+   así que sale del patrón de "píldora con punto" y se pinta en teal sólido. */
+.nav-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 14px 8px;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--husi-teal) 0%, var(--husi-teal-dark) 100%);
+  color: var(--husi-navy-deep);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 10px 22px rgba(2, 18, 46, 0.32);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.nav-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 14px 26px rgba(2, 18, 46, 0.38);
+}
+
+.nav-cta:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+/* En la propia pantalla de importación se invierte a blanco, como el
+   enlace activo, pero conserva el borde teal para seguir destacando. */
+.nav-cta--active {
+  background: #fff;
+  border-color: var(--husi-teal);
+  color: var(--husi-navy);
+}
+
+.nav-cta__icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-cta,
+  .nav-cta:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
 .sidebar__group-title {
   margin-top: 14px;
   padding-inline: 16px;
@@ -192,6 +255,11 @@
   .sidebar__group-title {
     margin-top: 6px;
     text-align: left;
+  }
+
+  .nav-cta {
+    align-self: flex-start;
+    margin-inline: 14px;
   }
 
   .sidebar__list {

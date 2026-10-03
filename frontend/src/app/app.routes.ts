@@ -6,6 +6,7 @@ import { PanelDashboard } from './features/admin/dashboard/panel-dashboard/panel
 import { Historial } from './features/admin/historial/historial';
 import { ListadoProgramas } from './features/admin/programas/listado-programas/listado-programas';
 import { ListadoResidentes } from './features/admin/residentes/listado-residentes/listado-residentes';
+import { ImportarRotaciones } from './features/admin/rotaciones/importar-rotaciones/importar-rotaciones';
 import { ListadoRotaciones } from './features/admin/rotaciones/listado-rotaciones/listado-rotaciones';
 import { ListadoServicios } from './features/admin/servicios/listado-servicios/listado-servicios';
 import { ListadoUniversidades } from './features/admin/universidades/listado-universidades/listado-universidades';
@@ -38,6 +39,7 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'residentes', pathMatch: 'full' },
       { path: 'rotaciones', component: ListadoRotaciones },
+      { path: 'importar-excel', component: ImportarRotaciones },
       { path: 'asignaturas', component: ListadoAsignaturas },
       { path: 'coordinadores', component: ListadoCoordinadores },
       { path: 'universidades', component: ListadoUniversidades },

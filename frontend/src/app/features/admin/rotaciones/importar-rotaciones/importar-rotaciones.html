@@ -1,7 +1,7 @@
 <header class="page-head">
   <div>
     <h1 class="page-head__title">Importar carga inicial</h1>
-    <p class="breadcrumb">Inicio &gt; Rotaciones &gt; Importar Excel</p>
+    <p class="breadcrumb">Inicio &gt; Importar Excel</p>
   </div>
 </header>
 <section class="card" [attr.aria-busy]="ocupado()">
@@ -273,7 +273,7 @@
     <p class="ayuda" role="status">Guarda o cancela la corrección de la fila antes de continuar.</p>
   }
   <footer>
-    <button class="btn btn--outline" [disabled]="ocupado()" (click)="cerrar.emit()">
+    <button class="btn btn--outline" [disabled]="ocupado()" (click)="volver()">
       {{ terminado() ? 'Ver rotaciones' : 'Cancelar importación' }}
     </button>
     @if (paso() > 0 && !terminado()) {

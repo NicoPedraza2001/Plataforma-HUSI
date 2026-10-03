@@ -10,7 +10,6 @@ import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Paginacion } from '../../../../shared/paginacion/paginacion';
 import { FormularioRotacion } from '../formulario-rotacion/formulario-rotacion';
-import { ImportarRotaciones } from '../importar-rotaciones/importar-rotaciones';
 import { ResidentesRotacion } from '../residentes-rotacion/residentes-rotacion';
 
 @Component({
@@ -22,7 +21,6 @@ import { ResidentesRotacion } from '../residentes-rotacion/residentes-rotacion';
     FormsModule,
     Paginacion,
     FocoModal,
-    ImportarRotaciones,
   ],
   templateUrl: './listado-rotaciones.html',
   styleUrl: './listado-rotaciones.css',
@@ -39,7 +37,6 @@ export class ListadoRotaciones {
   protected readonly pagina = computed(() => this.consulta.datos()?.pagina ?? 1);
   protected readonly rotacionResidentes = signal<RotacionGestion | null>(null);
   protected readonly formulario = signal(false);
-  protected readonly importando = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
   protected readonly error = signal('');
@@ -145,10 +142,5 @@ export class ListadoRotaciones {
     } finally {
       this.guardando.set(false);
     }
-  }
-
-  protected cerrarImportacion() {
-    this.importando.set(false);
-    this.cargar();
   }
 }
