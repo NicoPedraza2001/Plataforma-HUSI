@@ -1,0 +1,78 @@
+@if (resultadoFinal(); as resultado) {
+  <h2>Importación completada</h2>
+  <p class="mensaje exito" role="status">
+    {{ segunCantidad(resultado.validos, 'Se guardó', 'Se guardaron') }}
+    {{ contar(resultado.validos, 'asignación', 'asignaciones') }}
+    @if (resultado.espera) {
+      y {{ contar(resultado.espera, 'residente quedó', 'residentes quedaron') }} en lista de espera
+    }
+    . Las filas con errores o duplicadas no se crearon: descarga los registros no creados para
+    corregirlos e importarlos de nuevo.
+  </p>
+} @else {
+  <h2>Confirma la carga</h2>
+  <p class="mensaje aviso">
+    Todavía no se ha guardado nada. Al confirmar se crearán
+    <strong>{{ contar(resultadoValidacion().validos, 'asignación', 'asignaciones') }}</strong>
+    @if (resultadoValidacion().espera) {
+      y
+      <strong
+        >{{ contar(resultadoValidacion().espera, 'residente', 'residentes') }} en lista de
+        espera</strong
+      >
+      (no alcanzaron cupo)
+    }
+    ; las filas con errores o duplicadas no se importan.
+  </p>
+}
+
+<p class="ayuda">
+  {{
+    resultadoFinal() ? 'Registros creados en la base de datos:' : 'Registros nuevos que se crearán:'
+  }}
+</p>
+<div class="resumen">
+  @for (registro of registrosNuevos(); track registro.nombre) {
+    <div>
+      <strong>{{ registro.cantidad }}</strong
+      >{{ registro.nombre }}
+    </div>
+  }
+</div>
+
+@if (resultadoFinal(); as resultado) {
+  <app-resultado-carga
+    [resultado]="resultado"
+    [filas]="filas()"
+    [filasExcluidas]="filasExcluidas()"
+    [terminado]="true"
+  />
+} @else {
+  <app-vista-previa-carga [filas]="filas()" [resultadoValidacion]="resultadoValidacion()" />
+}
+
+<footer class="acciones-paso">
+  @if (resultadoFinal()) {
+    <button class="btn btn--navy" (click)="verRotaciones.emit()">Ver rotaciones</button>
+  } @else {
+    <button class="btn btn--outline" [disabled]="guardando()" (click)="anterior.emit()">
+      Atrás
+    </button>
+    <button
+      class="btn btn--add"
+      [disabled]="guardando() || !hayQueGuardar(resultadoValidacion())"
+      (click)="confirmarCarga()"
+    >
+      {{
+        guardando()
+          ? 'Guardando…'
+          : 'Confirmar y guardar ' +
+            contar(
+              resultadoValidacion().validos + resultadoValidacion().espera,
+              'asignación',
+              'asignaciones'
+            )
+      }}
+    </button>
+  }
+</footer>

@@ -2,6 +2,7 @@ import { Component, computed, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CatalogosRotacion, RotacionGestion } from '../../../../models/rotacion.model';
 import { TextoObligatorio } from '../../../../shared/formularios/restricciones-entrada';
+import { hoyBogota } from '../hoy';
 
 /** Formulario de presentación; el listado conserva la coordinación con el backend. */
 @Component({
@@ -24,11 +25,19 @@ export class FormularioRotacion {
   readonly errorFormulario = input('');
   readonly guardar = output<void>();
   readonly cancelar = output<void>();
+  protected readonly hoy = hoyBogota();
+  /** Al crear o mover fechas, la rotación no puede empezar antes de hoy. */
+  protected readonly inicioPasado = computed(() => {
+    const actual = this.edicion();
+    const sinCambios = actual && this.inicio() === actual.inicio && this.fin() === actual.fin;
+    return !sinCambios && !!this.inicio() && this.inicio() < this.hoy;
+  });
   protected readonly puedeGuardar = computed(
     () =>
       !this.guardando() &&
       this.asignaturaId() > 0 &&
       this.inicio() >= '1900-01-01' &&
+      !this.inicioPasado() &&
       this.fin() <= '9999-12-31' &&
       this.fin() >= this.inicio() &&
       !this.edicion()?.relaciones &&

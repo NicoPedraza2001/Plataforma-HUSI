@@ -1,0 +1,92 @@
+<label
+  >Buscar fila, residente, documento o servicio<input
+    type="search"
+    [ngModel]="textoBusqueda()"
+    (ngModelChange)="buscar($event)"
+/></label>
+@if (filaEnEdicion(); as fila) {
+  <section class="editor" aria-label="Corregir fila">
+    <h3>Corregir fila {{ fila.fila }}</h3>
+    <p class="ayuda">
+      Universidad, programa, servicio, asignatura y datos del residente se corrigen mejor en sus
+      pasos, donde se comparan con el sistema. Aquí ajusta sobre todo las fechas.
+    </p>
+    <div class="campos">
+      @for (campo of campos; track campo.clave) {
+        <label
+          >{{ campo.nombre
+          }}<input [(ngModel)]="fila[campo.clave]" [maxlength]="campo.max" [disabled]="bloqueado()"
+        /></label>
+      }
+    </div>
+    <button class="btn btn--navy" (click)="guardarEdicion()" [disabled]="bloqueado()">
+      Guardar corrección
+    </button>
+    <button class="btn btn--outline" (click)="cancelarEdicion()">Cancelar corrección</button>
+  </section>
+}
+<div class="table-wrap">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Fila</th>
+        <th>Residente / Documento</th>
+        <th>Universidad / Programa</th>
+        <th>Servicio / Asignatura</th>
+        <th>Fechas</th>
+        <th>Prioridad y corrección</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (fila of filasVisibles(); track fila.fila) {
+        <tr>
+          <td>{{ fila.fila }}</td>
+          <td>
+            {{ fila.residente }}<small>{{ fila.tipoDocumento }} {{ fila.documento }}</small>
+          </td>
+          <td>
+            {{ fila.universidad }}<small>{{ fila.programa }}</small>
+          </td>
+          <td>
+            {{ fila.servicio }}<small>{{ fila.asignatura }}</small>
+          </td>
+          <td>
+            {{ fila.inicio }}<small>{{ fila.fin }}</small>
+          </td>
+          <td>
+            <div class="acciones-fila">
+              <button
+                class="btn btn--outline"
+                [disabled]="bloqueado() || filas()[0].fila === fila.fila"
+                [attr.aria-label]="'Subir prioridad de fila ' + fila.fila"
+                (click)="moverFila(fila, -1)"
+              >
+                ↑
+              </button>
+              <button
+                class="btn btn--outline"
+                [disabled]="bloqueado() || filas()[filas().length - 1].fila === fila.fila"
+                [attr.aria-label]="'Bajar prioridad de fila ' + fila.fila"
+                (click)="moverFila(fila, 1)"
+              >
+                ↓
+              </button>
+              <button class="btn btn--navy" [disabled]="bloqueado()" (click)="editarFila(fila)">
+                Corregir
+              </button>
+            </div>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla__vacia">No hay filas que coincidan con la búsqueda.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+<app-paginacion
+  [paginaActual]="paginaActual()"
+  [totalPaginas]="totalPaginas()"
+  (cambio)="paginaSolicitada.set($event)"
+/>

@@ -20,8 +20,8 @@ Backend: ServicioController → ServicioService / ServicioServiceImpl → Servic
 
 Nombre obligatorio hasta 150 caracteres y sin duplicados por mayúsculas/minúsculas. Descripción opcional. Cupos enteros no negativos: simultáneo <= máximo instalado. Se deshabilitó la conversión silenciosa de decimales a enteros en JSON para no aceptar cupos truncados.
 
-Asignaturas o coordinadores asociados, incluso inactivos, bloquean el borrado. Desactivar no altera sus estados. Cambiar cupos no recalcula rotaciones existentes, respetando la regla de database/init/02_funciones.sql. No se modifica el esquema de la base de datos.
+Asignaturas o coordinadores asociados, incluso inactivos, bloquean el borrado. Desactivar no altera sus estados. Cambiar el cupo simultáneo recalcula las rotaciones vigentes del servicio (las finalizadas no se tocan) (cupo_disponible = cupo simultáneo − residentes Asignado) mediante el trigger trg_servicio_recalcular_cupo (database/init/13_recalcular_cupo_servicio.sql; en H2, CupoServicioTrigger). No se permite bajarlo por debajo del mayor número de asignados de una de sus rotaciones: ServicioServiceImpl responde 409 indicando el mínimo permitido y la base también lo rechaza. Si el cupo sube, los residentes en Esperando cupo de esas rotaciones se asignan solos por orden de llegada (ver docs/rotaciones.md, Lista de espera).
 
 ## Verificación
 
-ServicioIntegrationTests cubre persistencia, búsqueda, edición, estados, eliminación, duplicados, cupos, asociaciones y conservación de cupos de rotaciones. Pruebas frontend verifican llamadas HTTP y validación del formulario. También se verificó un registro temporal creado y editado desde la interfaz contra PostgreSQL.
+ServicioIntegrationTests cubre persistencia, búsqueda, edición, estados, eliminación, duplicados, cupos, asociaciones, recálculo de cupos de rotaciones y bloqueo al bajar el cupo por debajo de los asignados. Pruebas frontend verifican llamadas HTTP y validación del formulario. También se verificó un registro temporal creado y editado desde la interfaz contra PostgreSQL.

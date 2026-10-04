@@ -72,9 +72,9 @@ con las filas asignadas.
   de posición en lugar del hash. Reemplazarlo por uno real generado con
   `BCryptPasswordEncoder` antes de probar el login.
 - **Cupos de los servicios**: `06_datos_servicio.sql` usa cupos provisionales.
-  El Excel no trae `cupo_maximo_instalado` ni `cupo_simultaneo`, así que se puso
-  el mínimo que permite cargar los datos sin lista de espera. Reemplazarlos
-  cuando la Oficina de Educación entregue las capacidades reales.
+  El Excel no trae `cupo_maximo_instalado` ni `cupo_simultaneo`, así que cada
+  servicio arranca con 50 de ambos. Reemplazarlos cuando la Oficina de Educación
+  entregue las capacidades reales.
 - **4 filas duplicadas del Excel**: quedaron fuera de
   `10_datos_rotacion_residente.sql` porque violan la llave primaria. Están
   documentadas como comentario al inicio de ese archivo.
@@ -84,3 +84,9 @@ con las filas asignadas.
 ## Actualización de rotaciones (2026-09-14)
 
 Para bases ya creadas, aplicar `migrations/20260914_rotacion_activa.sql` antes de iniciar el nuevo backend. Es una migración transaccional aditiva: agrega `rotacion.activa`, conserva la disponibilidad y protege nuevas asignaciones a rotaciones inactivas. No borrar volúmenes ni volver a cargar los datos. Las bases nuevas ejecutan `init/11_rotacion_activa.sql` automáticamente. Ver `../docs/rotaciones.md`.
+
+## Cupo de rotaciones ligado al servicio (2026-10-03)
+
+Para bases ya creadas, aplicar `migrations/20261003_recalcular_cupo_servicio.sql`. Crea `trg_servicio_recalcular_cupo`: al cambiar `servicio.cupo_simultaneo` se recalcula `cupo_disponible` de todas sus rotaciones y se rechaza bajarlo por debajo de los residentes `Asignado` de cualquiera de ellas. También resincroniza una vez las rotaciones existentes y avisa (NOTICE) de servicios cuyo cupo ya es menor que sus asignados. Las bases nuevas ejecutan `init/13_recalcular_cupo_servicio.sql` automáticamente.
+
+Después, aplicar `migrations/20261003_lista_espera.sql` (en ese orden). Agrega `rotacion_residente.fecha_registro` y la promoción automática de la lista de espera por orden de llegada. A las filas existentes les pone la hora de la migración, así que entre ellas el orden lo decide `id_residente`. Al final promueve una vez a quienes ya esperaban en rotaciones con cupo libre e informa cuántos con un NOTICE. Las bases nuevas ejecutan `init/14_lista_espera.sql`.

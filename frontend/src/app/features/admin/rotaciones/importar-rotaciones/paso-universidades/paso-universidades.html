@@ -1,0 +1,125 @@
+<h2>Universidades</h2>
+<p class="ayuda">
+  Estas son las universidades que trae el Excel. Las que ya existen quedan listas. Para las demás:
+  créala si es nueva, o elige la registrada si está escrita de otra forma. Al elegir una, todas sus
+  filas pasan a usar el nombre y el país del sistema.
+</p>
+
+@if (cargandoUniversidades()) {
+  <p class="mensaje aviso" role="status">Consultando las universidades registradas…</p>
+} @else if (errorDeCarga()) {
+  <p class="mensaje error" role="alert">
+    {{ errorDeCarga() }}
+    <button class="btn btn--navy" (click)="cargarUniversidades()">Reintentar</button>
+  </p>
+} @else {
+  <div class="resumen" role="status">
+    <div>
+      <strong>{{ grupos().length }}</strong
+      >En el Excel
+    </div>
+    <div>
+      <strong>{{ grupos().length - totalPendientes() }}</strong
+      >Listas
+    </div>
+    <div>
+      <strong>{{ totalNuevas() }}</strong
+      >Nuevas
+    </div>
+    <div [class.error]="totalPendientes() > 0">
+      <strong>{{ totalPendientes() }}</strong
+      >Por resolver
+    </div>
+  </div>
+
+  @if (aviso()) {
+    <p class="mensaje exito" role="status">{{ aviso() }}</p>
+  }
+  @if (error()) {
+    <p class="mensaje error" role="alert">{{ error() }}</p>
+  }
+  @if (gruposParaCrearEnLote().length) {
+    <p class="mensaje aviso crear-en-lote">
+      <span
+        >{{
+          contar(
+            gruposParaCrearEnLote().length,
+            'universidad nueva tiene país y no se parece',
+            'universidades nuevas tienen país y no se parecen'
+          )
+        }}
+        a ninguna registrada.</span
+      >
+      <button class="btn btn--green" [disabled]="guardando()" (click)="crearUniversidadesEnLote()">
+        {{
+          guardando()
+            ? 'Creando…'
+            : 'Crear ' + contar(gruposParaCrearEnLote().length, 'universidad', 'universidades')
+        }}
+      </button>
+    </p>
+  }
+
+  <app-tabla-emparejamiento
+    [grupos]="grupos()"
+    nombreEntidad="universidad"
+    tituloContexto="País"
+    [bloqueado]="guardando()"
+    (crear)="abrirCreacion($event)"
+    (asociar)="asociarUniversidadExistente($event)"
+    (usarDatosDelSistema)="usarDatosDelSistema($event)"
+    (activar)="activarUniversidad($event)"
+    (excluir)="grupoPorExcluir.set($event)"
+  />
+}
+
+<footer class="acciones-paso">
+  @if (totalPendientes()) {
+    <span class="pendientes"
+      >Resuelve {{ contar(totalPendientes(), 'pendiente', 'pendientes') }} para continuar.</span
+    >
+  }
+  <button class="btn btn--outline" [disabled]="guardando()" (click)="anterior.emit()">Atrás</button>
+  <button
+    class="btn btn--navy"
+    [disabled]="cargandoUniversidades() || !!errorDeCarga() || guardando() || totalPendientes() > 0"
+    (click)="siguiente.emit()"
+  >
+    Continuar: programas
+  </button>
+</footer>
+
+@if (grupoEnCreacion(); as grupo) {
+  <div class="fondo-modal" (keydown.escape)="cerrarCreacion()">
+    <section
+      class="panel-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-nueva-universidad"
+      appFocoModal
+    >
+      <header>
+        <h2 id="titulo-nueva-universidad">Crear universidad</h2>
+        <p>Se usará en las filas {{ grupo.numerosFila.join(', ') }} del Excel.</p>
+      </header>
+      <app-formulario-universidad
+        [(nombre)]="nombreNuevaUniversidad"
+        [(pais)]="paisNuevaUniversidad"
+        [(perfil)]="perfilNuevaUniversidad"
+        [guardando]="guardando()"
+        [errorFormulario]="errorFormulario()"
+        (guardar)="guardarUniversidadNueva()"
+        (cancelar)="cerrarCreacion()"
+      />
+    </section>
+  </div>
+}
+
+@if (grupoPorExcluir(); as grupo) {
+  <app-confirmar-exclusion
+    [descripcion]="'la universidad «' + (grupo.valorEnExcel || 'sin nombre') + '»'"
+    [numerosFila]="grupo.numerosFila"
+    (confirmar)="confirmarExclusion()"
+    (cancelar)="grupoPorExcluir.set(null)"
+  />
+}

@@ -1,0 +1,42 @@
+<h2>Selecciona tu archivo</h2>
+<p class="ayuda">
+  Carga residentes y sus rotaciones desde un solo Excel. Después revisarás, en orden, las
+  universidades, los programas y los residentes del archivo frente a la base de datos, para corregir
+  cada error en su paso antes de guardar las rotaciones.
+</p>
+@if (error()) {
+  <p class="mensaje error" role="alert">{{ error() }}</p>
+}
+<div class="zona-archivo" (dragover)="$event.preventDefault()" (drop)="soltarArchivo($event)">
+  <span class="icono-excel" aria-hidden="true">X</span>
+  <h3>Arrastra tu archivo Excel aquí</h3>
+  <p>o selecciona un archivo de tu equipo</p>
+  <input
+    #selectorArchivo
+    type="file"
+    accept=".xlsx"
+    hidden
+    (change)="seleccionarArchivo($event)"
+  /><button class="btn btn--navy" [disabled]="leyendoArchivo()" (click)="selectorArchivo.click()">
+    {{ leyendoArchivo() ? 'Leyendo archivo…' : 'Seleccionar archivo' }}
+  </button>
+  <p class="ayuda">.xlsx · Hasta 5 MB · Hasta {{ maximoFilas }} registros por hoja</p>
+</div>
+@if (libroExcel(); as libro) {
+  <div class="mensaje exito archivo-cargado">
+    <span>{{ libro.nombreArchivo }} · {{ libro.hojas.length }} hojas disponibles</span
+    ><button class="btn btn--outline" [disabled]="leyendoArchivo()" (click)="archivoQuitado.emit()">
+      Quitar archivo
+    </button>
+  </div>
+}
+<footer class="acciones-paso">
+  <button class="btn btn--outline" (click)="descargarPlantilla()">↓ Descargar plantilla</button>
+  <button
+    class="btn btn--navy"
+    [disabled]="!libroExcel() || leyendoArchivo()"
+    (click)="siguiente.emit()"
+  >
+    Continuar: columnas
+  </button>
+</footer>

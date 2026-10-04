@@ -88,7 +88,7 @@ class CargaInicialIntegrationTests {
   }
 
   @Test
-  void respetaPrioridadSinCrearHuerfanosDeFilasSinCupo() {
+  void respetaPrioridadYDejaEnEsperaLasFilasSinCupo() {
     var d = request(
       List.of(
         fila(3, "IMP-B", "Servicio prioridad", "1"),
@@ -98,16 +98,20 @@ class CargaInicialIntegrationTests {
     );
     var r = carga.validar(d);
     assertThat(r.validos()).isEqualTo(1);
-    assertThat(r.advertencias()).isEqualTo(1);
+    assertThat(r.espera()).isEqualTo(1);
     assertThat(r.omitidos()).isEqualTo(1);
     assertThat(r.filas().getFirst().fila()).isEqualTo(3);
-    carga.confirmar(new CargaInicialRequest(d.filas(), true, r.validacion()));
+    assertThat(r.filas().get(1).mensaje()).contains("lista de espera (posición 1)");
+    var guardado = carga.confirmar(
+      new CargaInicialRequest(d.filas(), true, r.validacion())
+    );
+    assertThat(guardado.espera()).isEqualTo(1);
     assertThat(
       jdbc.queryForObject(
-        "select count(*) from residente where numero_documento='IMP-A'",
-        Integer.class
+        "select rr.estado from rotacion_residente rr join residente r using(id_residente) where r.numero_documento='IMP-A'",
+        String.class
       )
-    ).isZero();
+    ).isEqualTo("Esperando cupo");
   }
 
   @Test

@@ -37,4 +37,11 @@ describe('ResidenteService CRUD', () => {
     expect(del.request.method).toBe('DELETE');
     del.flush(null);
   });
+  it('busca residentes por lote de documentos', () => {
+    api.buscarPorDocumentos(['001', '002']).subscribe();
+    const req = http.expectOne('/api/residentes/buscar-por-documentos');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ documentos: ['001', '002'] });
+    req.flush([]);
+  });
 });

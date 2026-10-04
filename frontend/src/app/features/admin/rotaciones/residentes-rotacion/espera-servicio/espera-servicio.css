@@ -1,0 +1,46 @@
+.espera {
+  margin: 8px 0 28px;
+  padding: 20px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-md);
+  background: var(--husi-surface);
+}
+h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-serif);
+  color: var(--husi-navy);
+}
+.ayuda {
+  color: var(--husi-muted);
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--husi-navy);
+}
+label {
+  font-weight: 600;
+  color: var(--husi-text);
+}
+small {
+  display: block;
+  color: var(--husi-muted);
+}
+.cruce {
+  color: var(--husi-red-dark);
+  font-size: 14px;
+}
+.mensaje {
+  padding: 16px;
+  margin: 14px 0;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+.error {
+  color: var(--husi-red-dark);
+}
+.btn {
+  margin-top: 14px;
+}

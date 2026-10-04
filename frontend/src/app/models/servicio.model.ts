@@ -6,6 +6,8 @@ export interface Servicio {
   descripcion: string | null;
   cupoSimultaneo: number;
   cupoMaximoInstalado: number;
+  /** Activo, Inactivo… El backend también lo resume en `activo`. */
+  estado: string;
   activo: boolean;
 }
 

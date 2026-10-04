@@ -33,7 +33,7 @@
     type="date"
     name="inicio"
     [(ngModel)]="inicio"
-    min="1900-01-01"
+    [min]="hoy"
     max="9999-12-31"
     required
     [disabled]="guardando() || !!edicion()?.relaciones"
@@ -44,15 +44,18 @@
     type="date"
     name="fin"
     [(ngModel)]="fin"
-    [min]="inicio() || '1900-01-01'"
+    [min]="inicio() || hoy"
     max="9999-12-31"
     required
     [disabled]="guardando() || !!edicion()?.relaciones"
   />
   <p class="ayuda">
     Los cupos se calculan automáticamente a partir del servicio. La asignatura no se cambia al
-    editar.
+    editar. La rotación no puede empezar antes de hoy.
   </p>
+  @if (inicioPasado()) {
+    <p class="mensaje error" role="alert">La fecha de inicio no puede ser anterior a hoy.</p>
+  }
   @if (edicion()?.relaciones) {
     <p class="mensaje">
       Esta rotación tiene {{ edicion()?.relaciones }} registros de residentes. Sus fechas se

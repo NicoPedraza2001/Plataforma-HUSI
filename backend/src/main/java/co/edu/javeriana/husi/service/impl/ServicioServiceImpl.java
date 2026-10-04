@@ -67,7 +67,7 @@ public class ServicioServiceImpl implements ServicioService {
     );
     s.setCupoSimultaneo(d.cupoSimultaneo());
     s.setCupoMaximoInstalado(d.cupoMaximoInstalado());
-    // La base conserva el cupo de las rotaciones existentes; no se recalcula aquí.
+    // Al guardar, trg_servicio_recalcular_cupo recalcula el cupo de sus rotaciones vigentes.
   }
 
   public java.util.List<co.edu.javeriana.husi.dto.response.CatalogoResponse> catalogo(
@@ -99,6 +99,23 @@ public class ServicioServiceImpl implements ServicioService {
   @Transactional
   public ServicioResponse actualizar(Integer id, ServicioRequest d) {
     var s = obtener(id, true);
+    // Antes de aplicar: la consulta nativa haría flush y el trigger fallaría primero.
+    long minimo = servicios.maximoAsignadosPorRotacion(
+      id,
+      co.edu.javeriana.husi.util.Calendario.hoy()
+    );
+    if (
+      d.cupoSimultaneo() != null && d.cupoSimultaneo() < minimo
+    ) throw new NegocioException(
+      HttpStatus.CONFLICT,
+      "No puedes bajar el cupo simultáneo a " +
+        d.cupoSimultaneo() +
+        ": una rotación vigente de este servicio ya tiene " +
+        minimo +
+        " residentes asignados. El mínimo permitido es " +
+        minimo +
+        "; cancela asignaciones si necesitas reducirlo más."
+    );
     aplicar(s, d);
     return mapper.response(servicios.saveAndFlush(s));
   }

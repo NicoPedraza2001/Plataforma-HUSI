@@ -2,196 +2,89 @@
   display: block;
   padding: 26px 34px 44px;
 }
-h2,
-h3 {
+.page-head .btn--outline {
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--husi-bg);
   color: var(--husi-navy);
-  font-family: var(--font-serif);
-}
-.ayuda {
-  color: var(--husi-muted);
-  line-height: 1.6;
-  margin: 18px 0;
+  border: 1px solid var(--husi-border);
 }
 .mensaje {
-  padding: 18px;
+  padding: 16px 18px;
   border: 1px solid currentColor;
-  border-radius: 12px;
-  margin: 20px 0;
+  border-radius: var(--radius-sm);
+  margin: 0 0 20px;
 }
 .error {
   color: var(--husi-red-dark);
 }
-.exito {
-  color: var(--husi-green);
-}
-.zona-archivo {
-  padding: 32px;
-  text-align: center;
-  border: 2px dashed var(--husi-border);
-  border-radius: 18px;
-  background: var(--husi-surface);
-}
-.zona-archivo p {
-  margin: 16px 0;
-}
-.btn {
-  padding: 12px 20px;
-  border-radius: 10px;
-  font-weight: 600;
-}
-.btn--navy {
-  color: white;
-  background: var(--husi-navy);
-}
-.btn--outline {
-  background: white;
-  color: var(--husi-navy);
-  border: 1px solid var(--husi-border);
-}
-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-label {
-  display: block;
-  margin: 18px 0;
-  color: var(--husi-navy);
-  font-weight: 600;
-}
-select,
-input {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--husi-border);
-  border-radius: 10px;
-  margin-top: 8px;
-  font: inherit;
-  color: var(--husi-text);
-  background: white;
-}
-fieldset {
-  border: 1px solid var(--husi-border);
-  border-radius: 12px;
-  padding: 20px;
-  margin: 20px 0;
-}
-.archivo,
-.acciones,
-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin: 20px 0;
-}
-footer {
-  justify-content: flex-end;
-}
-.table-wrap {
-  max-height: 450px;
-  overflow: auto;
-}
-input[type='file'][hidden] {
-  display: none;
-}
 
+/* ---------- Barra de pasos ---------- */
 .pasos {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 .pasos button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 6px;
   border: 1px solid var(--husi-border);
-  border-radius: 12px;
-  padding: 14px 8px;
+  border-radius: var(--radius-sm);
   background: var(--husi-bg);
   color: var(--husi-navy);
   font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
-.pasos span {
-  display: block;
+.pasos button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pasos button:focus-visible {
+  outline: 3px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+.pasos__numero {
   font-weight: 700;
-  margin-bottom: 8px;
+}
+.pasos__estado {
+  font-size: 0.72rem;
+  color: var(--husi-muted);
+}
+.pasos .resuelto {
+  border-color: var(--husi-teal-dark);
+}
+.pasos .resuelto .pasos__estado {
+  color: var(--husi-green);
+}
+.pasos .con-pendientes .pasos__estado {
+  color: var(--husi-red-dark);
 }
 .pasos .actual {
   background: var(--husi-navy);
+  border-color: var(--husi-navy);
   color: var(--husi-bg);
 }
-.campos {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 24px;
+.pasos .actual .pasos__estado {
+  color: var(--husi-teal);
 }
-small {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 400;
-  color: var(--husi-muted);
-  margin-top: 8px;
-  line-height: 1.5;
-}
-.opcion {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.opcion input {
-  width: auto;
-  margin: 0;
-}
-.resumen {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin: 24px 0;
-}
-.resumen div {
-  padding: 20px;
-  border: 1px solid var(--husi-border);
-  border-radius: 12px;
-  text-align: center;
-  background: var(--husi-surface);
-}
-.resumen strong {
-  display: block;
-  font-size: 2rem;
-  margin-bottom: 8px;
-}
-.entidades {
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-}
-.excel-icon {
-  display: inline-grid;
-  place-items: center;
-  background: var(--husi-green);
-  color: var(--husi-bg);
-  font-weight: 700;
-  font-size: 40px;
-  border-radius: 14px;
-  width: 80px;
-  height: 80px;
-  margin-bottom: 20px;
-}
-button:focus-visible {
-  outline: 3px solid var(--husi-teal-dark);
-  outline-offset: 3px;
-}
-@media (max-width: 900px) {
+
+@media (max-width: 1100px) {
   .pasos {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .resumen {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 @media (max-width: 600px) {
-  .campos {
-    grid-template-columns: 1fr;
+  :host {
+    padding: 20px 16px 36px;
   }
-  footer .btn {
-    width: 100%;
+  .pasos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

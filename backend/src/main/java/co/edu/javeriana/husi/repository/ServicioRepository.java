@@ -22,4 +22,11 @@ public interface ServicioRepository extends JpaRepository<Servicio, Integer> {
     nativeQuery = true
   )
   long contarReferencias(Integer id);
+
+  /** Mayor número de residentes Asignado en una misma rotación vigente del servicio. */
+  @Query(
+    value = "select coalesce(max(n),0) from (select count(*) n from rotacion_residente rr join asignatura a on a.id_asignatura=rr.id_asignatura where a.id_servicio=:id and rr.estado='Asignado' and rr.fecha_fin>=:hoy group by rr.id_asignatura,rr.fecha_inicio,rr.fecha_fin) t",
+    nativeQuery = true
+  )
+  long maximoAsignadosPorRotacion(Integer id, java.time.LocalDate hoy);
 }

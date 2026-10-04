@@ -131,14 +131,14 @@ public class CargaInicialServiceImpl implements CargaInicialService {
           )
         )
         .id();
-      case "rotacion" -> rotaciones.crear(
+      case "rotacion" -> rotaciones.crearHistorica(
         new RotacionRequest(
           id(f, "id_asignatura", ids),
           fecha(f, "fecha_inicio"),
           fecha(f, "fecha_fin")
         )
       );
-      case "rotacion_residente" -> relaciones.asignar(
+      case "rotacion_residente" -> relaciones.asignarHistorica(
         new RotacionId(
           id(f, "id_asignatura", ids),
           fecha(f, "fecha_inicio"),

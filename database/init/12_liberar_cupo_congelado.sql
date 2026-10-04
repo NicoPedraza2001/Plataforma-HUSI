@@ -1,5 +1,6 @@
--- La capacidad de cada rotación se congela al crearla. Solo las transiciones
--- desde Asignado llaman esta función; no se compara con el servicio actual.
+-- Solo las transiciones desde Asignado llaman esta función; no se compara con
+-- el servicio actual porque trg_servicio_recalcular_cupo (13) ya mantiene
+-- cupo_disponible = cupo_simultaneo - asignados.
 CREATE OR REPLACE FUNCTION liberar_cupo_rotacion(p_id_asignatura INTEGER,p_fecha_inicio DATE,p_fecha_fin DATE)
 RETURNS VOID AS $$
 BEGIN

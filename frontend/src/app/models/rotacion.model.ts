@@ -25,6 +25,8 @@ export interface RotacionGestion extends RotacionDatos {
   disponibilidad: string;
   cupoDisponible: number;
   relaciones: number;
+  /** La fecha final ya pasó: solo se consulta. */
+  finalizada: boolean;
 }
 
 export interface CatalogosRotacion {
@@ -56,4 +58,19 @@ export interface ResidenteRotacion {
   documento: string;
   programa: string;
   estado: 'Asignado' | 'Esperando cupo' | 'Cancelado';
+}
+
+/** Backend: dto/response/EsperaServicioResponse. Los datos de rotación son los de origen. */
+export interface ResidenteEnEspera extends RotacionDatos {
+  residenteId: number;
+  nombre: string;
+  documento: string;
+  asignatura: string;
+  /** Ya tiene una rotación asignada que se cruza con las fechas de destino. */
+  cruce: boolean;
+}
+
+/** Backend: dto/request/TrasladoEsperaRequest.Origen. */
+export interface OrigenEspera extends RotacionDatos {
+  residenteId: number;
 }

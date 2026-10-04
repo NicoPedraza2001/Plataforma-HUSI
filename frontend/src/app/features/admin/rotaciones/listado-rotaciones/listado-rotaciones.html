@@ -80,7 +80,7 @@
               <td>
                 {{ r.asignatura }}<small>{{ r.servicio }}</small>
               </td>
-              <td>{{ r.inicio }}<br />{{ r.fin }}</td>
+              <td>{{ r.inicio | date: 'dd/MM/yyyy' }}<br />{{ r.fin | date: 'dd/MM/yyyy' }}</td>
               <td>
                 {{ r.cupoDisponible }}<small>{{ r.disponibilidad }}</small>
               </td>
@@ -94,30 +94,36 @@
                 </button>
               </td>
               <td>
-                <div class="acciones-registro">
-                  <button
-                    class="btn estado-directo"
-                    [class.estado-directo--activo]="r.activa"
-                    [class.estado-directo--inactivo]="!r.activa"
-                    [disabled]="guardando()"
-                    [attr.aria-pressed]="r.activa"
-                    [attr.aria-label]="(r.activa ? 'Desactivar ' : 'Activar ') + r.asignatura"
-                    [title]="r.activa ? 'Desactivar rotación' : 'Activar rotación'"
-                    (click)="cambiarEstado(r)"
+                @if (r.finalizada) {
+                  <span class="badge" title="La fecha final ya pasó; solo puede consultarse"
+                    >Finalizada</span
                   >
-                    {{ r.activa ? 'Activo' : 'Inactivo' }}</button
-                  ><button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(r)">
-                    Editar</button
-                  ><button
-                    class="btn papelera"
-                    [disabled]="guardando()"
-                    (click)="solicitar(r)"
-                    [attr.aria-label]="'Eliminar definitivamente ' + r.asignatura"
-                    title="Eliminar definitivamente"
-                  >
-                    <app-icono-papelera />
-                  </button>
-                </div>
+                } @else {
+                  <div class="acciones-registro">
+                    <button
+                      class="btn estado-directo"
+                      [class.estado-directo--activo]="r.activa"
+                      [class.estado-directo--inactivo]="!r.activa"
+                      [disabled]="guardando()"
+                      [attr.aria-pressed]="r.activa"
+                      [attr.aria-label]="(r.activa ? 'Desactivar ' : 'Activar ') + r.asignatura"
+                      [title]="r.activa ? 'Desactivar rotación' : 'Activar rotación'"
+                      (click)="cambiarEstado(r)"
+                    >
+                      {{ r.activa ? 'Activo' : 'Inactivo' }}</button
+                    ><button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(r)">
+                      Editar</button
+                    ><button
+                      class="btn papelera"
+                      [disabled]="guardando()"
+                      (click)="solicitar(r)"
+                      [attr.aria-label]="'Eliminar definitivamente ' + r.asignatura"
+                      title="Eliminar definitivamente"
+                    >
+                      <app-icono-papelera />
+                    </button>
+                  </div>
+                }
               </td>
             </tr>
           } @empty {
@@ -174,7 +180,8 @@
     >
       <h2 id="titulo-confirmar">¿Eliminar definitivamente esta rotación?</h2>
       <p>
-        <strong>{{ a.fila.asignatura }}</strong> · {{ a.fila.inicio }} a {{ a.fila.fin }}
+        <strong>{{ a.fila.asignatura }}</strong> · {{ a.fila.inicio | date: 'dd/MM/yyyy' }} a
+        {{ a.fila.fin | date: 'dd/MM/yyyy' }}
       </p>
       <p>
         Esta acción eliminará definitivamente la información de la base de datos y no podrá

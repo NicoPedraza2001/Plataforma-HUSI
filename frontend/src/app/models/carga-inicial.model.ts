@@ -21,7 +21,8 @@ export interface ResultadoCargaInicial {
   guardado: boolean;
   total: number;
   validos: number;
-  advertencias: number;
+  /** Filas sin cupo que se registran en lista de espera. */
+  espera: number;
   errores: number;
   omitidos: number;
   nuevos: Record<string, number>;

@@ -1,0 +1,83 @@
+<h2>Relaciona las columnas</h2>
+@if (esPlantillaInstitucional()) {
+  <p class="mensaje exito">
+    Plantilla institucional reconocida. Programa, Documento, Name, Perfil, Universidad, País,
+    Asignatura, Servicio_HUSI y fechas ya están relacionados. Categoría e id_sede son informativos y
+    no se guardan porque no tienen campos equivalentes en el modelo actual.
+  </p>
+}
+<p class="ayuda">
+  Elige una columna o escribe un valor común cuando el dato sea igual para todo el archivo. Si
+  eliges una columna, el valor común solo completa sus celdas vacías. Los documentos deben conservar
+  sus ceros iniciales: guárdalos como texto en Excel.
+</p>
+@if (error()) {
+  <p class="mensaje error" role="alert">{{ error() }}</p>
+}
+<fieldset>
+  <legend>Origen de los datos</legend>
+  <div class="campos">
+    <label
+      >Hoja<select [(ngModel)]="indiceHoja" (ngModelChange)="cambiarHoja()">
+        @for (hoja of libroExcel().hojas; track $index) {
+          <option [ngValue]="$index">{{ hoja.nombre }}</option>
+        }
+      </select></label
+    ><label
+      >Fila de encabezados<input
+        type="number"
+        min="1"
+        [max]="totalFilasDeLaHoja()"
+        [(ngModel)]="filaEncabezados"
+        (ngModelChange)="detectarColumnasAutomaticamente()"
+    /></label>
+  </div>
+  <p class="ayuda">
+    Si cambias el mapeo o un valor común, las filas se reconstruyen y se pierden las correcciones de
+    los pasos siguientes. Volver sin cambiar nada las conserva.
+  </p>
+</fieldset>
+<fieldset>
+  <legend>Campos de la carga</legend>
+  <div class="campos">
+    @for (campo of campos; track campo.clave; let indiceCampo = $index) {
+      <label
+        >{{ campo.nombre
+        }}<select [(ngModel)]="columnaPorCampo[indiceCampo]">
+          <option [ngValue]="-1">Valor común / sin columna</option>
+          @for (encabezado of encabezados(); track $index) {
+            <option [ngValue]="$index">
+              {{ $index + 1 }} · {{ encabezado || 'Sin encabezado' }}
+            </option>
+          }
+        </select>
+        <input
+          [(ngModel)]="valorComunPorCampo[indiceCampo]"
+          [maxlength]="campo.max"
+          [attr.aria-label]="'Valor común de ' + campo.nombre"
+          [placeholder]="
+            columnaPorCampo[indiceCampo] >= 0
+              ? 'Solo para celdas vacías (opcional)'
+              : 'Escribe el valor si corresponde'
+          "
+        />
+        @if (campo.ayuda) {
+          <small>{{ campo.ayuda }}</small>
+        }
+      </label>
+    }
+  </div>
+</fieldset>
+<footer class="acciones-paso">
+  <button class="btn btn--outline" (click)="anterior.emit()">Atrás</button>
+  @if (hayCorrecciones()) {
+    <button
+      class="btn btn--outline"
+      title="Descarta las correcciones y exclusiones hechas en los pasos siguientes"
+      (click)="confirmarColumnas(true)"
+    >
+      Reconstruir desde el Excel
+    </button>
+  }
+  <button class="btn btn--navy" (click)="confirmarColumnas()">Continuar: universidades</button>
+</footer>

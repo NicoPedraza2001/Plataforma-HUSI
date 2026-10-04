@@ -126,7 +126,7 @@ class LocalH2IntegrationTests {
     assertThat(
       enviar("POST", rot + "/residentes", "{\"residenteId\":1}").statusCode()
     ).isEqualTo(201);
-    assertThat(get(rot + "/residentes").body()).contains("Esperando cupo");
+    assertThat(get(rot + "/residentes?espera=true").body()).contains("Esperando cupo");
     assertThat(
       enviar(
         "PATCH",
@@ -135,29 +135,65 @@ class LocalH2IntegrationTests {
       ).statusCode()
     ).isEqualTo(409);
 
+    int res2 = crear(
+      "residentes",
+      "{\"nombre\":\"Residente test 2\",\"tipoDocumento\":\"CC\",\"numeroDocumento\":\"LOCAL-TEST-2\",\"programaId\":" +
+        prog +
+        "}"
+    );
+    assertThat(
+      enviar("POST", rot + "/residentes", "{\"residenteId\":" + res2 + "}").statusCode()
+    ).isEqualTo(201);
+    String servicio = "servicios/" + serv;
+    var bajar = enviar(
+      "PUT",
+      servicio,
+      "{\"nombre\":\"Servicio local test\",\"cupoSimultaneo\":0,\"cupoMaximoInstalado\":2}"
+    );
+    assertThat(bajar.statusCode()).isEqualTo(409);
+    assertThat(bajar.body()).contains("mínimo permitido es 1");
+    // Ampliar el cupo promueve al primero en espera (residente 1); res2 sigue esperando.
+    assertThat(
+      enviar(
+        "PUT",
+        servicio,
+        "{\"nombre\":\"Servicio local test\",\"cupoSimultaneo\":2,\"cupoMaximoInstalado\":2}"
+      ).statusCode()
+    ).isEqualTo(200);
+    assertThat(get(rot).body()).contains("\"cupoDisponible\":0");
+    assertThat(get(rot + "/residentes?espera=true").body()).contains("Esperando cupo");
+    assertThat(
+      enviar(
+        "PUT",
+        servicio,
+        "{\"nombre\":\"Servicio local test\",\"cupoSimultaneo\":1,\"cupoMaximoInstalado\":2}"
+      ).body()
+    ).contains("mínimo permitido es 2");
+
+    // Quitar el cupo a res lo manda a la espera y su cupo lo toma res2.
     assertThat(
       enviar(
         "PATCH",
         rot + "/residentes/" + res + "/estado",
-        "{\"estado\":\"Cancelado\"}"
-      ).statusCode()
-    ).isEqualTo(204);
-    assertThat(get(rot).body()).contains("\"cupoDisponible\":1");
-    assertThat(
-      enviar(
-        "PATCH",
-        rot + "/residentes/1/estado",
-        "{\"estado\":\"Asignado\"}"
+        "{\"estado\":\"Esperando cupo\"}"
       ).statusCode()
     ).isEqualTo(204);
     assertThat(get(rot).body()).contains("\"cupoDisponible\":0");
-    assertThat(
-      enviar(
-        "PATCH",
-        rot + "/residentes/1/estado",
-        "{\"estado\":\"Cancelado\"}"
-      ).statusCode()
-    ).isEqualTo(204);
+    assertThat(get(rot + "/residentes?espera=true").body()).contains("\"residenteId\":" + res + ",");
+    assertThat(get(rot + "/residentes?espera=true").body()).doesNotContain("\"residenteId\":" + res2 + ",");
+    // Quien está en espera se puede eliminar.
+    assertThat(enviar("DELETE", rot + "/residentes/" + res, "").statusCode()).isEqualTo(204);
+    assertThat(get(rot + "/residentes?espera=true").body()).doesNotContain("Esperando cupo");
+    for (String id : new String[] { "1", String.valueOf(res2) }) {
+      assertThat(
+        enviar(
+          "PATCH",
+          rot + "/residentes/" + id + "/estado",
+          "{\"estado\":\"Cancelado\"}"
+        ).statusCode()
+      ).isEqualTo(204);
+    }
+    assertThat(get(rot).body()).contains("\"cupoDisponible\":2");
 
     assertThat(enviar("DELETE", rot, "").statusCode()).isEqualTo(409);
     for (String ruta : new String[] {

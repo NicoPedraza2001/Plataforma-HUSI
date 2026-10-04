@@ -36,9 +36,9 @@ BEGIN
             USING ERRCODE = 'check_violation';
     END IF;
 
-    -- El cupo se congela al abrir la rotacion. Cambiar despues
-    -- servicio.cupo_simultaneo NO altera rotaciones ya abiertas, para no
-    -- invalidar asignaciones que el hospital ya comunico.
+    -- La rotacion nace con el cupo simultaneo del servicio. Si despues
+    -- cambia servicio.cupo_simultaneo, trg_servicio_recalcular_cupo
+    -- (13_recalcular_cupo_servicio.sql) recalcula las rotaciones abiertas.
     NEW.cupo_disponible := v_cupo;
 
     IF v_cupo = 0 THEN

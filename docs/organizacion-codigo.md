@@ -28,6 +28,29 @@ Las consultas de listados provienen del backend. Las filas de previsualización 
 
 No se cambió el esquema de base de datos ni las reglas de activación, eliminación o asociación por esta reorganización.
 
+## Importación de Excel (carga inicial)
+
+Vive en `features/admin/rotaciones/importar-rotaciones/` y se abre desde «Importar Excel» en la barra lateral (`/admin/importar-excel`). Es un asistente por pasos que sigue el diagrama entidad-relación, para corregir cada error en su paso antes de guardar:
+
+| Paso | Carpeta | Qué resuelve |
+|---|---|---|
+| 1. Archivo | `paso-archivo/` | Lee el .xlsx en el navegador. |
+| 2. Columnas | `paso-columnas/` | Relaciona columnas o valores comunes con cada campo (`campos-carga.ts`). |
+| 3. Universidades | `paso-universidades/` | Crea nuevas, asocia mal escritas a una existente, activa inactivas o excluye filas. |
+| 4. Programas | `paso-programas/` | Lo mismo, buscando cada programa dentro de su universidad. |
+| 5. Servicios | `paso-servicios/` | Crea nuevos con sus cupos, asocia mal escritos, usa los cupos del sistema si no coinciden, activa inactivos o excluye filas. |
+| 6. Asignaturas | `paso-asignaturas/` | Lo mismo que Programas, buscando cada asignatura dentro de su servicio. |
+| 7. Residentes | `paso-residentes/` | Busca por documento (`POST /residentes/buscar-por-documentos`); crea, actualiza o usa los datos del sistema. Tipo de documento, perfil y programa se eligen de los catálogos. |
+| 8. Rotaciones | `paso-rotaciones/` | Prioridad y corrección de fechas; valida todo contra el backend sin guardar. |
+| 9. Confirmar | `paso-confirmacion/` | Vista previa de cada asignación (`vista-previa-carga/`) y guardado con la huella de la última validación. |
+
+Todo lo que falta se crea en su paso con revisión del administrador; por eso la validación final se envía con `crearFaltantes=false` (`CREAR_FALTANTES_EN_LA_VALIDACION`) y cualquier faltante aparece como error que lleva a su paso.
+
+- `importar-rotaciones.ts` solo orquesta: guarda las filas (única fuente de verdad), habilita cada paso cuando el anterior no tiene pendientes y conecta los eventos.
+- Cada paso de emparejamiento separa la lógica pura (`emparejar-universidades.ts`, `emparejar-programas.ts`, `emparejar-servicios.ts`, `emparejar-asignaturas.ts`, `revisar-residentes.ts`) del componente, que llama al backend y reescribe las filas.
+- Piezas compartidas entre pasos: `emparejamiento.ts` (comparación igual a la del backend, sugerencias por similitud, reescritura de filas, creación en lote y concordancia singular/plural), `filtro-de-tabla.ts`, `tabla-emparejamiento/`, `confirmar-exclusion/`, `resultado-carga/` (los errores llevan al paso donde se corrigen) y `pasos.css`.
+- Los formularios de creación reutilizan los de cada módulo (`formulario-universidad`, `formulario-programa`, `formulario-servicio`, `formulario-asignatura`, `formulario-residente`).
+
 ## Dónde agregar cambios
 
 Una pantalla nueva pertenece a su módulo en `features`; un formulario específico permanece en ese módulo. Extraer a `shared` solamente lo que se comparte. Agregar llamadas de red al servicio del dominio y contratos a `models`. En backend, conservar controller → service → repository y evitar duplicar consultas o reglas en los controladores.

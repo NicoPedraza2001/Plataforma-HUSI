@@ -16,3 +16,29 @@ small {
 td button {
   margin: 4px;
 }
+.titulo-espera {
+  margin: 32px 0 4px;
+  font-family: var(--font-serif);
+  color: var(--husi-navy);
+}
+.btn--danger-outline {
+  background: var(--husi-bg);
+  border: 1px solid var(--husi-red);
+  color: var(--husi-red-dark);
+}
+.btn--danger-outline:hover:not(:disabled) {
+  background: var(--husi-red);
+  color: var(--husi-bg);
+}
+.panel-modal.confirmacion {
+  width: min(560px, 92vw);
+  padding: 32px;
+}
+.confirmacion h2 {
+  font-family: var(--font-serif);
+  color: var(--husi-navy);
+}
+.confirmacion p {
+  margin-top: 16px;
+  line-height: 1.6;
+}

@@ -7,6 +7,7 @@ import co.edu.javeriana.husi.mapper.ResidenteMapper;
 import co.edu.javeriana.husi.model.entity.Residente;
 import co.edu.javeriana.husi.repository.*;
 import co.edu.javeriana.husi.service.ResidenteService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -88,6 +89,20 @@ public class ResidenteServiceImpl implements ResidenteService {
   @Transactional
   public ResidenteResponse consultar(Integer id) {
     return mapper.response(obtener(id));
+  }
+
+  public List<ResidenteResponse> buscarPorDocumentos(List<String> documentos) {
+    var documentosNormalizados = documentos
+      .stream()
+      .map(documento -> documento.strip().toLowerCase())
+      .distinct()
+      .toList();
+    if (documentosNormalizados.isEmpty()) return List.of();
+    return residentes
+      .buscarPorDocumentos(documentosNormalizados)
+      .stream()
+      .map(mapper::response)
+      .toList();
   }
 
   @Transactional

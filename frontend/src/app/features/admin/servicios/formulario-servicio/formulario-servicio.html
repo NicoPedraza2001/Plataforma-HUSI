@@ -41,8 +41,9 @@
     [disabled]="guardando()"
   />
   <p class="ayuda">
-    Usa números enteros. El cupo simultáneo no puede superar el máximo instalado. Los cambios no
-    modifican los cupos de rotaciones ya creadas.
+    Usa números enteros. El cupo simultáneo no puede superar el máximo instalado. Al cambiarlo se
+    recalculan los cupos de sus rotaciones, y no puede quedar por debajo de los residentes ya
+    asignados en ninguna de ellas.
   </p>
   @if (!cuposValidos() && form.dirty) {
     <p class="mensaje error" role="alert">

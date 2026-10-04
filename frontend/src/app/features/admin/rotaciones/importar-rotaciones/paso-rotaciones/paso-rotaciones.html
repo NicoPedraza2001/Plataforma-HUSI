@@ -1,0 +1,54 @@
+<h2>Rotaciones</h2>
+<p class="ayuda">
+  Universidades, programas, servicios, asignaturas y residentes ya están resueltos. Revisa las
+  fechas de cada fila y su prioridad: el orden decide quién ocupa primero los cupos. Luego valida
+  contra la base de datos; todavía no se guarda nada.
+</p>
+@if (error()) {
+  <p class="mensaje error" role="alert">{{ error() }}</p>
+}
+
+<app-revisar-carga
+  [filas]="filas()"
+  [bloqueado]="validando()"
+  (cambiar)="filasCambiadas.emit($event)"
+  (edicion)="editandoFila.set($event)"
+/>
+
+@if (resultadoValidacion(); as resultado) {
+  <h3>Resultado de la validación</h3>
+  <p class="ayuda">
+    Cada error indica en qué paso corregirlo. Al corregir algo, vuelve aquí y valida de nuevo.
+  </p>
+  <app-resultado-carga
+    [resultado]="resultado"
+    [filas]="filas()"
+    (corregir)="corregirFila($event)"
+  />
+} @else {
+  <p class="mensaje aviso">
+    Valida las {{ filas().length }} filas para ver cuáles se pueden importar y cuáles requieren
+    corrección.
+  </p>
+}
+
+<footer class="acciones-paso">
+  @if (editandoFila()) {
+    <span class="pendientes">Guarda o cancela la corrección de la fila antes de continuar.</span>
+  }
+  <button class="btn btn--outline" [disabled]="validando()" (click)="anterior.emit()">Atrás</button>
+  <button
+    class="btn btn--outline"
+    [disabled]="validando() || editandoFila()"
+    (click)="validarConLaBaseDeDatos()"
+  >
+    {{ validando() ? 'Validando…' : resultadoValidacion() ? 'Validar de nuevo' : 'Validar' }}
+  </button>
+  <button
+    class="btn btn--navy"
+    [disabled]="validando() || editandoFila() || !hayQueGuardar(resultadoValidacion())"
+    (click)="siguiente.emit()"
+  >
+    Continuar: confirmar
+  </button>
+</footer>

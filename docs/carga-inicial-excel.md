@@ -7,7 +7,7 @@ Ruta: Rotaciones → Importar Excel. Rama: Desarrollo_Santi.
 3. Revisar y ordenar: corregir filas y cambiar su prioridad con las flechas. El número identifica la fila original.
 4. Validar: el backend compara con la base de datos sin escribir y reserva cupos en una simulación.
 5. Confirmar: revisar cantidades por tabla antes del guardado.
-6. Resultado: descargar el reporte con datos y mensajes o volver al listado.
+6. Resultado: descargar el reporte con datos y mensajes o volver al listado. Tras guardar, «Descargar registros no creados» genera `registros-no-creados.xlsx`. Incluye las filas con error u omitidas, y también las que se excluyeron a mano en los pasos del asistente. Lleva los mismos encabezados de la carga, más «Fila original», «Motivo» y «Detalle», para corregirlas e importarlas de nuevo.
 
 Volver de paso conserva las correcciones. Cambiar columnas o valores comunes reconstruye las filas; modificar datos o prioridad invalida la revisión anterior.
 
@@ -17,7 +17,7 @@ La carga resuelve Universidad → Programa → Residente y Servicio → Asignatu
 
 Se requieren universidad, programa, nombre, tipo y número de documento, servicio, asignatura y fechas. País es obligatorio para universidades nuevas; cupos máximo y simultáneo son obligatorios para servicios nuevos. Perfil académico es opcional. No se inventan cupos ni tipos de documento.
 
-Los existentes se reutilizan sin sobrescribirlos. Las contradicciones, inactivos, fechas inválidas y longitudes incorrectas producen errores. Los duplicados se omiten, incluidas relaciones canceladas. Las filas sin cupo no se crean y no dejan registros huérfanos. No hay reasignación automática a otros servicios. La capacidad sigue el modelo actual: por rotación y período, no como capacidad compartida entre períodos solapados.
+Los existentes se reutilizan sin sobrescribirlos. Las contradicciones, inactivos, fechas inválidas y longitudes incorrectas producen errores. Los duplicados se omiten, incluidas relaciones canceladas. Las filas sin cupo se importan igual y quedan en «Esperando cupo» (estado `ESPERA` en la validación, con su posición en la lista), en el orden de prioridad de la carga. Así la rotación conserva su lista de espera y se promueve sola cuando se libera o se amplía un cupo. No hay reasignación automática a otros servicios. La capacidad sigue el modelo actual: por rotación y período, no como capacidad compartida entre períodos solapados.
 
 Se aceptan fechas de Excel o texto AAAA-MM-DD. Documentos con ceros iniciales deben estar como texto. Las fórmulas deben reemplazarse por valores. La plantilla definitiva de 1756 filas con datos cabe en el límite; los campos ausentes deben completarse antes de confirmar.
 

@@ -16,6 +16,15 @@ Se añadió `activa BOOLEAN NOT NULL DEFAULT TRUE`. Los registros existentes que
 | Activar | `activa=true` | Exige asignatura y servicio activos; no modifica residentes |
 | Eliminar definitivamente | DELETE físico, tras confirmación en la pantalla | Bloqueado si existe cualquier fila en `rotacion_residente`, incluso cancelada |
 
+### Vigencia por fechas (2026-10-03)
+
+La fecha de hoy se toma en Bogotá (`util/Calendario`).
+
+- **Crear o cambiar fechas:** la fecha de inicio no puede ser anterior a hoy. Aplica a crear, editar y el importador de rotaciones. La carga inicial desde Excel queda exenta, para poder importar historia: usa `crearHistorica` y `asignarHistorica`.
+- **Rotación finalizada** (fecha final anterior a hoy): es de solo lectura. No se edita, activa, desactiva ni elimina, y tampoco se agregan, asignan, cancelan ni trasladan residentes (409). El backend expone `finalizada` en la respuesta. El listado muestra el distintivo "Finalizada" en lugar de las acciones, y "Ver residentes" queda solo para consulta.
+- **Rotación en curso** (empezó antes de hoy y termina hoy o después): sigue admitiendo cambios de residentes hasta su fecha final.
+- **Cupo del servicio:** cambiarlo no recalcula las rotaciones finalizadas, y sus asignados no cuentan para el mínimo permitido.
+
 **Activo ↔ Inactivo** son reversibles. **Eliminar definitivamente** es una operación, no un estado. Una rotación puede estar activa con cupo lleno o inactiva con cupos disponibles.
 
 Las fechas son parte de la identidad. Para proteger referencias e historial no se cambian cuando hay residentes relacionados. La asignatura determina el servicio y sus cupos: para cambiarla se debe crear otra rotación. Desactivar no cancela las asignaciones previas. Se permite cancelar una asignación en una rotación inactiva; al liberar su cupo permanece inactiva.
@@ -129,6 +138,24 @@ La prueba exige que no exista previamente la rotación de prueba de fechas `2094
 
 La columna Asociados abre `residentes-rotacion/`, con búsqueda de residentes activos en backend y paginación de asignaciones. Cada combinación residente/rotación es única. Al agregar, los triggers asignan cupo o colocan al residente en espera. Desde el panel puede asignarse un cupo libre o cancelarse una asignación; las canceladas se conservan y pueden reactivarse si la rotación está activa y hay cupo. No hay borrado en cascada ni edición manual del cupo.
 
+### Lista de espera (2026-10-03)
+
+`rotacion_residente.fecha_registro` guarda el orden de llegada. Cada vez que una rotación gana cupo, los residentes en `Esperando cupo` pasan solos a `Asignado` por orden de llegada (`promover_espera_rotacion`, `database/init/14_lista_espera.sql`; en H2, `config/local/ListaEspera`). Esto ocurre cuando:
+
+- se cancela o elimina una asignación (`liberar_cupo_rotacion`),
+- sube el cupo simultáneo del servicio (`trg_servicio_recalcular_cupo`),
+- se reactiva la rotación (`trg_rotacion_reactivada`).
+
+No se promueve en rotaciones terminadas o inactivas, si la asignatura o el servicio están inactivos, ni a residentes inactivos.
+
+En «Ver residentes», los que están en `Esperando cupo` se muestran aparte, en la tabla «Residentes en espera», en orden de llegada y con su posición (`GET .../residentes?espera=true`). La tabla principal lista solo asignados y cancelados.
+
+**Quitar cupo** (`PATCH .../estado` con `Esperando cupo`, solo desde `Asignado`) pasa al residente al final de la lista de espera con una nueva `fecha_registro`. Su cupo lo toma el primero que ya esperaba; `liberar_cupo_rotacion` y `promover_espera_rotacion` reciben el residente a excluir, para que no lo recupere en ese mismo momento. Si nadie esperaba, el cupo queda libre. **Eliminar** (`DELETE .../residentes/{residente}`, con confirmación) borra la relación de quien está en espera o cancelado, por ejemplo si desistió o retiró la rotación. A un asignado primero hay que quitarle el cupo.
+
+Una rotación nueva del mismo servicio **no** recibe residentes en espera de otras rotaciones de forma automática, porque cambiaría sus fechas. `residentes-rotacion/espera-servicio/` lista los que esperan en otras rotaciones del servicio (`GET .../espera`), en orden de llegada y marcando a quienes tienen otra rotación asignada en esas fechas. Preselecciona los primeros sin cruce hasta completar el cupo, y el administrador confirma (`POST .../espera`). El traslado mueve la fila a la nueva rotación como `Asignado` y conserva su `fecha_registro`. Al crear una rotación con residentes en espera en su servicio, el listado abre directamente ese panel.
+
+Pendiente con el cliente: hoy cada rotación recibe el cupo simultáneo completo del servicio, aunque se cruce en fechas con otra rotación del mismo servicio.
+
 Endpoints bajo `/api/rotaciones/gestion/{asignatura}/{inicio}/{fin}`:
 - `GET /residentes?pagina=1`: asignaciones paginadas.
 - `GET /candidatos?q=...`: hasta 30 residentes activos sin relación previa, búsqueda por nombre/documento.
@@ -139,6 +166,6 @@ Capas nuevas: RotacionResidenteController, RotacionResidenteService/Impl y Rotac
 
 ### Migración para instalaciones existentes
 
-Ejecutar `database/migrations/20260927_liberar_cupo_congelado.sql` sobre la base existente (ya aplicada en el entorno local). En instalaciones nuevas se ejecuta automáticamente `database/init/12_liberar_cupo_congelado.sql`. La función libera un cupo solamente al salir de Asignado; no lo compara con la capacidad actual del servicio porque la capacidad de una rotación se congela al abrirla. No cambia registros, tablas ni fechas existentes.
+Ejecutar `database/migrations/20260927_liberar_cupo_congelado.sql` sobre la base existente (ya aplicada en el entorno local). En instalaciones nuevas se ejecuta automáticamente `database/init/12_liberar_cupo_congelado.sql`. La función libera un cupo solamente al salir de Asignado; no lo compara con la capacidad actual del servicio porque `trg_servicio_recalcular_cupo` (ver `20261003_recalcular_cupo_servicio.sql`) ya mantiene el cupo de cada rotación alineado con el cupo simultáneo del servicio. No cambia registros, tablas ni fechas existentes.
 
 La importación Excel crea rotaciones (asignatura, servicio, inicio, fin); la asignación de residentes se gestiona desde el panel Asociados. No crea usuarios, servicios ni asignaturas implícitamente.

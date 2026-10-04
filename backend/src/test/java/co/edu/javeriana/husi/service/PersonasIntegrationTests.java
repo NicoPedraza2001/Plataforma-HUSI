@@ -46,6 +46,21 @@ class PersonasIntegrationTests {
   }
 
   @Test
+  void buscaResidentesPorDocumentosSinDistinguirMayusculas() {
+    String documento = "Doc-" + UUID.randomUUID();
+    var creado = residentes.crear(
+      new ResidenteRequest("Prueba Lote", "CC", documento, "", programa())
+    );
+    var encontrados = residentes.buscarPorDocumentos(
+      List.of(" " + documento.toLowerCase() + " ", "no-existe-" + UUID.randomUUID())
+    );
+    assertThat(encontrados).hasSize(1);
+    assertThat(encontrados.getFirst().id()).isEqualTo(creado.id());
+    assertThat(encontrados.getFirst().tipoDocumento()).isEqualTo("CC");
+    assertThat(residentes.buscarPorDocumentos(List.of())).isEmpty();
+  }
+
+  @Test
   void residentePersisteEditaFiltraCambiaEstadoYElimina() {
     String doc = UUID.randomUUID().toString();
     var d = new ResidenteRequest(

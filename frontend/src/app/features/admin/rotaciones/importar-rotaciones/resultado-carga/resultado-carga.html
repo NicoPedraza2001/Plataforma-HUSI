@@ -1,0 +1,90 @@
+<div class="resumen" role="status">
+  <div class="exito">
+    <strong>{{ resultado().validos }}</strong
+    >{{ terminado() ? 'Asignaciones creadas' : 'Filas válidas' }}
+  </div>
+  <div>
+    <strong>{{ resultado().espera }}</strong
+    >En lista de espera
+  </div>
+  <div [class.error]="resultado().errores > 0">
+    <strong>{{ resultado().errores }}</strong
+    >Con errores
+  </div>
+  <div>
+    <strong>{{ resultado().omitidos }}</strong
+    >Omitidas
+  </div>
+</div>
+
+<div class="barra-herramientas">
+  <label
+    >Mostrar<select [ngModel]="filtroResultado()" (ngModelChange)="cambiarFiltro($event)">
+      <option value="TODOS">Todas las filas</option>
+      <option [value]="terminado() ? 'CREADO' : 'VALIDO'">
+        {{ terminado() ? 'Creadas' : 'Válidas' }}
+      </option>
+      <option value="ESPERA">En espera</option>
+      <option value="ERROR">Con errores</option>
+      <option value="OMITIDO">Omitidas</option>
+    </select></label
+  >
+  <div class="descargas">
+    @if (terminado()) {
+      <button
+        class="btn btn--navy"
+        [disabled]="!noCreados().length"
+        [title]="noCreados().length ? '' : 'Todos los registros se crearon'"
+        (click)="descargarNoCreados()"
+      >
+        ↓ Descargar registros no creados ({{ noCreados().length }})
+      </button>
+    }
+    <button class="btn btn--outline" (click)="descargarReporte()">
+      ↓ Descargar reporte con los datos
+    </button>
+  </div>
+</div>
+@if (errorDescarga()) {
+  <p class="mensaje error" role="alert">{{ errorDescarga() }}</p>
+}
+<div class="table-wrap">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Fila del Excel</th>
+        <th>Resultado</th>
+        <th>Detalle</th>
+        <th>Corregir</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (detalle of detallesVisibles(); track detalle.fila) {
+        <tr>
+          <td>{{ detalle.fila }}</td>
+          <td>{{ etiquetaResultado[detalle.estado] ?? detalle.estado }}</td>
+          <td>{{ detalle.mensaje }}</td>
+          <td>
+            @if (pasoParaCorregir(detalle); as paso) {
+              <button
+                class="btn btn--outline"
+                (click)="corregir.emit({ numeroFila: detalle.fila, paso })"
+              >
+                Corregir en {{ tituloDelPaso(paso) }}
+              </button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="tabla__vacia">No hay filas con este resultado.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+<app-paginacion
+  [paginaActual]="paginaActual()"
+  [totalPaginas]="totalPaginas()"
+  (cambio)="paginaSolicitada.set($event)"
+/>

@@ -100,4 +100,54 @@ describe('Rotaciones conectadas', () => {
     expect(f.nativeElement.querySelectorAll('tbody .acciones-registro button').length).toBe(3);
     http.verify();
   });
+  it('al crear una rotación con residentes en espera abre su listado para trasladarlos', async () => {
+    const { f, http } = crear();
+    const c = f.componentInstance as any;
+    c.asignaturaId = 4;
+    c.inicio = '2091-01-01';
+    c.fin = '2091-01-31';
+    const tarea = c.guardar();
+    http.expectOne((r) => r.method === 'POST' && r.url === '/api/rotaciones/gestion').flush(fila);
+    await new Promise((r) => setTimeout(r));
+    http
+      .expectOne((r) => r.url === '/api/rotaciones/gestion')
+      .flush({ contenido: [fila], pagina: 1, totalPaginas: 1, totalElementos: 1, tamano: 10 });
+    http
+      .expectOne('/api/rotaciones/gestion/4/2091-01-01/2091-01-31/espera')
+      .flush([{ residenteId: 9 }]);
+    await tarea;
+    expect(c.rotacionResidentes()).toEqual(fila);
+    expect(c.aviso()).toContain('esperando cupo');
+  });
+  it('muestra las fechas en formato día/mes/año', () => {
+    const { f } = crear();
+    const texto = f.nativeElement.textContent;
+    expect(texto).toContain('01/01/2091');
+    expect(texto).toContain('31/01/2091');
+    expect(texto).not.toContain('2091-01-01');
+  });
+  it('una rotación finalizada solo ofrece consultar sus residentes', () => {
+    TestBed.configureTestingModule({
+      imports: [ListadoRotaciones],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    const f = TestBed.createComponent(ListadoRotaciones);
+    const http = TestBed.inject(HttpTestingController);
+    http
+      .expectOne((r) => r.url === '/api/rotaciones/gestion')
+      .flush({
+        contenido: [{ ...fila, finalizada: true }],
+        pagina: 1,
+        totalPaginas: 1,
+        totalElementos: 1,
+        tamano: 10,
+      });
+    http.expectOne('/api/rotaciones/gestion/catalogos').flush({ asignaturas: [], servicios: [] });
+    f.detectChanges();
+    const fila0 = f.nativeElement.querySelector('tbody tr') as HTMLElement;
+    expect(fila0.textContent).toContain('Finalizada');
+    expect(fila0.textContent).toContain('Ver residentes');
+    expect(fila0.textContent).not.toContain('Editar');
+    expect(fila0.querySelector('.papelera')).toBeNull();
+  });
 });

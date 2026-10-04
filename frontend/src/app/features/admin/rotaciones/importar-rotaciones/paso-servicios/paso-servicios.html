@@ -1,0 +1,123 @@
+<h2>Servicios</h2>
+<p class="ayuda">
+  Estos son los servicios del hospital que trae el Excel. Crea los nuevos con sus cupos o elige el
+  registrado si está escrito de otra forma. Si los cupos del Excel no coinciden con los del sistema,
+  usa los del sistema: la importación no los modifica.
+</p>
+
+@if (cargandoServicios()) {
+  <p class="mensaje aviso" role="status">Consultando los servicios registrados…</p>
+} @else if (errorDeCarga()) {
+  <p class="mensaje error" role="alert">
+    {{ errorDeCarga() }}
+    <button class="btn btn--navy" (click)="cargarServicios()">Reintentar</button>
+  </p>
+} @else {
+  <div class="resumen" role="status">
+    <div>
+      <strong>{{ grupos().length }}</strong
+      >En el Excel
+    </div>
+    <div>
+      <strong>{{ grupos().length - totalPendientes() }}</strong
+      >Listos
+    </div>
+    <div>
+      <strong>{{ totalNuevos() }}</strong
+      >Nuevos
+    </div>
+    <div [class.error]="totalPendientes() > 0">
+      <strong>{{ totalPendientes() }}</strong
+      >Por resolver
+    </div>
+  </div>
+
+  @if (aviso()) {
+    <p class="mensaje exito" role="status">{{ aviso() }}</p>
+  }
+  @if (error()) {
+    <p class="mensaje error" role="alert">{{ error() }}</p>
+  }
+  @if (serviciosParaCrearEnLote().length) {
+    <p class="mensaje aviso crear-en-lote">
+      <span
+        >{{
+          contar(
+            serviciosParaCrearEnLote().length,
+            'servicio nuevo tiene cupos válidos y no se parece',
+            'servicios nuevos tienen cupos válidos y no se parecen'
+          )
+        }}
+        a ninguno registrado.</span
+      >
+      <button class="btn btn--green" [disabled]="guardando()" (click)="crearServiciosEnLote()">
+        {{
+          guardando()
+            ? 'Creando…'
+            : 'Crear ' + contar(serviciosParaCrearEnLote().length, 'servicio', 'servicios')
+        }}
+      </button>
+    </p>
+  }
+
+  <app-tabla-emparejamiento
+    [grupos]="grupos()"
+    nombreEntidad="servicio"
+    tituloContexto="Cupos"
+    [bloqueado]="guardando()"
+    (crear)="abrirCreacion($event)"
+    (asociar)="asociarServicioExistente($event)"
+    (usarDatosDelSistema)="usarDatosDelSistema($event)"
+    (activar)="activarServicio($event)"
+    (excluir)="grupoPorExcluir.set($event)"
+  />
+}
+
+<footer class="acciones-paso">
+  @if (totalPendientes()) {
+    <span class="pendientes"
+      >Resuelve {{ contar(totalPendientes(), 'pendiente', 'pendientes') }} para continuar.</span
+    >
+  }
+  <button class="btn btn--outline" [disabled]="guardando()" (click)="anterior.emit()">Atrás</button>
+  <button
+    class="btn btn--navy"
+    [disabled]="cargandoServicios() || !!errorDeCarga() || guardando() || totalPendientes() > 0"
+    (click)="siguiente.emit()"
+  >
+    Continuar: asignaturas
+  </button>
+</footer>
+
+@if (grupoEnCreacion(); as grupo) {
+  <div class="fondo-modal" (keydown.escape)="cerrarCreacion()">
+    <section
+      class="panel-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-nuevo-servicio"
+      appFocoModal
+    >
+      <header>
+        <h2 id="titulo-nuevo-servicio">Crear servicio</h2>
+        <p>Se usará en las filas {{ grupo.numerosFila.join(', ') }} del Excel.</p>
+      </header>
+      <app-formulario-servicio
+        [(datos)]="datosNuevoServicio"
+        [guardando]="guardando()"
+        [errorFormulario]="errorFormulario()"
+        (guardar)="guardarServicioNuevo()"
+        (cancelar)="cerrarCreacion()"
+      />
+    </section>
+  </div>
+}
+
+@if (grupoPorExcluir(); as grupo) {
+  <app-confirmar-exclusion
+    [descripcion]="'el servicio «' + (grupo.valorEnExcel || 'sin nombre') + '»'"
+    [numerosFila]="grupo.numerosFila"
+    (confirmar)="confirmarExclusion()"
+    (cancelar)="grupoPorExcluir.set(null)"
+  />
+}

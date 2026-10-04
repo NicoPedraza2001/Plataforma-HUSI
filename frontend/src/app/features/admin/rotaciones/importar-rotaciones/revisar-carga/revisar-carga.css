@@ -1,0 +1,28 @@
+@import '../pasos.css';
+
+.editor {
+  border: 1px solid var(--husi-border);
+  padding: 20px;
+  border-radius: var(--radius-sm);
+  margin: 20px 0;
+}
+.editor .btn {
+  margin-right: 10px;
+}
+.editor .btn--navy {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+}
+.campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+}
+td {
+  min-width: 100px;
+}
+@media (max-width: 600px) {
+  .campos {
+    grid-template-columns: 1fr;
+  }
+}

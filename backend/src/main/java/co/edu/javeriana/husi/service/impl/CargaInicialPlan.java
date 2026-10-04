@@ -7,7 +7,10 @@ import co.edu.javeriana.husi.dto.response.CargaInicialResponse.Detalle;
 import java.time.LocalDate;
 import java.util.*;
 
-/** Simulación sin escrituras: cada fila válida reserva sus relaciones y su cupo. */
+/**
+ * Simulación sin escrituras: cada fila válida reserva sus relaciones y su cupo. Si la
+ * rotación ya no tiene cupo, la fila igual se importa y queda en lista de espera.
+ */
 final class CargaInicialPlan {
 
   record Alta(String tabla, Map<String, Object> datos) {}
@@ -35,7 +38,7 @@ final class CargaInicialPlan {
       datos.forEach((tabla, lista) -> tamanos.put(tabla, lista.size()));
       int inicio = altas.size();
       try {
-        procesar(f);
+        String espera = procesar(f);
         String nuevos = altas
           .subList(inicio, altas.size())
           .stream()
@@ -43,13 +46,17 @@ final class CargaInicialPlan {
           .distinct()
           .reduce((a, b) -> a + ", " + b)
           .orElse("");
+        String creaciones = nuevos.isEmpty()
+          ? ""
+          : " Se crearán: " + nuevos + ".";
         detalles.add(
-          new Detalle(
-            f.fila(),
-            "VALIDO",
-            "Residente y rotación relacionados con cupo." +
-              (nuevos.isEmpty() ? "" : " Se crearán: " + nuevos + ".")
-          )
+          espera == null
+            ? new Detalle(
+                f.fila(),
+                "VALIDO",
+                "Residente y rotación relacionados con cupo." + creaciones
+              )
+            : new Detalle(f.fila(), "ESPERA", espera + creaciones)
         );
       } catch (Incidencia e) {
         datos.forEach((tabla, lista) ->
@@ -174,7 +181,8 @@ final class CargaInicialPlan {
     );
   }
 
-  private void procesar(Fila f) {
+  /** Devuelve null si la fila toma cupo, o el aviso de su posición en la lista de espera. */
+  private String procesar(Fila f) {
     String universidad = campo(f.universidad(), "universidad", 150, true),
       pais = campo(f.pais(), "país", 100, false);
     String programa = campo(f.programa(), "programa", 150, true),
@@ -353,13 +361,30 @@ final class CargaInicialPlan {
       "La rotación existe pero está inactiva."
     );
     int disponibles = numero(rot.get("cupo_disponible"));
-    if (disponibles < 1) throw new Incidencia(
-      "ADVERTENCIA",
-      "Sin cupo en esta rotación. No se importará esta fila. Corrige el período o la asignatura, o revisa su prioridad."
-    );
+    if (disponibles < 1) {
+      // Al guardar, el trigger de la base la deja en «Esperando cupo» en este mismo orden.
+      long posicion =
+        1 +
+        datos
+          .get("rotacion_residente")
+          .stream()
+          .filter(x -> mismaClave(x, clave))
+          .filter(x -> "Esperando cupo".equals(texto(x.get("estado"))))
+          .count();
+      relacion.put("estado", "Esperando cupo");
+      datos.get("rotacion_residente").add(relacion);
+      altas.add(new Alta("rotacion_residente", relacion));
+      return (
+        "Sin cupo en esta rotación: quedará en lista de espera (posición " +
+        posicion +
+        ")."
+      );
+    }
     rot.put("cupo_disponible", disponibles - 1);
+    relacion.put("estado", "Asignado");
     datos.get("rotacion_residente").add(relacion);
     altas.add(new Alta("rotacion_residente", relacion));
+    return null;
   }
 
   private boolean mismaClave(
@@ -395,20 +420,28 @@ final class CargaInicialPlan {
       guardado,
       detalles.size(),
       contar("VALIDO"),
-      contar("ADVERTENCIA"),
+      contar("ESPERA"),
       contar("ERROR"),
       contar("OMITIDO"),
       nuevos,
       detalles
         .stream()
         .map(d ->
-          guardado && d.estado().equals("VALIDO")
-            ? new Detalle(
-                d.fila(),
-                "CREADO",
-                "Asignación creada correctamente."
-              )
-            : d
+          !guardado
+            ? d
+            : d.estado().equals("VALIDO")
+              ? new Detalle(
+                  d.fila(),
+                  "CREADO",
+                  "Asignación creada correctamente."
+                )
+              : d.estado().equals("ESPERA")
+                ? new Detalle(
+                    d.fila(),
+                    "ESPERA",
+                    d.mensaje().replace("quedará en", "quedó en")
+                  )
+                : d
         )
         .toList()
     );

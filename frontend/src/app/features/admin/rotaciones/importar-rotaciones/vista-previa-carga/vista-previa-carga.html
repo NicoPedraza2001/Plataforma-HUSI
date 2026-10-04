@@ -1,0 +1,94 @@
+<h3>Revisa lo que se va a guardar</h3>
+<p class="ayuda">
+  {{
+    segunCantidad(
+      filasAGuardar().length,
+      'Esta es la asignación',
+      'Estas son las ' + filasAGuardar().length + ' asignaciones'
+    )
+  }}, en orden de prioridad, con los datos exactos que se guardarán. Si algo no es correcto, vuelve
+  atrás y corrígelo en su paso.
+  @if (totalFilasQueNoSeImportan()) {
+    {{
+      segunCantidad(
+        totalFilasQueNoSeImportan(),
+        'La otra fila no se importará',
+        'Las otras ' + totalFilasQueNoSeImportan() + ' filas no se importarán'
+      )
+    }}
+    (errores o ya registradas); su detalle está en el paso Rotaciones.
+  }
+</p>
+<label
+  >Buscar en lo que se guardará<input
+    type="search"
+    placeholder="Residente, documento, programa, servicio, asignatura o fecha"
+    [ngModel]="textoBusqueda()"
+    (ngModelChange)="buscar($event)"
+/></label>
+<div class="table-wrap">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Prioridad</th>
+        <th>Residente</th>
+        <th>Universidad / Programa</th>
+        <th>Servicio / Asignatura</th>
+        <th>Fechas</th>
+        <th>Se crea además</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (filaAGuardar of filasVisibles(); track filaAGuardar.fila.fila) {
+        <tr>
+          <td>
+            {{ filaAGuardar.prioridad }}<small>Fila {{ filaAGuardar.fila.fila }} del Excel</small>
+            @if (filaAGuardar.enEspera) {
+              <span class="badge badge--pendiente">Lista de espera</span>
+            }
+          </td>
+          <td>
+            <strong>{{ filaAGuardar.fila.residente }}</strong>
+            <small
+              >{{ filaAGuardar.fila.tipoDocumento }} {{ filaAGuardar.fila.documento }}
+              @if (filaAGuardar.fila.perfilAcademico) {
+                · {{ filaAGuardar.fila.perfilAcademico }}
+              }
+            </small>
+          </td>
+          <td>
+            {{ filaAGuardar.fila.universidad }}<small>{{ filaAGuardar.fila.programa }}</small>
+          </td>
+          <td>
+            {{ filaAGuardar.fila.servicio }}<small>{{ filaAGuardar.fila.asignatura }}</small>
+            @if (creaServicio(filaAGuardar)) {
+              <small
+                >Cupo máximo {{ filaAGuardar.fila.cupoMaximo }} · simultáneo
+                {{ filaAGuardar.fila.cupoSimultaneo }}</small
+              >
+            }
+          </td>
+          <td>
+            {{ filaAGuardar.fila.inicio }}<small>a {{ filaAGuardar.fila.fin }}</small>
+          </td>
+          <td>
+            @for (registro of filaAGuardar.registrosNuevos; track registro) {
+              <span class="registro-nuevo">{{ registro }}</span>
+            } @empty {
+              <small>Solo la asignación</small>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla__vacia">No hay filas que coincidan con la búsqueda.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+<app-paginacion
+  [paginaActual]="paginaActual()"
+  [totalPaginas]="totalPaginas()"
+  (cambio)="paginaSolicitada.set($event)"
+/>

@@ -1,0 +1,122 @@
+<h2>Asignaturas</h2>
+<p class="ayuda">
+  Cada asignatura se busca dentro de su servicio. Crea las nuevas o elige la registrada si está
+  escrita de otra forma; al elegirla, todas sus filas pasan a usar el nombre del sistema.
+</p>
+
+@if (cargandoCatalogos()) {
+  <p class="mensaje aviso" role="status">Consultando servicios y asignaturas registrados…</p>
+} @else if (errorDeCarga()) {
+  <p class="mensaje error" role="alert">
+    {{ errorDeCarga() }}
+    <button class="btn btn--navy" (click)="cargarCatalogos()">Reintentar</button>
+  </p>
+} @else {
+  <div class="resumen" role="status">
+    <div>
+      <strong>{{ grupos().length }}</strong
+      >En el Excel
+    </div>
+    <div>
+      <strong>{{ grupos().length - totalPendientes() }}</strong
+      >Listas
+    </div>
+    <div>
+      <strong>{{ totalNuevas() }}</strong
+      >Nuevas
+    </div>
+    <div [class.error]="totalPendientes() > 0">
+      <strong>{{ totalPendientes() }}</strong
+      >Por resolver
+    </div>
+  </div>
+
+  @if (aviso()) {
+    <p class="mensaje exito" role="status">{{ aviso() }}</p>
+  }
+  @if (error()) {
+    <p class="mensaje error" role="alert">{{ error() }}</p>
+  }
+  @if (gruposParaCrearEnLote().length) {
+    <p class="mensaje aviso crear-en-lote">
+      <span
+        >{{
+          contar(
+            gruposParaCrearEnLote().length,
+            'asignatura nueva no se parece',
+            'asignaturas nuevas no se parecen'
+          )
+        }}
+        a ninguna registrada en su servicio.</span
+      >
+      <button class="btn btn--green" [disabled]="guardando()" (click)="crearAsignaturasEnLote()">
+        {{
+          guardando()
+            ? 'Creando…'
+            : 'Crear ' + contar(gruposParaCrearEnLote().length, 'asignatura', 'asignaturas')
+        }}
+      </button>
+    </p>
+  }
+
+  <app-tabla-emparejamiento
+    [grupos]="grupos()"
+    nombreEntidad="asignatura"
+    tituloContexto="Servicio"
+    [bloqueado]="guardando()"
+    (crear)="abrirCreacion($event)"
+    (asociar)="asociarAsignaturaExistente($event)"
+    (activar)="activarAsignatura($event)"
+    (excluir)="grupoPorExcluir.set($event)"
+  />
+}
+
+<footer class="acciones-paso">
+  @if (totalPendientes()) {
+    <span class="pendientes"
+      >Resuelve {{ contar(totalPendientes(), 'pendiente', 'pendientes') }} para continuar.</span
+    >
+  }
+  <button class="btn btn--outline" [disabled]="guardando()" (click)="anterior.emit()">Atrás</button>
+  <button
+    class="btn btn--navy"
+    [disabled]="cargandoCatalogos() || !!errorDeCarga() || guardando() || totalPendientes() > 0"
+    (click)="siguiente.emit()"
+  >
+    Continuar: residentes
+  </button>
+</footer>
+
+@if (grupoEnCreacion(); as grupo) {
+  <div class="fondo-modal" (keydown.escape)="cerrarCreacion()">
+    <section
+      class="panel-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-nueva-asignatura"
+      appFocoModal
+    >
+      <header>
+        <h2 id="titulo-nueva-asignatura">Crear asignatura</h2>
+        <p>Se usará en las filas {{ grupo.numerosFila.join(', ') }} del Excel.</p>
+      </header>
+      <app-formulario-asignatura
+        [(datos)]="datosNuevaAsignatura"
+        [servicios]="opcionesDeServicio()"
+        [guardando]="guardando()"
+        [errorFormulario]="errorFormulario()"
+        (guardar)="guardarAsignaturaNueva()"
+        (cancelar)="cerrarCreacion()"
+      />
+    </section>
+  </div>
+}
+
+@if (grupoPorExcluir(); as grupo) {
+  <app-confirmar-exclusion
+    [descripcion]="'la asignatura «' + (grupo.valorEnExcel || 'sin nombre') + '»'"
+    [numerosFila]="grupo.numerosFila"
+    (confirmar)="confirmarExclusion()"
+    (cancelar)="grupoPorExcluir.set(null)"
+  />
+}

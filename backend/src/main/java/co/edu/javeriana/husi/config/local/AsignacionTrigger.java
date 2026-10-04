@@ -59,7 +59,10 @@ public class AsignacionTrigger implements Trigger {
     if (
       "Asignado".equals(a[4]) &&
       (b == null || cambio(a, b) || !"Asignado".equals(b[4]))
-    ) ajustar(c, a, 1);
+    ) {
+      ajustar(c, a, 1);
+      ListaEspera.promover(c, a[1], a[2], a[3]);
+    }
     if (
       b != null &&
       "Asignado".equals(b[4]) &&

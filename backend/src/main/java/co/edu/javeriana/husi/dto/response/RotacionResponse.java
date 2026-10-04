@@ -11,5 +11,7 @@ public record RotacionResponse(
   boolean activa,
   String disponibilidad,
   int cupoDisponible,
-  long relaciones
+  long relaciones,
+  /** La fecha final ya pasó: la rotación es de solo lectura. */
+  boolean finalizada
 ) {}

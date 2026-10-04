@@ -1,0 +1,20 @@
+@import '../pasos.css';
+
+h3 {
+  margin-top: 28px;
+}
+td strong {
+  color: var(--husi-navy);
+  font-weight: 600;
+}
+.registro-nuevo {
+  display: inline-block;
+  margin: 0 6px 6px 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--husi-surface);
+  border: 1px solid var(--husi-teal-dark);
+  color: var(--husi-navy);
+  font-size: 0.78rem;
+  font-weight: 600;
+}

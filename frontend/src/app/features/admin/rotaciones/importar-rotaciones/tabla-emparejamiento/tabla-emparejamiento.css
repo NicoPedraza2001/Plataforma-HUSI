@@ -1,0 +1,37 @@
+@import '../pasos.css';
+
+.barra-herramientas {
+  grid-template-columns: 2fr 1fr;
+}
+td strong {
+  color: var(--husi-navy);
+  font-weight: 600;
+}
+.sugerencias {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.sugerencias small {
+  width: 100%;
+  margin: 0;
+}
+.sugerencia {
+  padding: 4px 10px;
+  border: 1px dashed var(--husi-teal-dark);
+  border-radius: 999px;
+  background: var(--husi-bg);
+  color: var(--husi-navy);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.sugerencia:hover:not(:disabled) {
+  background: var(--husi-surface);
+  border-style: solid;
+}
+.badge {
+  min-width: 0;
+}

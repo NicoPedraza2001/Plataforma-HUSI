@@ -1,0 +1,68 @@
+@if (error()) {
+  <p role="alert" class="mensaje error">{{ error() }}</p>
+}
+@if (!cargando() && filas().length) {
+  <section class="espera" aria-labelledby="espera-titulo">
+    <h3 id="espera-titulo">En espera en otras rotaciones de {{ rotacion().servicio }}</h3>
+    <p class="ayuda">
+      Ordenados por llegada. Se preseleccionan los primeros hasta completar los cupos disponibles
+      ({{ cupos() }}). Al confirmar pasan a esta rotación como asignados y salen de la espera
+      anterior.
+    </p>
+    <div class="table-wrap">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th><span class="sr-only">Seleccionar</span></th>
+            <th>Residente / Documento</th>
+            <th>Espera en</th>
+            <th>Observación</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filas(); track clave(f); let i = $index) {
+            <tr>
+              <td>
+                <input
+                  type="checkbox"
+                  [id]="'espera-' + i"
+                  [checked]="seleccion().has(clave(f))"
+                  [disabled]="guardando()"
+                  (change)="alternar(f)"
+                />
+              </td>
+              <td>
+                <label [for]="'espera-' + i">{{ f.nombre }}</label
+                ><small>{{ f.documento }}</small>
+              </td>
+              <td>
+                {{ f.asignatura
+                }}<small
+                  >{{ f.inicio | date: 'dd/MM/yyyy' }} a {{ f.fin | date: 'dd/MM/yyyy' }}</small
+                >
+              </td>
+              <td>
+                @if (f.cruce) {
+                  <span class="cruce">Tiene otra rotación asignada en estas fechas</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (excede()) {
+      <p role="alert" class="mensaje error">
+        Seleccionaste {{ seleccion().size }} residentes y solo hay {{ cupos() }} cupos disponibles.
+      </p>
+    }
+    <button
+      type="button"
+      class="btn btn--navy"
+      [disabled]="!seleccion().size || excede() || guardando()"
+      (click)="trasladar()"
+    >
+      {{ guardando() ? 'Trasladando…' : 'Trasladar seleccionados (' + seleccion().size + ')' }}
+    </button>
+  </section>
+}

@@ -19,4 +19,15 @@ describe('FormularioRotacion', () => {
     f.detectChanges();
     expect(f.nativeElement.querySelector('button[type=submit]').disabled).toBe(false);
   });
+  it('no permite que una rotación nueva empiece antes de hoy', async () => {
+    const f = TestBed.createComponent(FormularioRotacion);
+    f.componentRef.setInput('asignaturaId', 1);
+    f.componentRef.setInput('inicio', '2020-01-01');
+    f.componentRef.setInput('fin', '2099-01-01');
+    f.detectChanges();
+    await f.whenStable();
+    f.detectChanges();
+    expect(f.nativeElement.textContent).toContain('no puede ser anterior a hoy');
+    expect(f.nativeElement.querySelector('button[type=submit]').disabled).toBe(true);
+  });
 });

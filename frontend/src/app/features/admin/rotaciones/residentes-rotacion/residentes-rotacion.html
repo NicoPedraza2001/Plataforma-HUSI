@@ -10,11 +10,16 @@
     <div class="contenido">
       <p>
         <strong>{{ rotacion().asignatura }}</strong> · {{ rotacion().servicio }}<br />{{
-          rotacion().inicio
+          rotacion().inicio | date: 'dd/MM/yyyy'
         }}
-        a {{ rotacion().fin }}
+        a {{ rotacion().fin | date: 'dd/MM/yyyy' }}
       </p>
-      @if (rotacion().activa) {
+      @if (rotacion().finalizada) {
+        <p class="mensaje">
+          La rotación finalizó el {{ rotacion().fin | date: 'dd/MM/yyyy' }}. Solo puedes consultar
+          sus residentes.
+        </p>
+      } @else if (rotacion().activa) {
         <form (ngSubmit)="asignar()">
           <label for="buscar-residente">Buscar residente por nombre o documento</label
           ><input
@@ -60,6 +65,7 @@
             Agregar residente
           </button>
         </form>
+        <app-espera-servicio [rotacion]="rotacion()" (trasladados)="trasladados($event)" />
       } @else {
         <p class="mensaje">
           La rotación está inactiva. Puedes consultar o cancelar asignaciones existentes.
@@ -98,7 +104,7 @@
                   <td>{{ r.programa }}</td>
                   <td>{{ r.estado }}</td>
                   <td>
-                    @if (r.estado !== 'Asignado' && rotacion().activa) {
+                    @if (r.estado !== 'Asignado' && rotacion().activa && !rotacion().finalizada) {
                       <button
                         class="btn btn--navy"
                         [disabled]="guardando()"
@@ -107,13 +113,23 @@
                         Asignar cupo
                       </button>
                     }
-                    @if (r.estado !== 'Cancelado') {
+                    @if (r.estado === 'Asignado' && rotacion().activa && !rotacion().finalizada) {
                       <button
                         class="btn btn--outline"
                         [disabled]="guardando()"
-                        (click)="estado(r, 'Cancelado')"
+                        [title]="'Pasa a ' + r.nombre + ' al final de la lista de espera'"
+                        (click)="estado(r, 'Esperando cupo')"
                       >
-                        Cancelar asignación
+                        Quitar cupo
+                      </button>
+                    }
+                    @if (r.estado === 'Cancelado' && !rotacion().finalizada) {
+                      <button
+                        class="btn btn--danger-outline"
+                        [disabled]="guardando()"
+                        (click)="solicitarEliminar(r)"
+                      >
+                        Eliminar
                       </button>
                     }
                   </td>
@@ -132,6 +148,73 @@
           (cambio)="cargar($event)"
         />
       }
+      <h3 class="titulo-espera">Residentes en espera</h3>
+      <p class="ayuda">
+        En orden de llegada: cuando se libera o se amplía un cupo, lo ocupa el primero de la lista.
+      </p>
+      @if (enEspera.cargando()) {
+        <p role="status">Cargando residentes en espera…</p>
+      } @else if (enEspera.error()) {
+        <p role="alert">
+          {{ enEspera.error() }}
+          <button class="btn btn--outline" (click)="cargarEspera()">Reintentar</button>
+        </p>
+      } @else {
+        <div class="table-wrap">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Posición</th>
+                <th>Residente / Documento</th>
+                <th>Programa</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of enEspera.datos()?.contenido ?? []; track r.residenteId; let i = $index) {
+                <tr>
+                  <td>{{ posicion(i) }}</td>
+                  <td>
+                    {{ r.nombre }}<small>{{ r.documento }}</small>
+                  </td>
+                  <td>{{ r.programa }}</td>
+                  <td>
+                    @if (rotacion().activa && !rotacion().finalizada) {
+                      <button
+                        class="btn btn--navy"
+                        [disabled]="guardando()"
+                        (click)="estado(r, 'Asignado')"
+                      >
+                        Asignar cupo
+                      </button>
+                    }
+                    @if (!rotacion().finalizada) {
+                      <button
+                        class="btn btn--danger-outline"
+                        [disabled]="guardando()"
+                        (click)="solicitarEliminar(r)"
+                      >
+                        Eliminar
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4">No hay residentes en espera en esta rotación.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if ((enEspera.datos()?.totalPaginas ?? 1) > 1) {
+          <app-paginacion
+            [paginaActual]="enEspera.datos()?.pagina ?? 1"
+            [totalPaginas]="enEspera.datos()?.totalPaginas ?? 1"
+            (cambio)="cargarEspera($event)"
+          />
+        }
+      }
       <footer>
         <button class="btn btn--outline" [disabled]="guardando()" (click)="cerrar.emit()">
           Cerrar
@@ -140,3 +223,35 @@
     </div>
   </section>
 </div>
+@if (porEliminar(); as fila) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && porEliminar.set(null)">
+    <section
+      class="panel-modal confirmacion"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-eliminar-residente"
+      appFocoModal
+    >
+      <h2 id="titulo-eliminar-residente">¿Eliminar a este residente de la rotación?</h2>
+      <p>
+        <strong>{{ fila.nombre }}</strong> · {{ fila.documento }}<br />{{ rotacion().asignatura }} ·
+        {{ rotacion().inicio | date: 'dd/MM/yyyy' }} a {{ rotacion().fin | date: 'dd/MM/yyyy' }}
+      </p>
+      <p>
+        Se borrará su registro en esta rotación (por ejemplo, si desistió o retiró la rotación). El
+        residente sigue existiendo y puede agregarse de nuevo; si lo haces, entrará al final de la
+        lista de espera.
+      </p>
+      @if (error()) {
+        <p class="mensaje error" role="alert">{{ error() }}</p>
+      }
+      <footer>
+        <button class="btn btn--outline" [disabled]="guardando()" (click)="porEliminar.set(null)">
+          Cancelar</button
+        ><button class="btn btn--danger" [disabled]="guardando()" (click)="eliminar()">
+          {{ guardando() ? 'Eliminando…' : 'Eliminar' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}

@@ -1,0 +1,156 @@
+<div class="barra-herramientas">
+  <label
+    >Buscar {{ nombreEntidad()
+    }}<input
+      type="search"
+      [placeholder]="'Nombre o ' + tituloContexto().toLowerCase()"
+      [ngModel]="filtro.textoBusqueda()"
+      (ngModelChange)="filtro.cambiarBusqueda($event)"
+  /></label>
+  <label
+    >Mostrar<select
+      [ngModel]="filtro.filtroEstado()"
+      (ngModelChange)="filtro.cambiarFiltro($event)"
+    >
+      @for (opcion of opcionesFiltro; track opcion.valor) {
+        <option [ngValue]="opcion.valor">{{ opcion.etiqueta }}</option>
+      }
+    </select></label
+  >
+</div>
+<div class="table-wrap">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>En el Excel</th>
+        <th>{{ tituloContexto() }}</th>
+        <th>Situación</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (grupo of filtro.elementosVisibles(); track grupo.clave) {
+        <tr>
+          <td>
+            <strong>{{ grupo.valorEnExcel || '(vacío)' }}</strong>
+            @if (grupo.valoresOriginales.length) {
+              <small>En el archivo: {{ grupo.valoresOriginales.join(' · ') }}</small>
+            }
+            <small
+              >{{ grupo.numerosFila.length }}
+              {{ grupo.numerosFila.length === 1 ? 'fila' : 'filas' }}:
+              {{ describirFilas(grupo.numerosFila) }}</small
+            >
+          </td>
+          <td>{{ grupo.contexto || '—' }}</td>
+          <td>
+            <span class="badge" [class]="claseBadgeEstado[grupo.estado]">{{
+              etiquetaEstado[grupo.estado]
+            }}</span>
+            @if (grupo.registro && grupo.estado === 'encontrado') {
+              <small>En el sistema como «{{ grupo.registro.nombre }}».</small>
+            }
+            @if (grupo.observaciones.length) {
+              <ul class="observaciones">
+                @for (observacion of grupo.observaciones; track $index) {
+                  <li>{{ observacion }}</li>
+                }
+              </ul>
+            }
+            @if (grupo.sugerencias.length) {
+              <div class="sugerencias">
+                <small>¿Es alguna de estas?</small>
+                @for (sugerencia of grupo.sugerencias; track sugerencia.id) {
+                  <button
+                    type="button"
+                    class="sugerencia"
+                    [disabled]="bloqueado()"
+                    [title]="'Usar «' + sugerencia.nombre + '» en estas filas'"
+                    (click)="asociar.emit({ grupo, registroId: sugerencia.id })"
+                  >
+                    {{ sugerencia.nombre }}
+                  </button>
+                }
+              </div>
+            }
+          </td>
+          <td>
+            <div class="acciones-fila">
+              @switch (grupo.estado) {
+                @case ('diferencias') {
+                  <button
+                    class="btn btn--navy"
+                    [disabled]="bloqueado()"
+                    (click)="usarDatosDelSistema.emit(grupo)"
+                  >
+                    Usar datos del sistema
+                  </button>
+                }
+                @case ('inactivo') {
+                  <button
+                    class="btn btn--navy"
+                    [disabled]="bloqueado()"
+                    (click)="activar.emit(grupo)"
+                  >
+                    Activar
+                  </button>
+                }
+                @case ('encontrado') {}
+                @default {
+                  <button
+                    class="btn btn--green"
+                    [disabled]="bloqueado() || !grupo.sePuedeCrear"
+                    (click)="crear.emit(grupo)"
+                  >
+                    Crear {{ nombreEntidad() }}
+                  </button>
+                }
+              }
+              @if (grupo.opciones.length) {
+                <select
+                  [disabled]="bloqueado()"
+                  [attr.aria-label]="'Elegir un registro existente para ' + grupo.valorEnExcel"
+                  (change)="elegirRegistroExistente(grupo, $event)"
+                >
+                  <option value="">
+                    {{
+                      grupo.estado === 'encontrado'
+                        ? 'Cambiar por otro registro…'
+                        : 'Elegir existente…'
+                    }}
+                  </option>
+                  @for (opcion of grupo.opciones; track opcion.id) {
+                    <option [value]="opcion.id">{{ opcion.nombre }}</option>
+                  }
+                </select>
+              }
+              @if (grupo.estado !== 'encontrado') {
+                <button
+                  class="btn btn--outline boton-excluir"
+                  [disabled]="bloqueado()"
+                  [title]="
+                    'Quitar de la importación las filas ' + describirFilas(grupo.numerosFila)
+                  "
+                  (click)="excluir.emit(grupo)"
+                >
+                  Excluir filas
+                </button>
+              }
+            </div>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="tabla__vacia">
+            No hay registros con este filtro. Cambia el filtro para verlos todos.
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+<app-paginacion
+  [paginaActual]="filtro.paginaActual()"
+  [totalPaginas]="filtro.totalPaginas()"
+  (cambio)="filtro.paginaSolicitada.set($event)"
+/>

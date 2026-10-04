@@ -1,0 +1,23 @@
+<div class="fondo-modal" (keydown.escape)="cancelar.emit()">
+  <section
+    class="panel-modal confirmacion"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-excluir-filas"
+    appFocoModal
+  >
+    <h2 id="titulo-excluir-filas">¿Excluir estas filas de la importación?</h2>
+    <p>
+      Se quitarán {{ numerosFila().length }} {{ numerosFila().length === 1 ? 'fila' : 'filas' }} de
+      {{ descripcion() }} (filas del Excel: {{ describirFilas(numerosFila(), 10) }}).
+    </p>
+    <p>
+      No se borra nada de la base de datos ni del archivo. Para recuperarlas, vuelve al paso
+      «Columnas» y pulsa «Reconstruir desde el Excel» (se descartan las correcciones hechas).
+    </p>
+    <footer>
+      <button class="btn btn--outline" (click)="cancelar.emit()">Cancelar</button
+      ><button class="btn btn--danger" (click)="confirmar.emit()">Excluir filas</button>
+    </footer>
+  </section>
+</div>

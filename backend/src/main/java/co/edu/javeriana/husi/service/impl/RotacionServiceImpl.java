@@ -7,6 +7,7 @@ import co.edu.javeriana.husi.exception.NegocioException;
 import co.edu.javeriana.husi.model.entity.*;
 import co.edu.javeriana.husi.repository.*;
 import co.edu.javeriana.husi.service.RotacionService;
+import co.edu.javeriana.husi.util.Calendario;
 import java.time.LocalDate;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -121,6 +122,26 @@ public class RotacionServiceImpl implements RotacionService {
     );
   }
 
+  /** Crear o mover fechas: la rotación no puede empezar antes de hoy. */
+  private void validarVigencia(RotacionRequest d) {
+    if (d.inicio().isBefore(Calendario.hoy())) throw error(
+      HttpStatus.BAD_REQUEST,
+      "La fecha de inicio no puede ser anterior a hoy (" +
+        Calendario.formato(Calendario.hoy()) +
+        ")."
+    );
+  }
+
+  /** Una rotación cuya fecha final ya pasó es de solo lectura. */
+  private void noFinalizada(RotacionId id) {
+    if (Calendario.finalizada(id.getFin())) throw error(
+      HttpStatus.CONFLICT,
+      "La rotación finalizó el " +
+        Calendario.formato(id.getFin()) +
+        " y ya no admite cambios."
+    );
+  }
+
   private void activa(Integer id) {
     if (!consultas.asignaturaActiva(id)) throw error(
       HttpStatus.BAD_REQUEST,
@@ -140,6 +161,17 @@ public class RotacionServiceImpl implements RotacionService {
   @Transactional
   public RotacionResponse crear(RotacionRequest d) {
     validar(d);
+    validarVigencia(d);
+    return registrar(d);
+  }
+
+  @Transactional
+  public RotacionResponse crearHistorica(RotacionRequest d) {
+    validar(d);
+    return registrar(d);
+  }
+
+  private RotacionResponse registrar(RotacionRequest d) {
     activa(d.asignaturaId());
     RotacionId id = clave(d);
     if (repo.existsById(id)) throw error(
@@ -155,8 +187,10 @@ public class RotacionServiceImpl implements RotacionService {
   @Transactional
   public RotacionResponse editar(RotacionId id, RotacionRequest d) {
     obtener(id, true);
+    noFinalizada(id);
     validar(d);
     if (id.equals(clave(d))) return mapper.toResponse(consultas.detalle(id));
+    validarVigencia(d);
     if (consultas.relaciones(id) > 0) throw error(
       HttpStatus.CONFLICT,
       "No se pueden cambiar las fechas de una rotación con residentes relacionados. Conserva su historial o crea otra rotación."
@@ -177,6 +211,7 @@ public class RotacionServiceImpl implements RotacionService {
   @Transactional
   public RotacionResponse estado(RotacionId id, boolean valor) {
     Rotacion r = obtener(id, true);
+    noFinalizada(id);
     if (valor) activa(id.getAsignaturaId());
     r.setActiva(valor);
     repo.saveAndFlush(r);
@@ -186,6 +221,7 @@ public class RotacionServiceImpl implements RotacionService {
   @Transactional
   public void eliminar(RotacionId id) {
     Rotacion r = obtener(id, true);
+    noFinalizada(id);
     long relaciones = consultas.relaciones(id);
     if (relaciones > 0) throw error(
       HttpStatus.CONFLICT,
@@ -225,6 +261,7 @@ public class RotacionServiceImpl implements RotacionService {
       fin
     );
     validar(d);
+    validarVigencia(d);
     if (repo.existsById(clave(d))) throw error(
       HttpStatus.CONFLICT,
       "La rotación ya existe; no se modificará ni reactivará."

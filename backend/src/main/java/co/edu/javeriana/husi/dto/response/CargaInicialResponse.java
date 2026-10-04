@@ -7,7 +7,8 @@ public record CargaInicialResponse(
   boolean guardado,
   int total,
   int validos,
-  int advertencias,
+  /** Filas sin cupo que se registran en lista de espera. */
+  int espera,
   int errores,
   int omitidos,
   Map<String, Integer> nuevos,

@@ -4,6 +4,7 @@ import co.edu.javeriana.husi.dto.request.*;
 import co.edu.javeriana.husi.dto.response.*;
 import co.edu.javeriana.husi.service.ResidenteService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,14 @@ public class ResidenteController {
   @GetMapping("/{id}")
   public ResidenteResponse consultar(@PathVariable Integer id) {
     return service.consultar(id);
+  }
+
+  /** Residentes cuyos documentos coinciden con la lista (sin distinguir mayúsculas). */
+  @PostMapping("/buscar-por-documentos")
+  public List<ResidenteResponse> buscarPorDocumentos(
+    @Valid @RequestBody BusquedaDocumentosRequest request
+  ) {
+    return service.buscarPorDocumentos(request.documentos());
   }
 
   @PostMapping

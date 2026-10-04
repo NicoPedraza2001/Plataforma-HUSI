@@ -1,6 +1,8 @@
 package co.edu.javeriana.husi.mapper;
 
 import co.edu.javeriana.husi.dto.response.RotacionResponse;
+import co.edu.javeriana.husi.util.Calendario;
+import java.time.LocalDate;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +21,8 @@ public class RotacionMapper {
       (Boolean) fila.get("activa"),
       (String) fila.get("disponibilidad"),
       ((Number) fila.get("cupoDisponible")).intValue(),
-      ((Number) fila.get("relaciones")).longValue()
+      ((Number) fila.get("relaciones")).longValue(),
+      Calendario.finalizada(LocalDate.parse(fila.get("fin").toString()))
     );
   }
 }

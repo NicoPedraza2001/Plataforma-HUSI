@@ -4,7 +4,7 @@ import java.sql.*;
 import java.util.Objects;
 import org.h2.api.Trigger;
 
-/** Exclusivo de H2: capacidad inicial congelada y protección de cambios directos. */
+/** Exclusivo de H2: capacidad inicial del servicio y protección de cambios directos. */
 public class CupoRotacionTrigger implements Trigger {
 
   static final ThreadLocal<Boolean> AJUSTANDO = ThreadLocal.withInitial(

@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -10,6 +11,7 @@ import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Paginacion } from '../../../../shared/paginacion/paginacion';
 import { FormularioRotacion } from '../formulario-rotacion/formulario-rotacion';
+import { hoyBogota } from '../hoy';
 import { ResidentesRotacion } from '../residentes-rotacion/residentes-rotacion';
 
 @Component({
@@ -21,6 +23,7 @@ import { ResidentesRotacion } from '../residentes-rotacion/residentes-rotacion';
     FormsModule,
     Paginacion,
     FocoModal,
+    DatePipe,
   ],
   templateUrl: './listado-rotaciones.html',
   styleUrl: './listado-rotaciones.css',
@@ -87,20 +90,40 @@ export class ListadoRotaciones {
       );
       return;
     }
+    const fechasCambian = this.inicio !== this.edicion?.inicio || this.fin !== this.edicion?.fin;
+    if (fechasCambian && this.inicio < hoyBogota()) {
+      this.error.set('La fecha de inicio no puede ser anterior a hoy.');
+      return;
+    }
     this.guardando.set(true);
     this.error.set('');
     try {
       const datos = { asignaturaId: Number(this.asignaturaId), inicio: this.inicio, fin: this.fin };
-      await firstValueFrom(
+      const guardada = await firstValueFrom(
         this.edicion ? this.api.editar(this.edicion, datos) : this.api.crear(datos),
       );
       this.formulario.set(false);
       this.aviso.set(this.edicion ? 'Rotación actualizada.' : 'Rotación creada correctamente.');
       this.cargar();
+      if (!this.edicion) await this.ofrecerEspera(guardada);
     } catch (e) {
       this.error.set(mensajeError(e));
     } finally {
       this.guardando.set(false);
+    }
+  }
+
+  /** Si hay residentes esperando cupo en el servicio, abre la rotación nueva para trasladarlos. */
+  private async ofrecerEspera(rotacion: RotacionGestion) {
+    try {
+      const espera = await firstValueFrom(this.api.espera(rotacion));
+      if (!espera.length) return;
+      this.aviso.set(
+        'Rotación creada. Hay residentes esperando cupo en este servicio: elige cuáles trasladar.',
+      );
+      this.rotacionResidentes.set(rotacion);
+    } catch {
+      // La rotación ya se creó; la espera puede revisarse desde "Ver residentes".
     }
   }
 

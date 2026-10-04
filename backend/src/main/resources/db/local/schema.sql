@@ -202,6 +202,8 @@ CREATE TABLE rotacion_residente (
 
     estado         VARCHAR(30) NOT NULL DEFAULT 'Esperando cupo',
 
+    fecha_registro TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
     PRIMARY KEY (id_residente, id_asignatura, fecha_inicio, fecha_fin),
 
     CONSTRAINT fk_rr_residente
@@ -243,3 +245,5 @@ CREATE INDEX idx_historial_usuario_fecha
 ALTER TABLE rotacion ADD activa BOOLEAN NOT NULL DEFAULT TRUE;
 CREATE TRIGGER local_rotacion BEFORE INSERT, UPDATE ON rotacion FOR EACH ROW CALL 'co.edu.javeriana.husi.config.local.CupoRotacionTrigger';
 CREATE TRIGGER local_asignacion BEFORE INSERT, UPDATE, DELETE ON rotacion_residente FOR EACH ROW CALL 'co.edu.javeriana.husi.config.local.AsignacionTrigger';
+CREATE TRIGGER local_rotacion_reactivada AFTER UPDATE ON rotacion FOR EACH ROW CALL 'co.edu.javeriana.husi.config.local.RotacionReactivadaTrigger';
+CREATE TRIGGER local_servicio_cupo AFTER UPDATE ON servicio FOR EACH ROW CALL 'co.edu.javeriana.husi.config.local.CupoServicioTrigger';

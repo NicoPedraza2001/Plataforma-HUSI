@@ -120,26 +120,87 @@ class ServicioIntegrationTests {
       .hasMessageContaining("coordinadores");
   }
 
-  @Test
-  void cambiarCupoNoModificaRotacionesExistentes() {
-    var s = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 2, 5));
+  /** Crea una rotación del servicio con {@code asignados} residentes en estado Asignado. */
+  private Integer rotacionConAsignados(Integer servicio, int asignados) {
     Integer a = jdbc.queryForObject(
       "insert into asignatura(id_servicio,nombre_asignatura) values (?,'Prueba') returning id_asignatura",
       Integer.class,
-      s.id()
+      servicio
     );
     jdbc.update(
-      "insert into rotacion(id_asignatura,fecha_inicio,fecha_fin,cupo_disponible) values (?,'2099-01-01','2099-01-02',2)",
+      "insert into rotacion(id_asignatura,fecha_inicio,fecha_fin) values (?,'2099-01-01','2099-01-02')",
       a
     );
-    servicios.actualizar(s.id(), datos(s.nombre(), 4, 5));
-    assertThat(
-      jdbc.queryForObject(
-        "select cupo_disponible from rotacion where id_asignatura=?",
+    int u = jdbc.queryForObject(
+      "insert into universidad(nombre_universidad,pais) values(?,'Colombia') returning id_universidad",
+      Integer.class,
+      "TEST-SERV-U-" + UUID.randomUUID()
+    );
+    int p = jdbc.queryForObject(
+      "insert into programa(id_universidad,nombre_programa) values(?,'TEST SERV') returning id_programa",
+      Integer.class,
+      u
+    );
+    for (int i = 0; i < asignados; i++) {
+      Integer r = jdbc.queryForObject(
+        "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values(?,1,'Residente ficticio',?) returning id_residente",
         Integer.class,
+        p,
+        UUID.randomUUID().toString()
+      );
+      jdbc.update(
+        "insert into rotacion_residente(id_residente,id_asignatura,fecha_inicio,fecha_fin) values (?,?,'2099-01-01','2099-01-02')",
+        r,
         a
-      )
-    ).isEqualTo(2);
+      );
+    }
+    return a;
+  }
+
+  private Map<String, Object> rotacion(Integer asignatura) {
+    return jdbc.queryForMap(
+      "select cupo_disponible,estado from rotacion where id_asignatura=?",
+      asignatura
+    );
+  }
+
+  @Test
+  void cambiarCupoRecalculaRotacionesExistentes() {
+    var s = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 2, 10));
+    Integer a = rotacionConAsignados(s.id(), 2);
+    assertThat(rotacion(a)).containsEntry("cupo_disponible", 0).containsEntry(
+      "estado",
+      "Cupo Lleno"
+    );
+    servicios.actualizar(s.id(), datos(s.nombre(), 5, 10));
+    assertThat(rotacion(a)).containsEntry("cupo_disponible", 3).containsEntry(
+      "estado",
+      "Disponible"
+    );
+  }
+
+  @Test
+  void noPermiteBajarCupoPorDebajoDeLosAsignados() {
+    var s = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 5, 10));
+    Integer a = rotacionConAsignados(s.id(), 3);
+    assertThatThrownBy(() -> servicios.actualizar(s.id(), datos(s.nombre(), 2, 10)))
+      .isInstanceOf(NegocioException.class)
+      .hasMessageContaining("mínimo permitido es 3");
+    assertThat(rotacion(a)).containsEntry("cupo_disponible", 2);
+    servicios.actualizar(s.id(), datos(s.nombre(), 3, 10));
+    assertThat(rotacion(a)).containsEntry("cupo_disponible", 0).containsEntry(
+      "estado",
+      "Cupo Lleno"
+    );
+  }
+
+  @Test
+  void laBaseTambienBloqueaBajarCupoPorDebajoDeLosAsignados() {
+    var s = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 5, 10));
+    rotacionConAsignados(s.id(), 3);
+    assertThatThrownBy(() ->
+      jdbc.update("update servicio set cupo_simultaneo=2 where id_servicio=?", s.id())
+    ).hasMessageContaining("asignados");
   }
 
   @Autowired

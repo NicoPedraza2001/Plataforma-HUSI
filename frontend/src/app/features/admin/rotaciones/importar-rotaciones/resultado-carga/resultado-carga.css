@@ -1,0 +1,23 @@
+@import '../pasos.css';
+
+.barra-herramientas {
+  grid-template-columns: minmax(0, 320px) auto;
+  justify-content: space-between;
+}
+.resumen .exito {
+  color: var(--husi-green);
+}
+.resumen .error {
+  color: var(--husi-red-dark);
+}
+.tabla .btn--outline {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.descargas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}

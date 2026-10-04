@@ -19,6 +19,13 @@ export class ResidenteService {
     return this.http.get<ResidenteDetalle>(`${API_URL}/residentes/${id}`);
   }
 
+  /** POST /api/residentes/buscar-por-documentos — residentes registrados con esos documentos. */
+  buscarPorDocumentos(documentos: string[]): Observable<ResidenteDetalle[]> {
+    return this.http.post<ResidenteDetalle[]>(`${API_URL}/residentes/buscar-por-documentos`, {
+      documentos,
+    });
+  }
+
   /** POST /api/residentes */
   crear(datos: ResidenteRequest): Observable<ResidenteDetalle> {
     return this.http.post<ResidenteDetalle>(`${API_URL}/residentes`, datos);

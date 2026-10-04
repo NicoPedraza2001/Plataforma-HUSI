@@ -23,9 +23,14 @@ public class RotacionResidenteController {
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin,
-    @RequestParam(defaultValue = "1") int pagina
+    @RequestParam(defaultValue = "1") int pagina,
+    @RequestParam(defaultValue = "false") boolean espera
   ) {
-    return service.listar(new RotacionId(asignatura, inicio, fin), pagina);
+    return service.listar(
+      new RotacionId(asignatura, inicio, fin),
+      pagina,
+      espera
+    );
   }
 
   @GetMapping("/candidatos")
@@ -63,5 +68,36 @@ public class RotacionResidenteController {
       residente,
       d.estado()
     );
+  }
+
+  @DeleteMapping("/residentes/{residente}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void eliminar(
+    @PathVariable Integer asignatura,
+    @PathVariable LocalDate inicio,
+    @PathVariable LocalDate fin,
+    @PathVariable Integer residente
+  ) {
+    service.eliminar(new RotacionId(asignatura, inicio, fin), residente);
+  }
+
+  @GetMapping("/espera")
+  public List<EsperaServicioResponse> espera(
+    @PathVariable Integer asignatura,
+    @PathVariable LocalDate inicio,
+    @PathVariable LocalDate fin
+  ) {
+    return service.espera(new RotacionId(asignatura, inicio, fin));
+  }
+
+  @PostMapping("/espera")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void trasladarEspera(
+    @PathVariable Integer asignatura,
+    @PathVariable LocalDate inicio,
+    @PathVariable LocalDate fin,
+    @Valid @RequestBody TrasladoEsperaRequest d
+  ) {
+    service.trasladarEspera(new RotacionId(asignatura, inicio, fin), d);
   }
 }

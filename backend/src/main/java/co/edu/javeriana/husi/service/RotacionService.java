@@ -11,6 +11,8 @@ public interface RotacionService {
   Map<String, Object> catalogos();
   RotacionResponse consultar(RotacionId id);
   RotacionResponse crear(RotacionRequest datos);
+  /** Solo para la carga inicial desde Excel: admite rotaciones históricas. */
+  RotacionResponse crearHistorica(RotacionRequest datos);
   RotacionResponse editar(RotacionId id, RotacionRequest datos);
   RotacionResponse estado(RotacionId id, boolean activa);
   void eliminar(RotacionId id);

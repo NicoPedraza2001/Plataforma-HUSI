@@ -1,0 +1,301 @@
+<h2>Residentes</h2>
+<p class="ayuda">
+  Cada residente se busca por su número de documento. Crea los nuevos y, si un residente ya existe
+  pero le falta un dato o tiene otro distinto, actualízalo aquí o usa los datos que ya tiene el
+  sistema. El tipo de documento, el perfil y el programa se eligen de las listas del sistema.
+</p>
+
+@if (cargandoDatos()) {
+  <p class="mensaje aviso" role="status">Buscando los residentes del Excel en el sistema…</p>
+} @else if (errorDeCarga()) {
+  <p class="mensaje error" role="alert">
+    {{ errorDeCarga() }}
+    <button class="btn btn--navy" (click)="cargarDatos()">Reintentar</button>
+  </p>
+} @else {
+  <div class="resumen" role="status">
+    <div>
+      <strong>{{ revisiones().length }}</strong
+      >En el Excel
+    </div>
+    <div>
+      <strong>{{ totalExistentes() }}</strong
+      >Ya registrados
+    </div>
+    <div>
+      <strong>{{ revisionesNuevas().length }}</strong
+      >Nuevos listos para crear
+    </div>
+    <div [class.error]="totalPendientes() > 0">
+      <strong>{{ totalPendientes() }}</strong
+      >Por resolver
+    </div>
+  </div>
+
+  @if (aviso()) {
+    <p class="mensaje exito" role="status">{{ aviso() }}</p>
+  }
+  @if (error()) {
+    <p class="mensaje error" role="alert">{{ error() }}</p>
+  }
+  @if (revisionesNuevas().length) {
+    <p class="mensaje aviso crear-en-lote">
+      <span>{{
+        contar(
+          revisionesNuevas().length,
+          'residente nuevo tiene todos sus datos completos y válidos.',
+          'residentes nuevos tienen todos sus datos completos y válidos.'
+        )
+      }}</span>
+      <button
+        class="btn btn--green"
+        [disabled]="guardando()"
+        (click)="crearResidentesNuevosEnLote()"
+      >
+        {{
+          guardando()
+            ? 'Creando…'
+            : 'Crear ' + contar(revisionesNuevas().length, 'residente', 'residentes')
+        }}
+      </button>
+    </p>
+  }
+
+  <div class="barra-herramientas">
+    <label
+      >Buscar residente<input
+        type="search"
+        placeholder="Nombre, documento o programa"
+        [ngModel]="filtro.textoBusqueda()"
+        (ngModelChange)="filtro.cambiarBusqueda($event)"
+    /></label>
+    <label
+      >Mostrar<select
+        [ngModel]="filtro.filtroEstado()"
+        (ngModelChange)="filtro.cambiarFiltro($event)"
+      >
+        @for (opcion of opcionesFiltro; track opcion.valor) {
+          <option [ngValue]="opcion.valor">{{ opcion.etiqueta }}</option>
+        }
+      </select></label
+    >
+  </div>
+  <div class="table-wrap">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Residente</th>
+          <th>Programa / Universidad</th>
+          <th>Situación</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (revision of filtro.elementosVisibles(); track revision.clave) {
+          <tr>
+            <td>
+              <strong>{{ revision.datosEnExcel.nombre || '(sin nombre)' }}</strong>
+              <small
+                >{{ revision.datosEnExcel.tipoDocumento || '¿tipo?' }}
+                {{ revision.datosEnExcel.documento || '(sin documento)' }}
+                @if (revision.datosEnExcel.perfilAcademico) {
+                  · {{ revision.datosEnExcel.perfilAcademico }}
+                }
+              </small>
+              <small>Filas: {{ describirFilas(revision.numerosFila) }}</small>
+            </td>
+            <td>
+              {{ revision.datosEnExcel.programa || '—'
+              }}<small>{{ revision.datosEnExcel.universidad }}</small>
+            </td>
+            <td>
+              <span class="badge" [class]="claseBadgeEstado[revision.estado]">{{
+                etiquetaEstado[revision.estado]
+              }}</span>
+              @if (revision.observaciones.length) {
+                <ul class="observaciones">
+                  @for (observacion of revision.observaciones; track $index) {
+                    <li>{{ observacion }}</li>
+                  }
+                </ul>
+              }
+            </td>
+            <td>
+              <div class="acciones-fila">
+                @switch (revision.estado) {
+                  @case ('nuevo') {
+                    <button
+                      class="btn btn--green"
+                      [disabled]="guardando()"
+                      (click)="abrirFormulario(revision)"
+                    >
+                      Crear
+                    </button>
+                  }
+                  @case ('incompleto') {
+                    <button
+                      class="btn btn--green"
+                      [disabled]="guardando()"
+                      (click)="abrirFormulario(revision)"
+                    >
+                      Completar y crear
+                    </button>
+                  }
+                  @case ('diferencias') {
+                    <button
+                      class="btn btn--navy"
+                      [disabled]="guardando()"
+                      (click)="abrirFormulario(revision)"
+                    >
+                      Revisar y actualizar
+                    </button>
+                    <button
+                      class="btn btn--outline"
+                      [disabled]="guardando()"
+                      (click)="usarDatosDelSistema(revision)"
+                    >
+                      Usar datos del sistema
+                    </button>
+                  }
+                  @case ('inactivo') {
+                    <button
+                      class="btn btn--navy"
+                      [disabled]="guardando()"
+                      (click)="activarResidente(revision)"
+                    >
+                      Activar
+                    </button>
+                  }
+                  @case ('encontrado') {
+                    <button
+                      class="btn btn--outline"
+                      [disabled]="guardando()"
+                      (click)="abrirFormulario(revision)"
+                    >
+                      Editar
+                    </button>
+                  }
+                }
+                @if (revision.estado !== 'encontrado') {
+                  <button
+                    class="btn btn--outline boton-excluir"
+                    [disabled]="guardando()"
+                    (click)="revisionPorExcluir.set(revision)"
+                  >
+                    Excluir filas
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="tabla__vacia">
+              No hay residentes con este filtro. Cambia el filtro para verlos todos.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <app-paginacion
+    [paginaActual]="filtro.paginaActual()"
+    [totalPaginas]="filtro.totalPaginas()"
+    (cambio)="filtro.paginaSolicitada.set($event)"
+  />
+}
+
+<footer class="acciones-paso">
+  @if (totalPendientes()) {
+    <span class="pendientes"
+      >Resuelve {{ contar(totalPendientes(), 'pendiente', 'pendientes') }} para continuar.</span
+    >
+  }
+  <button class="btn btn--outline" [disabled]="guardando()" (click)="anterior.emit()">Atrás</button>
+  <button
+    class="btn btn--navy"
+    [disabled]="cargandoDatos() || !!errorDeCarga() || guardando() || totalPendientes() > 0"
+    (click)="siguiente.emit()"
+  >
+    Continuar: rotaciones
+  </button>
+</footer>
+
+@if (revisionEnEdicion(); as revision) {
+  <div class="fondo-modal" (keydown.escape)="cerrarFormulario()">
+    <section
+      class="panel-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-formulario-residente"
+      appFocoModal
+    >
+      <header>
+        <h2 id="titulo-formulario-residente">
+          {{ revision.residenteRegistrado ? 'Actualizar residente' : 'Crear residente' }}
+        </h2>
+        <p>Se aplicará a las filas {{ describirFilas(revision.numerosFila, 10) }} del Excel.</p>
+      </header>
+      @if (revision.residenteRegistrado; as registrado) {
+        <table class="comparacion">
+          <caption>
+            Lo que trae el Excel frente a lo registrado
+          </caption>
+          <thead>
+            <tr>
+              <th>Dato</th>
+              <th>Excel</th>
+              <th>Sistema</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Nombre</th>
+              <td>{{ revision.datosEnExcel.nombre || '—' }}</td>
+              <td>{{ registrado.nombre }}</td>
+            </tr>
+            <tr>
+              <th>Tipo de documento</th>
+              <td>{{ revision.datosEnExcel.tipoDocumento || '—' }}</td>
+              <td>{{ registrado.tipoDocumento }}</td>
+            </tr>
+            <tr>
+              <th>Perfil académico</th>
+              <td>{{ revision.datosEnExcel.perfilAcademico || '—' }}</td>
+              <td>{{ registrado.perfilAcademico || '—' }}</td>
+            </tr>
+            <tr>
+              <th>Programa</th>
+              <td>{{ describirPrograma(revision.programa) }}</td>
+              <td>{{ describirProgramaPorId(registrado.programaId) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      }
+      <app-formulario-residente
+        [(datos)]="datosFormulario"
+        [opciones]="opcionesDePrograma()"
+        [tiposDocumento]="tiposDocumento()"
+        [perfiles]="perfilesAcademicos()"
+        [edicion]="!!revision.residenteRegistrado"
+        [guardando]="guardando()"
+        [errorFormulario]="errorFormulario()"
+        (guardar)="guardarResidente()"
+        (cancelar)="cerrarFormulario()"
+      />
+    </section>
+  </div>
+}
+
+@if (revisionPorExcluir(); as revision) {
+  <app-confirmar-exclusion
+    [descripcion]="
+      'el residente «' +
+      (revision.datosEnExcel.nombre || revision.datosEnExcel.documento || 'sin datos') +
+      '»'
+    "
+    [numerosFila]="revision.numerosFila"
+    (confirmar)="confirmarExclusion()"
+    (cancelar)="revisionPorExcluir.set(null)"
+  />
+}

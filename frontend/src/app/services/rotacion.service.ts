@@ -6,6 +6,8 @@ import { Pagina, Parametros } from '../models/pagina.model';
 import {
   CatalogosRotacion,
   FilaRotacion,
+  OrigenEspera,
+  ResidenteEnEspera,
   ResidenteRotacion,
   ResultadoRotaciones,
   Rotacion,
@@ -36,10 +38,13 @@ export class RotacionService {
     return this.http.get<RotacionGestion>(this.ruta(r));
   }
 
-  /** GET /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/residentes */
-  residentes(r: RotacionDatos, pagina = 1): Observable<Pagina<ResidenteRotacion>> {
+  /**
+   * GET /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/residentes
+   * Con `espera` trae solo «Esperando cupo» por orden de llegada; sin él, el resto por nombre.
+   */
+  residentes(r: RotacionDatos, pagina = 1, espera = false): Observable<Pagina<ResidenteRotacion>> {
     return this.http.get<Pagina<ResidenteRotacion>>(this.ruta(r) + '/residentes', {
-      params: { pagina },
+      params: { pagina, espera },
     });
   }
 
@@ -56,6 +61,21 @@ export class RotacionService {
   /** PATCH /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/residentes/{residente}/estado */
   estadoResidente(r: RotacionDatos, residente: number, estado: string): Observable<void> {
     return this.http.patch<void>(this.ruta(r) + '/residentes/' + residente + '/estado', { estado });
+  }
+
+  /** DELETE /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/residentes/{residente} */
+  eliminarResidente(r: RotacionDatos, residente: number): Observable<void> {
+    return this.http.delete<void>(this.ruta(r) + '/residentes/' + residente);
+  }
+
+  /** GET /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/espera */
+  espera(r: RotacionDatos): Observable<ResidenteEnEspera[]> {
+    return this.http.get<ResidenteEnEspera[]>(this.ruta(r) + '/espera');
+  }
+
+  /** POST /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/espera */
+  trasladarEspera(r: RotacionDatos, residentes: OrigenEspera[]): Observable<void> {
+    return this.http.post<void>(this.ruta(r) + '/espera', { residentes });
   }
 
   /** POST /api/rotaciones/gestion */
