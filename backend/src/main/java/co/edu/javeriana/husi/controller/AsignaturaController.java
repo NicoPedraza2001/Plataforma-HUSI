@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AsignaturaController {
 
-  private final AsignaturaService service;
+  private final AsignaturaService asignaturaService;
 
   @GetMapping("/{id}")
   public AsignaturaResponse consultar(@PathVariable Integer id) {
-    return service.consultar(id);
+    return asignaturaService.consultar(id);
   }
 
   @PostMapping
@@ -25,7 +25,7 @@ public class AsignaturaController {
   public AsignaturaResponse crear(
     @Valid @RequestBody AsignaturaRequest request
   ) {
-    return service.crear(request);
+    return asignaturaService.crear(request);
   }
 
   @PutMapping("/{id}")
@@ -33,20 +33,20 @@ public class AsignaturaController {
     @PathVariable Integer id,
     @Valid @RequestBody AsignaturaRequest request
   ) {
-    return service.actualizar(id, request);
+    return asignaturaService.actualizar(id, request);
   }
 
   @PatchMapping("/{id}/estado")
-  public AsignaturaResponse estado(
+  public AsignaturaResponse cambiarEstado(
     @PathVariable Integer id,
     @Valid @RequestBody EstadoRequest request
   ) {
-    return service.cambiarEstado(id, request.estado());
+    return asignaturaService.cambiarEstado(id, request.estado());
   }
 
   @DeleteMapping("/{id}/definitivo")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void eliminar(@PathVariable Integer id) {
-    service.eliminarDefinitivamente(id);
+    asignaturaService.eliminarDefinitivamente(id);
   }
 }

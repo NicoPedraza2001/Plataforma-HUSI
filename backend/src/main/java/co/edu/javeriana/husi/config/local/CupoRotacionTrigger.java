@@ -7,15 +7,25 @@ import org.h2.api.Trigger;
 /** Exclusivo de H2: capacidad inicial del servicio y protección de cambios directos. */
 public class CupoRotacionTrigger implements Trigger {
 
+  // Posición de cada columna de rotacion en las filas que entrega H2.
+  private static final int ID_ASIGNATURA = 0;
+  private static final int CUPO_DISPONIBLE = 3;
+  private static final int ESTADO = 4;
+
+  /** Lo activan los otros triggers mientras ajustan el cupo, para que este no lo bloquee. */
   static final ThreadLocal<Boolean> AJUSTANDO = ThreadLocal.withInitial(
     () -> false
   );
 
-  public void fire(Connection c, Object[] anterior, Object[] nuevo)
+  public void fire(Connection conexion, Object[] filaAnterior, Object[] filaNueva)
     throws SQLException {
-    if (anterior != null) {
+    if (filaAnterior != null) {
       if (
-        !Objects.equals(anterior[3], nuevo[3]) && !AJUSTANDO.get()
+        !Objects.equals(
+          filaAnterior[CUPO_DISPONIBLE],
+          filaNueva[CUPO_DISPONIBLE]
+        ) &&
+        !AJUSTANDO.get()
       ) throw new SQLException(
         "El cupo se ajusta mediante las asignaciones.",
         "23514"
@@ -23,21 +33,24 @@ public class CupoRotacionTrigger implements Trigger {
       return;
     }
     try (
-      var p = c.prepareStatement(
+      var consulta = conexion.prepareStatement(
         "select s.cupo_simultaneo,a.estado,s.estado from asignatura a join servicio s using(id_servicio) where a.id_asignatura=?"
       )
     ) {
-      p.setObject(1, nuevo[0]);
-      try (var r = p.executeQuery()) {
-        if (!r.next()) throw new SQLException(
+      consulta.setObject(1, filaNueva[ID_ASIGNATURA]);
+      try (var resultado = consulta.executeQuery()) {
+        if (!resultado.next()) throw new SQLException(
           "Asignatura inexistente",
           "23503"
         );
+        String estadoAsignatura = resultado.getString(2);
+        String estadoServicio = resultado.getString(3);
         if (
-          !"Activo".equals(r.getString(2)) || !"Activo".equals(r.getString(3))
+          !"Activo".equals(estadoAsignatura) || !"Activo".equals(estadoServicio)
         ) throw new SQLException("Asignatura o servicio inactivo", "23514");
-        nuevo[3] = r.getInt(1);
-        nuevo[4] = r.getInt(1) == 0 ? "Cupo Lleno" : "Disponible";
+        int cupoSimultaneo = resultado.getInt(1);
+        filaNueva[CUPO_DISPONIBLE] = cupoSimultaneo;
+        filaNueva[ESTADO] = cupoSimultaneo == 0 ? "Cupo Lleno" : "Disponible";
       }
     }
   }

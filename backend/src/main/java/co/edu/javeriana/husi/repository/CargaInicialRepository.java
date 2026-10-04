@@ -11,8 +11,12 @@ public class CargaInicialRepository {
 
   private final JdbcTemplate jdbc;
 
-  public Map<String, List<Map<String, Object>>> obtener(boolean bloquear) {
-    Map<String, List<Map<String, Object>>> datos = new LinkedHashMap<>();
+  /**
+   * Lee completas las tablas que intervienen en la carga inicial (nombre de tabla → filas).
+   * Con {@code bloquear} usa FOR UPDATE para que nadie las cambie mientras se confirma.
+   */
+  public Map<String, List<Map<String, Object>>> leerTablas(boolean bloquear) {
+    Map<String, List<Map<String, Object>>> tablas = new LinkedHashMap<>();
     for (String tabla : List.of(
       "universidad",
       "programa",
@@ -39,14 +43,14 @@ public class CargaInicialRepository {
       if (tabla.equals("residente")) filas = jdbc.queryForList(
         "select r.*,td.codigo as tipo_documento,pa.nombre as perfil_academico from residente r join tipo_documento td on td.id_tipo_documento=r.id_tipo_documento left join perfil_academico pa on pa.id_perfil_academico=r.id_perfil_academico order by r.id_residente"
       );
-      datos.put(tabla, filas);
+      tablas.put(tabla, filas);
     }
-    for (String catalogo : List.of("tipo_documento", "perfil_academico")) datos.put(
+    for (String catalogo : List.of("tipo_documento", "perfil_academico")) tablas.put(
       catalogo,
       jdbc.queryForList(
         "select * from " + catalogo + " order by id_" + catalogo
       )
     );
-    return datos;
+    return tablas;
   }
 }

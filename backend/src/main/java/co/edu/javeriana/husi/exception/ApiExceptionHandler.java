@@ -14,20 +14,25 @@ public class ApiExceptionHandler {
   public record ErrorResponse(String mensaje, Map<String, String> campos) {}
 
   @ExceptionHandler(NegocioException.class)
-  public ResponseEntity<ErrorResponse> negocio(NegocioException e) {
-    return ResponseEntity.status(e.getStatus()).body(
-      new ErrorResponse(e.getMessage(), Map.of())
+  public ResponseEntity<ErrorResponse> manejarErrorDeNegocio(
+    NegocioException excepcion
+  ) {
+    return ResponseEntity.status(excepcion.getStatus()).body(
+      new ErrorResponse(excepcion.getMessage(), Map.of())
     );
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ErrorResponse> validacion(
-    MethodArgumentNotValidException e
+  public ResponseEntity<ErrorResponse> manejarErrorDeValidacion(
+    MethodArgumentNotValidException excepcion
   ) {
     Map<String, String> campos = new LinkedHashMap<>();
-    e.getBindingResult()
+    excepcion
+      .getBindingResult()
       .getFieldErrors()
-      .forEach(f -> campos.putIfAbsent(f.getField(), f.getDefaultMessage()));
+      .forEach(errorCampo ->
+        campos.putIfAbsent(errorCampo.getField(), errorCampo.getDefaultMessage())
+      );
     return ResponseEntity.badRequest().body(
       new ErrorResponse("Revisa los datos del formulario.", campos)
     );
@@ -37,26 +42,27 @@ public class ApiExceptionHandler {
     HttpMessageNotReadableException.class,
     MethodArgumentTypeMismatchException.class,
   })
-  public ResponseEntity<ErrorResponse> formato(Exception e) {
+  public ResponseEntity<ErrorResponse> manejarErrorDeFormato(Exception excepcion) {
     return ResponseEntity.badRequest().body(
       new ErrorResponse("El formato de los datos no es válido.", Map.of())
     );
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)
-  public ResponseEntity<ErrorResponse> integridad(
-    DataIntegrityViolationException e
+  public ResponseEntity<ErrorResponse> manejarErrorDeIntegridad(
+    DataIntegrityViolationException excepcion
   ) {
-    Throwable causa = e;
+    // Busca la SQLException original para distinguir datos inválidos de duplicados.
+    Throwable causa = excepcion;
     while (
         causa.getCause() != null && !(causa instanceof java.sql.SQLException)
       )
       causa = causa.getCause();
-    String estado =
-      causa instanceof java.sql.SQLException sql ? sql.getSQLState() : "";
+    String codigoSql =
+      causa instanceof java.sql.SQLException errorSql ? errorSql.getSQLState() : "";
     if (
       Set.of("23502", "23514", "22001", "22003", "22018").contains(
-        estado == null ? "" : estado
+        codigoSql == null ? "" : codigoSql
       )
     ) {
       return ResponseEntity.badRequest().body(
@@ -75,8 +81,8 @@ public class ApiExceptionHandler {
   }
 
   @ExceptionHandler(org.springframework.dao.DataAccessException.class)
-  public ResponseEntity<ErrorResponse> baseDeDatos(
-    org.springframework.dao.DataAccessException e
+  public ResponseEntity<ErrorResponse> manejarErrorDeBaseDeDatos(
+    org.springframework.dao.DataAccessException excepcion
   ) {
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(
       new ErrorResponse(

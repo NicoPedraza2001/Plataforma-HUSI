@@ -7,16 +7,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class CoordinadorMapper {
 
-  public CoordinadorResponse response(Coordinador e) {
+  public CoordinadorResponse toResponse(Coordinador coordinador) {
     return new CoordinadorResponse(
-      e.getId(),
-      e.getUsuario().getId(),
-      e.getUsuario().getNombre() + " " + e.getUsuario().getApellido(),
-      e.getUsuario().getCorreo(),
-      e.getServicio().getId(),
-      e.getServicio().getNombre(),
-      e.getEstado(),
-      "Activo".equals(e.getEstado())
+      coordinador.getId(),
+      coordinador.getUsuario().getId(),
+      coordinador.getUsuario().getNombre() + " " + coordinador.getUsuario().getApellido(),
+      coordinador.getUsuario().getCorreo(),
+      coordinador.getServicio().getId(),
+      coordinador.getServicio().getNombre(),
+      coordinador.getEstado(),
+      "Activo".equals(coordinador.getEstado())
     );
   }
 }

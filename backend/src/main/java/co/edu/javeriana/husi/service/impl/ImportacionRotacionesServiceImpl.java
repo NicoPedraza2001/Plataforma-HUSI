@@ -17,7 +17,7 @@ public class ImportacionRotacionesServiceImpl
   implements ImportacionRotacionesService
 {
 
-  private final RotacionService rotaciones;
+  private final RotacionService rotacionService;
 
   // Cada creación usa su propia transacción; validar nunca escribe.
   public ImportacionRotacionesResponse procesar(
@@ -33,26 +33,29 @@ public class ImportacionRotacionesServiceImpl
       HttpStatus.BAD_REQUEST,
       "Selecciona entre 1 y 1000 filas."
     );
-    Set<Integer> numeros = new HashSet<>();
-    for (var f : request.filas())
+    Set<Integer> numerosDeFila = new HashSet<>();
+    for (var fila : request.filas())
       if (
-        f == null || f.fila() == null || f.fila() < 1 || !numeros.add(f.fila())
+        fila == null ||
+        fila.fila() == null ||
+        fila.fila() < 1 ||
+        !numerosDeFila.add(fila.fila())
       ) throw new NegocioException(
         HttpStatus.BAD_REQUEST,
         "Los números de fila deben ser positivos y distintos."
       );
-    List<ImportacionRotacionesResponse.Fila> filas = new ArrayList<>();
-    Set<String> vistos = new HashSet<>();
-    for (var f : request.filas()) {
+    List<ImportacionRotacionesResponse.Fila> resultados = new ArrayList<>();
+    Set<String> rotacionesYaLeidas = new HashSet<>();
+    for (var fila : request.filas()) {
       String estado = "VALIDO",
         mensaje = "Se creará una rotación activa.";
       try {
-        var datos = rotaciones.validarFila(f);
-        if (!vistos.add(datos.toString())) {
+        var rotacion = rotacionService.validarFila(fila);
+        if (!rotacionesYaLeidas.add(rotacion.toString())) {
           estado = "OMITIDO";
           mensaje = "Rotación repetida dentro del archivo.";
         } else if (guardar) {
-          rotaciones.crear(datos);
+          rotacionService.crear(rotacion);
           estado = "CREADO";
           mensaje = "Rotación guardada.";
         }
@@ -64,27 +67,27 @@ public class ImportacionRotacionesServiceImpl
         mensaje =
           "No se pudo guardar o consultar la fila. Vuelve a validar; las rotaciones existentes se omitirán.";
       }
-      filas.add(
-        new ImportacionRotacionesResponse.Fila(f.fila(), estado, mensaje)
+      resultados.add(
+        new ImportacionRotacionesResponse.Fila(fila.fila(), estado, mensaje)
       );
     }
     return new ImportacionRotacionesResponse(
-      filas.size(),
-      contar(filas, "VALIDO"),
-      contar(filas, "CREADO"),
-      contar(filas, "OMITIDO"),
-      contar(filas, "ERROR"),
-      filas
+      resultados.size(),
+      contarPorEstado(resultados, "VALIDO"),
+      contarPorEstado(resultados, "CREADO"),
+      contarPorEstado(resultados, "OMITIDO"),
+      contarPorEstado(resultados, "ERROR"),
+      resultados
     );
   }
 
-  private long contar(
-    List<ImportacionRotacionesResponse.Fila> filas,
+  private long contarPorEstado(
+    List<ImportacionRotacionesResponse.Fila> resultados,
     String estado
   ) {
-    return filas
+    return resultados
       .stream()
-      .filter(f -> estado.equals(f.estado()))
+      .filter(resultado -> estado.equals(resultado.estado()))
       .count();
   }
 }

@@ -4,7 +4,7 @@
     <p class="breadcrumb">Inicio &gt; Rotaciones</p>
   </div>
   <div class="acciones">
-    <button class="btn btn--add" (click)="abrir()">+ Agregar rotación</button>
+    <button class="btn btn--add" (click)="abrirFormulario()">+ Agregar rotación</button>
   </div>
 </header>
 @if (aviso()) {
@@ -21,7 +21,7 @@
     <button class="btn btn--navy" (click)="catalogos.cargar()">Reintentar catálogos</button>
   </p>
 }
-@if (error() && !formulario() && !pendiente()) {
+@if (error() && !formularioAbierto() && !accionPendiente()) {
   <p class="mensaje error" role="alert">{{ error() }}</p>
 }
 <section class="card" [attr.aria-busy]="consulta.cargando()">
@@ -31,21 +31,21 @@
         type="search"
         placeholder="Buscar rotaciones…"
         maxlength="200"
-        [(ngModel)]="termino"
+        [(ngModel)]="terminoBusqueda"
         (ngModelChange)="cargar(1, 300)"
     /></label>
     <label
-      >Estado<select [(ngModel)]="estado" (ngModelChange)="cargar()">
+      >Estado<select [(ngModel)]="filtroEstado" (ngModelChange)="cargar()">
         <option value="">Todos</option>
         <option value="true">Activo</option>
         <option value="false">Inactivo</option>
       </select></label
     >
     <label
-      >Servicio<select [(ngModel)]="servicio" (ngModelChange)="cargar()">
+      >Servicio<select [(ngModel)]="filtroServicioId" (ngModelChange)="cargar()">
         <option value="">Todos</option>
-        @for (s of catalogos.datos()?.servicios ?? []; track s.id) {
-          <option [value]="s.id">{{ s.nombre }}</option>
+        @for (opcionServicio of catalogos.datos()?.servicios ?? []; track opcionServicio.id) {
+          <option [value]="opcionServicio.id">{{ opcionServicio.nombre }}</option>
         }
       </select></label
     >
@@ -75,26 +75,33 @@
             <td colspan="5">No se pudo obtener el listado.</td>
           </tr>
         } @else {
-          @for (r of filas(); track r.asignaturaId + '|' + r.inicio + '|' + r.fin) {
+          @for (
+            rotacion of filas();
+            track rotacion.asignaturaId + '|' + rotacion.inicio + '|' + rotacion.fin
+          ) {
             <tr>
               <td>
-                {{ r.asignatura }}<small>{{ r.servicio }}</small>
+                {{ rotacion.asignatura }}<small>{{ rotacion.servicio }}</small>
               </td>
-              <td>{{ r.inicio | date: 'dd/MM/yyyy' }}<br />{{ r.fin | date: 'dd/MM/yyyy' }}</td>
               <td>
-                {{ r.cupoDisponible }}<small>{{ r.disponibilidad }}</small>
+                {{ rotacion.inicio | date: 'dd/MM/yyyy' }}<br />{{
+                  rotacion.fin | date: 'dd/MM/yyyy'
+                }}
+              </td>
+              <td>
+                {{ rotacion.cupoDisponible }}<small>{{ rotacion.disponibilidad }}</small>
               </td>
               <td>
                 <button
                   class="btn btn--outline"
                   [disabled]="guardando()"
-                  (click)="rotacionResidentes.set(r)"
+                  (click)="rotacionVerResidentes.set(rotacion)"
                 >
-                  Ver residentes ({{ r.relaciones }})
+                  Ver residentes ({{ rotacion.relaciones }})
                 </button>
               </td>
               <td>
-                @if (r.finalizada) {
+                @if (rotacion.finalizada) {
                   <span class="badge" title="La fecha final ya pasó; solo puede consultarse"
                     >Finalizada</span
                   >
@@ -102,22 +109,28 @@
                   <div class="acciones-registro">
                     <button
                       class="btn estado-directo"
-                      [class.estado-directo--activo]="r.activa"
-                      [class.estado-directo--inactivo]="!r.activa"
+                      [class.estado-directo--activo]="rotacion.activa"
+                      [class.estado-directo--inactivo]="!rotacion.activa"
                       [disabled]="guardando()"
-                      [attr.aria-pressed]="r.activa"
-                      [attr.aria-label]="(r.activa ? 'Desactivar ' : 'Activar ') + r.asignatura"
-                      [title]="r.activa ? 'Desactivar rotación' : 'Activar rotación'"
-                      (click)="cambiarEstado(r)"
+                      [attr.aria-pressed]="rotacion.activa"
+                      [attr.aria-label]="
+                        (rotacion.activa ? 'Desactivar ' : 'Activar ') + rotacion.asignatura
+                      "
+                      [title]="rotacion.activa ? 'Desactivar rotación' : 'Activar rotación'"
+                      (click)="cambiarEstado(rotacion)"
                     >
-                      {{ r.activa ? 'Activo' : 'Inactivo' }}</button
-                    ><button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(r)">
+                      {{ rotacion.activa ? 'Activo' : 'Inactivo' }}</button
+                    ><button
+                      class="btn btn--navy"
+                      [disabled]="guardando()"
+                      (click)="abrirFormulario(rotacion)"
+                    >
                       Editar</button
                     ><button
                       class="btn papelera"
                       [disabled]="guardando()"
-                      (click)="solicitar(r)"
-                      [attr.aria-label]="'Eliminar definitivamente ' + r.asignatura"
+                      (click)="solicitarEliminar(rotacion)"
+                      [attr.aria-label]="'Eliminar definitivamente ' + rotacion.asignatura"
                       title="Eliminar definitivamente"
                     >
                       <app-icono-papelera />
@@ -140,8 +153,8 @@
   </div>
   <app-paginacion [paginaActual]="pagina()" [totalPaginas]="paginas()" (cambio)="cargar($event)" />
 </section>
-@if (formulario()) {
-  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+@if (formularioAbierto()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formularioAbierto.set(false)">
     <section
       class="panel-modal"
       role="dialog"
@@ -150,13 +163,13 @@
       appFocoModal
     >
       <header>
-        <h2 id="titulo-form">{{ edicion ? 'Editar rotación' : 'Agregar rotación' }}</h2>
+        <h2 id="titulo-form">{{ rotacionEnEdicion ? 'Editar rotación' : 'Agregar rotación' }}</h2>
       </header>
       <app-formulario-rotacion
         [(asignaturaId)]="asignaturaId"
         [(inicio)]="inicio"
         [(fin)]="fin"
-        [edicion]="edicion"
+        [edicion]="rotacionEnEdicion"
         [asignaturas]="catalogos.datos()?.asignaturas ?? []"
         [cargandoCatalogos]="catalogos.cargando()"
         [errorCatalogos]="catalogos.error()"
@@ -164,13 +177,13 @@
         (reintentar)="catalogos.cargar()"
         [guardando]="guardando()"
         (guardar)="guardar()"
-        (cancelar)="formulario.set(false)"
+        (cancelar)="formularioAbierto.set(false)"
       />
     </section>
   </div>
 }
-@if (pendiente(); as a) {
-  <div class="fondo-modal" (keydown.escape)="!guardando() && pendiente.set(null)">
+@if (accionPendiente(); as a) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && accionPendiente.set(null)">
     <section
       class="panel-modal confirmacion"
       role="dialog"
@@ -194,7 +207,11 @@
         <p class="mensaje error" role="alert">{{ error() }}</p>
       }
       <footer>
-        <button class="btn btn--outline" [disabled]="guardando()" (click)="pendiente.set(null)">
+        <button
+          class="btn btn--outline"
+          [disabled]="guardando()"
+          (click)="accionPendiente.set(null)"
+        >
           Cancelar</button
         ><button class="btn btn--danger" [disabled]="guardando()" (click)="confirmar()">
           {{ guardando() ? 'Eliminando…' : 'Eliminar definitivamente' }}
@@ -204,9 +221,9 @@
   </div>
 }
 
-@if (rotacionResidentes(); as r) {
+@if (rotacionVerResidentes(); as rotacion) {
   <app-residentes-rotacion
-    [rotacion]="r"
-    (cerrar)="rotacionResidentes.set(null); cargar(pagina())"
+    [rotacion]="rotacion"
+    (cerrar)="rotacionVerResidentes.set(null); cargar(pagina())"
   />
 }

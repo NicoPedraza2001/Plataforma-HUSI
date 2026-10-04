@@ -9,25 +9,25 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 })
 export class Login {
   // Dependencias
-  private readonly fb = inject(FormBuilder);
+  private readonly formBuilder = inject(FormBuilder);
 
-  protected readonly form = this.fb.nonNullable.group({
+  protected readonly formularioLogin = this.formBuilder.nonNullable.group({
     usuario: ['', Validators.required],
     contrasena: ['', Validators.required],
   });
-  protected readonly showErrors = signal(false);
+  protected readonly mostrarErrores = signal(false);
 
-  protected isInvalid(control: 'usuario' | 'contrasena'): boolean {
-    return this.showErrors() && this.form.controls[control].invalid;
+  protected esCampoInvalido(control: 'usuario' | 'contrasena'): boolean {
+    return this.mostrarErrores() && this.formularioLogin.controls[control].invalid;
   }
 
-  protected submit(): void {
-    if (this.form.invalid) {
-      this.showErrors.set(true);
+  protected iniciarSesion(): void {
+    if (this.formularioLogin.invalid) {
+      this.mostrarErrores.set(true);
       return;
     }
 
-    this.showErrors.set(false);
+    this.mostrarErrores.set(false);
     // TODO: conectar con el servicio de autenticación del backend.
   }
 }

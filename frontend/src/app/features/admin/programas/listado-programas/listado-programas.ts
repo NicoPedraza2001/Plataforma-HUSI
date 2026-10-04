@@ -22,7 +22,7 @@ import { FormularioPrograma } from '../formulario-programa/formulario-programa';
 })
 export class ListadoProgramas {
   // Dependencias
-  private readonly api = inject(ProgramaService);
+  private readonly programaService = inject(ProgramaService);
   private readonly universidadService = inject(UniversidadService);
   private readonly route = inject(ActivatedRoute);
 
@@ -30,7 +30,7 @@ export class ListadoProgramas {
   protected readonly universidadRuta = signal<number | null>(null);
   protected readonly consulta = new Consulta<Pagina<Programa>>((params) =>
     this.universidadRuta() === null
-      ? this.api.buscar(params)
+      ? this.programaService.buscar(params)
       : this.universidadService.programas(this.universidadRuta()!, params),
   );
   private readonly catalogo = new Consulta<{
@@ -50,7 +50,7 @@ export class ListadoProgramas {
   protected readonly contextoInactivo = computed(
     () => this.universidadContexto()?.estado === 'Inactivo',
   );
-  protected readonly termino = signal('');
+  protected readonly terminoBusqueda = signal('');
   protected readonly paginaActual = signal(1);
   protected readonly cargando = computed(
     () => this.consulta.cargando() || this.catalogo.cargando(),
@@ -59,7 +59,7 @@ export class ListadoProgramas {
   protected readonly error = computed(() => this.consulta.error() || this.catalogo.error());
   protected readonly aviso = signal('');
   protected readonly errorAccion = signal('');
-  protected readonly formulario = signal(false);
+  protected readonly formularioAbierto = signal(false);
   protected readonly pendienteEliminar = signal<Programa | null>(null);
   protected readonly errorFormulario = signal('');
   protected edicion: Programa | null = null;
@@ -70,28 +70,28 @@ export class ListadoProgramas {
   protected readonly paginaVisible = computed(
     () => this.consulta.datos()?.pagina ?? this.paginaActual(),
   );
-  protected readonly desde = computed(() => (this.paginaVisible() - 1) * 10);
+  protected readonly indicePrimeraFila = computed(() => (this.paginaVisible() - 1) * 10);
   protected readonly programasPagina = computed(() => this.consulta.datos()?.contenido ?? []);
 
   constructor() {
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const id = params.get('universidadId');
       this.universidadRuta.set(id === null ? null : Number(id));
-      this.termino.set('');
+      this.terminoBusqueda.set('');
       this.paginaActual.set(1);
-      this.formulario.set(false);
+      this.formularioAbierto.set(false);
       this.pendienteEliminar.set(null);
       this.cargar();
     });
   }
 
   protected cargar() {
-    this.consulta.cargar({ q: this.termino(), pagina: this.paginaActual(), tamano: 10 });
+    this.consulta.cargar({ q: this.terminoBusqueda(), pagina: this.paginaActual(), tamano: 10 });
     this.catalogo.cargar();
   }
 
   protected buscar(valor: string) {
-    this.termino.set(valor);
+    this.terminoBusqueda.set(valor);
     this.paginaActual.set(1);
     this.consulta.cargar({ q: valor, pagina: 1, tamano: 10 }, 300);
   }
@@ -99,15 +99,15 @@ export class ListadoProgramas {
   protected irAPagina(pagina: number) {
     if (pagina < 1 || pagina > this.totalPaginas() || this.cargando()) return;
     this.paginaActual.set(pagina);
-    this.consulta.cargar({ q: this.termino(), pagina, tamano: 10 });
+    this.consulta.cargar({ q: this.terminoBusqueda(), pagina, tamano: 10 });
   }
 
-  protected abrir(programa: Programa | null = null) {
+  protected abrirFormulario(programa: Programa | null = null) {
     this.edicion = programa;
     this.nombre = programa?.nombre ?? '';
     this.universidadId = programa?.universidadId ?? this.universidadRuta();
     this.errorFormulario.set('');
-    this.formulario.set(true);
+    this.formularioAbierto.set(true);
     this.aviso.set('');
   }
 
@@ -125,9 +125,11 @@ export class ListadoProgramas {
     try {
       const datos = { nombre, universidadId: this.universidadRuta() ?? this.universidadId };
       await firstValueFrom(
-        this.edicion ? this.api.actualizar(this.edicion.id, datos) : this.api.crear(datos),
+        this.edicion
+          ? this.programaService.actualizar(this.edicion.id, datos)
+          : this.programaService.crear(datos),
       );
-      this.formulario.set(false);
+      this.formularioAbierto.set(false);
       this.aviso.set(
         this.edicion ? 'Programa actualizado correctamente.' : 'Programa creado correctamente.',
       );
@@ -146,12 +148,20 @@ export class ListadoProgramas {
     this.aviso.set('');
     try {
       const actualizado = await firstValueFrom(
-        this.api.cambiarEstado(programa.id, programa.estado === 'Activo' ? 'Inactivo' : 'Activo'),
+        this.programaService.cambiarEstado(
+          programa.id,
+          programa.estado === 'Activo' ? 'Inactivo' : 'Activo',
+        ),
       );
-      this.consulta.datos.update((p) =>
-        p
-          ? { ...p, contenido: p.contenido.map((f) => (f.id === actualizado.id ? actualizado : f)) }
-          : p,
+      this.consulta.datos.update((pagina) =>
+        pagina
+          ? {
+              ...pagina,
+              contenido: pagina.contenido.map((registro) =>
+                registro.id === actualizado.id ? actualizado : registro,
+              ),
+            }
+          : pagina,
       );
       this.aviso.set(
         'Programa ' +
@@ -171,7 +181,7 @@ export class ListadoProgramas {
     this.guardando.set(true);
     this.errorFormulario.set('');
     try {
-      await firstValueFrom(this.api.eliminarDefinitivamente(programa.id));
+      await firstValueFrom(this.programaService.eliminarDefinitivamente(programa.id));
       this.pendienteEliminar.set(null);
       this.aviso.set('Programa eliminado definitivamente de la base de datos.');
       await this.cargar();

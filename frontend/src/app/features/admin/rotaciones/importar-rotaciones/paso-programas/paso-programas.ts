@@ -17,7 +17,7 @@ import {
   GrupoEmparejamiento,
   indexarPorNumeroDeFila,
   procesarEnLote,
-  contar,
+  cantidadConPalabra,
   segunCantidad,
 } from '../emparejamiento';
 import {
@@ -55,7 +55,7 @@ export class PasoProgramas {
   protected readonly guardando = signal(false);
   protected readonly error = signal('');
   protected readonly aviso = signal('');
-  protected readonly contar = contar;
+  protected readonly cantidadConPalabra = cantidadConPalabra;
   protected readonly grupoPorExcluir = signal<GrupoEmparejamiento | null>(null);
 
   // Formulario de creación (reutiliza FormularioPrograma del módulo de programas).
@@ -139,7 +139,7 @@ export class PasoProgramas {
       this.filasCambiadas.emit(this.aplicarProgramaEnFilas(this.filas(), grupo, programaCreado));
       this.grupoEnCreacion.set(null);
       this.mostrarAviso(
-        `Programa «${programaCreado.nombre}» creado y asignado a ${contar(grupo.numerosFila.length, 'fila', 'filas')}.`,
+        `Programa «${programaCreado.nombre}» creado y asignado a ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')}.`,
       );
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
@@ -166,7 +166,7 @@ export class PasoProgramas {
     this.filasCambiadas.emit(filasActualizadas);
     this.guardando.set(false);
     this.mostrarAviso(
-      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${contar(procesados, 'programa', 'programas')}.`,
+      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${cantidadConPalabra(procesados, 'programa', 'programas')}.`,
     );
     if (errores.length) this.error.set('No se pudieron crear: ' + errores.join(' · '));
   }
@@ -188,7 +188,7 @@ export class PasoProgramas {
     if (!programaElegido) return;
     this.filasCambiadas.emit(this.aplicarProgramaEnFilas(this.filas(), grupo, programaElegido));
     this.mostrarAviso(
-      `${contar(grupo.numerosFila.length, 'fila', 'filas')} ${segunCantidad(grupo.numerosFila.length, 'ahora usa', 'ahora usan')} «${programaElegido.nombre}».`,
+      `${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')} ${segunCantidad(grupo.numerosFila.length, 'ahora usa', 'ahora usan')} «${programaElegido.nombre}».`,
     );
   }
 
@@ -217,7 +217,7 @@ export class PasoProgramas {
     this.filasCambiadas.emit(excluirFilas(this.filas(), grupo.numerosFila));
     this.grupoPorExcluir.set(null);
     this.mostrarAviso(
-      `${segunCantidad(grupo.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${contar(grupo.numerosFila.length, 'fila', 'filas')} de la importación.`,
+      `${segunCantidad(grupo.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')} de la importación.`,
     );
   }
 

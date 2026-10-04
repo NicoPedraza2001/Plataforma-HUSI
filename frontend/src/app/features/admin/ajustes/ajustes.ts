@@ -11,9 +11,9 @@ import { Consulta } from '../../../shared/consulta/consulta';
 })
 export class Ajustes {
   // Dependencias
-  private readonly api = inject(SesionService);
+  private readonly sesionService = inject(SesionService);
 
-  protected readonly consulta = new Consulta<Perfil>(() => this.api.perfil());
+  protected readonly consulta = new Consulta<Perfil>(() => this.sesionService.perfil());
 
   constructor() {
     this.consulta.cargar();

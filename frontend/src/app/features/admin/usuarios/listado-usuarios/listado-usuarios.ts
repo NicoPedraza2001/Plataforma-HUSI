@@ -22,36 +22,38 @@ import { FormularioUsuario } from '../formulario-usuario/formulario-usuario';
 })
 export class ListadoUsuarios {
   // Dependencias
-  private readonly api = inject(UsuarioService);
-  private readonly catalogosApi = inject(CatalogoService);
-  private readonly opcionesApi = inject(RolService);
+  private readonly usuarioService = inject(UsuarioService);
+  private readonly catalogoService = inject(CatalogoService);
+  private readonly rolService = inject(RolService);
 
   // Estado de la pantalla y datos del formulario
-  protected readonly consulta = new Consulta<Pagina<Usuario>>((params) => this.api.listar(params));
-  protected readonly catalogos = new Consulta<Catalogos>(() => this.catalogosApi.listar());
-  protected readonly termino = signal('');
+  protected readonly consulta = new Consulta<Pagina<Usuario>>((params) =>
+    this.usuarioService.listar(params),
+  );
+  protected readonly catalogos = new Consulta<Catalogos>(() => this.catalogoService.listar());
+  protected readonly terminoBusqueda = signal('');
   protected readonly paginaActual = computed(
     () => this.consulta.datos()?.pagina ?? this.paginaSolicitada(),
   );
   private readonly paginaSolicitada = signal(1);
   protected readonly totalPaginas = computed(() => this.consulta.datos()?.totalPaginas ?? 1);
-  protected readonly desde = computed(() => (this.paginaActual() - 1) * 8);
+  protected readonly indicePrimeraFila = computed(() => (this.paginaActual() - 1) * 8);
   protected readonly usuariosPagina = computed(() => this.consulta.datos()?.contenido ?? []);
   protected readonly cargando = computed(
     () => this.consulta.cargando() || this.catalogos.cargando(),
   );
   protected readonly error = computed(() => this.consulta.error() || this.catalogos.error());
   protected readonly rol = signal('todos');
-  protected readonly estado = signal('todos');
+  protected readonly filtroEstado = signal('todos');
   protected readonly roles = computed(() => this.catalogos.datos()?.roles ?? []);
-  protected readonly formulario = signal(false);
+  protected readonly formularioAbierto = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
   protected readonly errorFormulario = signal('');
   protected readonly opciones = signal<OpcionCatalogo[]>([]);
   protected readonly pendienteEliminar = signal<Usuario | null>(null);
-  protected edicionId: number | null = null;
-  protected datos: UsuarioRequest = {
+  protected idEnEdicion: number | null = null;
+  protected datosFormulario: UsuarioRequest = {
     nombre: '',
     apellido: '',
     correo: '',
@@ -70,15 +72,19 @@ export class ListadoUsuarios {
   }
 
   protected cargar(espera = 0) {
-    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 8 };
+    const params: Parametros = {
+      q: this.terminoBusqueda(),
+      pagina: this.paginaSolicitada(),
+      tamano: 8,
+    };
     if (this.rol() !== 'todos') params['rol'] = this.rol();
-    if (this.estado() !== 'todos')
-      params['estado'] = this.estado() === 'activos' ? 'Activo' : 'Inactivo';
+    if (this.filtroEstado() !== 'todos')
+      params['estado'] = this.filtroEstado() === 'activos' ? 'Activo' : 'Inactivo';
     this.consulta.cargar(params, espera);
   }
 
   protected buscar(valor: string) {
-    this.termino.set(valor);
+    this.terminoBusqueda.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar(300);
   }
@@ -90,7 +96,7 @@ export class ListadoUsuarios {
   }
 
   protected filtrarPorEstado(valor: string) {
-    this.estado.set(valor);
+    this.filtroEstado.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
@@ -101,20 +107,27 @@ export class ListadoUsuarios {
     this.cargar();
   }
 
-  protected async abrir(fila: Usuario | null = null) {
+  protected async abrirFormulario(fila: Usuario | null = null) {
     if (this.guardando()) return;
     this.guardando.set(true);
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      const opciones = await firstValueFrom(this.opcionesApi.listar());
-      this.edicionId = fila?.id ?? null;
+      const opciones = await firstValueFrom(this.rolService.listar());
+      this.idEnEdicion = fila?.id ?? null;
       if (fila) {
-        const detalle = await firstValueFrom(this.api.consultar(fila.id));
-        this.datos = { ...detalle, contrasena: '' };
-      } else this.datos = { nombre: '', apellido: '', correo: '', contrasena: '', rolId: null };
+        const detalle = await firstValueFrom(this.usuarioService.consultar(fila.id));
+        this.datosFormulario = { ...detalle, contrasena: '' };
+      } else
+        this.datosFormulario = {
+          nombre: '',
+          apellido: '',
+          correo: '',
+          contrasena: '',
+          rolId: null,
+        };
       this.opciones.set(opciones);
-      this.formulario.set(true);
+      this.formularioAbierto.set(true);
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
     } finally {
@@ -128,11 +141,11 @@ export class ListadoUsuarios {
     this.errorFormulario.set('');
     try {
       await firstValueFrom(
-        this.edicionId
-          ? this.api.actualizar(this.edicionId, this.datos)
-          : this.api.crear(this.datos),
+        this.idEnEdicion
+          ? this.usuarioService.actualizar(this.idEnEdicion, this.datosFormulario)
+          : this.usuarioService.crear(this.datosFormulario),
       );
-      this.formulario.set(false);
+      this.formularioAbierto.set(false);
       this.aviso.set('Usuario guardado correctamente.');
       this.cargar();
       this.catalogos.cargar();
@@ -149,7 +162,9 @@ export class ListadoUsuarios {
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      await firstValueFrom(this.api.cambiarEstado(fila.id, fila.activo ? 'Inactivo' : 'Activo'));
+      await firstValueFrom(
+        this.usuarioService.cambiarEstado(fila.id, fila.activo ? 'Inactivo' : 'Activo'),
+      );
       this.aviso.set('Estado actualizado correctamente.');
       this.cargar();
     } catch (e) {
@@ -170,7 +185,7 @@ export class ListadoUsuarios {
     this.guardando.set(true);
     this.errorFormulario.set('');
     try {
-      await firstValueFrom(this.api.eliminarDefinitivamente(fila.id));
+      await firstValueFrom(this.usuarioService.eliminarDefinitivamente(fila.id));
       this.pendienteEliminar.set(null);
       this.aviso.set('Usuario eliminado definitivamente.');
       this.cargar();

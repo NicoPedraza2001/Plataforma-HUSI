@@ -18,80 +18,82 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ProgramaServiceImpl implements ProgramaService {
 
-  private final ProgramaRepository programas;
-  private final UniversidadRepository universidades;
-  private final ProgramaMapper mapper;
+  private final ProgramaRepository programaRepository;
+  private final UniversidadRepository universidadRepository;
+  private final ProgramaMapper programaMapper;
 
   public List<ProgramaResponse> listar() {
-    return programas
+    return programaRepository
       .findByEstadoOrderByNombreAscIdAsc("Activo")
       .stream()
-      .map(mapper::response)
+      .map(programaMapper::toResponse)
       .toList();
   }
 
   public ProgramaResponse consultar(Integer id) {
-    return mapper.response(obtener(id));
+    return programaMapper.toResponse(buscarPrograma(id));
   }
 
-  private Programa obtener(Integer id) {
-    return programas
+  private Programa buscarPrograma(Integer id) {
+    return programaRepository
       .findById(id)
       .orElseThrow(() ->
         error(HttpStatus.NOT_FOUND, "No se encontró el programa.")
       );
   }
 
-  private Programa obtenerBloqueado(Integer id) {
-    return programas
+  private Programa buscarProgramaBloqueado(Integer id) {
+    return programaRepository
       .bloquearPorId(id)
       .orElseThrow(() ->
         error(HttpStatus.NOT_FOUND, "No se encontró el programa.")
       );
   }
 
-  private String nombreValido(String nombre) {
+  /** Devuelve el nombre sin espacios sobrantes o rechaza si está vacío o es muy largo. */
+  private String validarNombre(String nombre) {
     if (nombre == null || nombre.isBlank()) throw error(
       HttpStatus.BAD_REQUEST,
       "Falta el nombre del programa."
     );
-    String limpio = nombre.strip();
-    if (limpio.length() > 150) throw error(
+    String nombreLimpio = nombre.strip();
+    if (nombreLimpio.length() > 150) throw error(
       HttpStatus.BAD_REQUEST,
       "El nombre admite hasta 150 caracteres."
     );
-    return limpio;
+    return nombreLimpio;
   }
 
-  private Universidad universidadActiva(Integer id) {
-    if (id == null) throw error(
+  private Universidad buscarUniversidadActiva(Integer universidadId) {
+    if (universidadId == null) throw error(
       HttpStatus.BAD_REQUEST,
       "Selecciona una universidad."
     );
-    Universidad u = universidades
-      .bloquearPorId(id)
+    Universidad universidad = universidadRepository
+      .bloquearPorId(universidadId)
       .orElseThrow(() ->
         error(HttpStatus.BAD_REQUEST, "La universidad no existe.")
       );
-    if (!"Activo".equals(u.getEstado())) throw error(
+    if (!"Activo".equals(universidad.getEstado())) throw error(
       HttpStatus.BAD_REQUEST,
       "La universidad está inactiva."
     );
-    return u;
+    return universidad;
   }
 
-  private void sinDuplicado(
+  /** Rechaza si la universidad ya tiene un programa con ese nombre (salvo {@code idExcluido}). */
+  private void validarSinDuplicado(
     Integer universidadId,
     String nombre,
-    Integer excluir
+    Integer idExcluido
   ) {
-    programas
+    programaRepository
       .findFirstByUniversidadIdAndNombreIgnoreCase(universidadId, nombre)
-      .ifPresent(p -> {
-        if (!Objects.equals(p.getId(), excluir)) throw error(
+      .ifPresent(existente -> {
+        if (!Objects.equals(existente.getId(), idExcluido)) throw error(
           HttpStatus.CONFLICT,
           "Ya existe este programa en la universidad (estado: " +
-            p.getEstado() +
+            existente.getEstado() +
             "). No se creará otro."
         );
       });
@@ -99,35 +101,35 @@ public class ProgramaServiceImpl implements ProgramaService {
 
   @Transactional
   public ProgramaResponse crear(ProgramaRequest request) {
-    String nombre = nombreValido(request.nombre());
-    Universidad u = universidadActiva(request.universidadId());
-    sinDuplicado(u.getId(), nombre, null);
-    Programa p = new Programa();
-    p.setNombre(nombre);
-    p.setUniversidad(u);
-    return mapper.response(programas.saveAndFlush(p));
+    String nombre = validarNombre(request.nombre());
+    Universidad universidad = buscarUniversidadActiva(request.universidadId());
+    validarSinDuplicado(universidad.getId(), nombre, null);
+    Programa programa = new Programa();
+    programa.setNombre(nombre);
+    programa.setUniversidad(universidad);
+    return programaMapper.toResponse(programaRepository.saveAndFlush(programa));
   }
 
   @Transactional
   public ProgramaResponse actualizar(Integer id, ProgramaRequest request) {
-    Programa p = obtenerBloqueado(id);
-    if ("Eliminado".equals(p.getEstado())) throw error(
+    Programa programa = buscarProgramaBloqueado(id);
+    if ("Eliminado".equals(programa.getEstado())) throw error(
       HttpStatus.CONFLICT,
       "El programa no está disponible."
     );
-    String nombre = nombreValido(request.nombre());
-    Universidad u = universidadActiva(request.universidadId());
-    sinDuplicado(u.getId(), nombre, id);
-    p.setNombre(nombre);
-    p.setUniversidad(u);
-    return mapper.response(programas.saveAndFlush(p));
+    String nombre = validarNombre(request.nombre());
+    Universidad universidad = buscarUniversidadActiva(request.universidadId());
+    validarSinDuplicado(universidad.getId(), nombre, id);
+    programa.setNombre(nombre);
+    programa.setUniversidad(universidad);
+    return programaMapper.toResponse(programaRepository.saveAndFlush(programa));
   }
 
   @Transactional
   public void desactivar(Integer id) {
-    Programa p = obtenerBloqueado(id);
-    p.setEstado("Inactivo");
-    programas.saveAndFlush(p);
+    Programa programa = buscarProgramaBloqueado(id);
+    programa.setEstado("Inactivo");
+    programaRepository.saveAndFlush(programa);
   }
 
   @Transactional
@@ -138,58 +140,64 @@ public class ProgramaServiceImpl implements ProgramaService {
       HttpStatus.BAD_REQUEST,
       "El estado debe ser Activo o Inactivo."
     );
-    Programa p = obtenerBloqueado(id);
-    if ("Eliminado".equals(p.getEstado())) throw error(
+    Programa programa = buscarProgramaBloqueado(id);
+    if ("Eliminado".equals(programa.getEstado())) throw error(
       HttpStatus.CONFLICT,
       "El programa no está disponible."
     );
-    if ("Activo".equals(estado)) universidadActiva(p.getUniversidad().getId());
-    p.setEstado(estado);
-    return mapper.response(programas.saveAndFlush(p));
+    if ("Activo".equals(estado)) buscarUniversidadActiva(
+      programa.getUniversidad().getId()
+    );
+    programa.setEstado(estado);
+    return programaMapper.toResponse(programaRepository.saveAndFlush(programa));
   }
 
   @Transactional
   public void eliminarDefinitivamente(Integer id) {
-    Programa p = obtenerBloqueado(id);
-    long cantidad = programas.contarResidentes(id);
-    if (cantidad > 0) throw error(
+    Programa programa = buscarProgramaBloqueado(id);
+    long residentesAsociados = programaRepository.contarResidentes(id);
+    if (residentesAsociados > 0) throw error(
       HttpStatus.CONFLICT,
       "No se puede eliminar definitivamente: este programa tiene " +
-        cantidad +
+        residentesAsociados +
         " residentes asociados, incluidos los inactivos. Puedes desactivarlo para conservar su historial."
     );
-    programas.delete(p);
-    programas.flush();
+    programaRepository.delete(programa);
+    programaRepository.flush();
   }
 
-  public ProgramaRequest validarImportacion(String nombre, String universidad) {
-    String limpio = nombreValido(nombre);
-    if (universidad == null || universidad.isBlank()) throw error(
+  public ProgramaRequest validarImportacion(
+    String nombre,
+    String nombreUniversidad
+  ) {
+    String nombreLimpio = validarNombre(nombre);
+    if (nombreUniversidad == null || nombreUniversidad.isBlank()) throw error(
       HttpStatus.BAD_REQUEST,
       "Falta la universidad."
     );
-    if (universidad.strip().length() > 150) throw error(
+    if (nombreUniversidad.strip().length() > 150) throw error(
       HttpStatus.BAD_REQUEST,
       "La universidad admite hasta 150 caracteres."
     );
-    List<Universidad> opciones = universidades.findByNombreIgnoreCaseAndEstado(
-      universidad.strip(),
-      "Activo"
-    );
-    if (opciones.isEmpty()) throw error(
+    List<Universidad> coincidencias =
+      universidadRepository.findByNombreIgnoreCaseAndEstado(
+        nombreUniversidad.strip(),
+        "Activo"
+      );
+    if (coincidencias.isEmpty()) throw error(
       HttpStatus.BAD_REQUEST,
       "Universidad no encontrada o inactiva. Usa el nombre del catálogo."
     );
-    if (opciones.size() != 1) throw error(
+    if (coincidencias.size() != 1) throw error(
       HttpStatus.BAD_REQUEST,
       "El nombre de universidad es ambiguo. Revisa el catálogo."
     );
-    Integer id = opciones.getFirst().getId();
-    sinDuplicado(id, limpio, null);
-    return new ProgramaRequest(limpio, id);
+    Integer universidadId = coincidencias.getFirst().getId();
+    validarSinDuplicado(universidadId, nombreLimpio, null);
+    return new ProgramaRequest(nombreLimpio, universidadId);
   }
 
-  private static NegocioException error(HttpStatus status, String mensaje) {
-    return new NegocioException(status, mensaje);
+  private static NegocioException error(HttpStatus estado, String mensaje) {
+    return new NegocioException(estado, mensaje);
   }
 }

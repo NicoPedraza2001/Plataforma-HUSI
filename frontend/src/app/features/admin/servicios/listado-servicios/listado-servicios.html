@@ -10,7 +10,7 @@
     </nav>
   </div>
 
-  <button type="button" class="btn btn--add" [disabled]="guardando()" (click)="abrir()">
+  <button type="button" class="btn btn--add" [disabled]="guardando()" (click)="abrirFormulario()">
     <span class="btn__plus" aria-hidden="true">+</span>
     Agregar servicio
   </button>
@@ -44,7 +44,7 @@
         class="search__input"
         type="search"
         placeholder="Buscar servicio..."
-        [value]="termino()"
+        [value]="terminoBusqueda()"
         (input)="buscar($any($event.target).value)"
       />
     </label>
@@ -56,7 +56,7 @@
       <span class="filtro__control">
         <select
           class="filtro__select"
-          [value]="estado()"
+          [value]="filtroEstado()"
           (change)="filtrarPorEstado($any($event.target).value)"
         >
           <option value="todos">Estado: Todos</option>
@@ -96,9 +96,9 @@
 
       <tbody>
         @if (!cargando() && !error()) {
-          @for (servicio of serviciosPagina(); track servicio.id; let i = $index) {
+          @for (servicio of serviciosPagina(); track servicio.id; let indice = $index) {
             <tr>
-              <td class="col-no">{{ desde() + i + 1 }}</td>
+              <td class="col-no">{{ indicePrimeraFila() + indice + 1 }}</td>
               <td>{{ servicio.nombre }}</td>
               <td class="col-descripcion">
                 <!-- La descripción es opcional en la base de datos: cuando falta
@@ -145,7 +145,11 @@
                   >
                     {{ servicio.activo ? 'Activo' : 'Inactivo' }}
                   </button>
-                  <button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(servicio)">
+                  <button
+                    class="btn btn--navy"
+                    [disabled]="guardando()"
+                    (click)="abrirFormulario(servicio)"
+                  >
                     Editar
                   </button>
                   <button
@@ -180,12 +184,12 @@
 @if (aviso()) {
   <p class="mensaje exito" role="status">{{ aviso() }}</p>
 }
-@if (errorFormulario() && !formulario() && !pendienteEliminar()) {
+@if (errorFormulario() && !formularioAbierto() && !pendienteEliminar()) {
   <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
 }
 
-@if (formulario()) {
-  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+@if (formularioAbierto()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formularioAbierto.set(false)">
     <section
       class="panel-modal"
       appFocoModal
@@ -194,14 +198,14 @@
       aria-labelledby="titulo-servicio"
     >
       <header>
-        <h2 id="titulo-servicio">{{ edicionId ? 'Editar servicio' : 'Agregar servicio' }}</h2>
+        <h2 id="titulo-servicio">{{ idEnEdicion ? 'Editar servicio' : 'Agregar servicio' }}</h2>
       </header>
       <app-formulario-servicio
-        [(datos)]="datos"
+        [(datos)]="datosFormulario"
         [guardando]="guardando()"
         [errorFormulario]="errorFormulario()"
         (guardar)="guardar()"
-        (cancelar)="formulario.set(false)"
+        (cancelar)="formularioAbierto.set(false)"
       />
     </section>
   </div>

@@ -11,33 +11,35 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ConsultaSql {
 
-  private final EntityManager em;
+  private final EntityManager entityManager;
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
+  /** Ejecuta la consulta y devuelve cada fila como un mapa alias → valor (fechas como texto). */
   public List<Map<String, Object>> mapas(NativeQuery query) {
-    query.setTupleTransformer((tuple, aliases) -> {
-      Map<String, Object> row = new LinkedHashMap<>();
-      for (int i = 0; i < aliases.length; i++) row.put(
-        aliases[i],
-        tuple[i] instanceof java.sql.Date d ? d.toString() : tuple[i]
+    query.setTupleTransformer((valores, alias) -> {
+      Map<String, Object> fila = new LinkedHashMap<>();
+      for (int i = 0; i < alias.length; i++) fila.put(
+        alias[i],
+        valores[i] instanceof java.sql.Date fecha ? fecha.toString() : valores[i]
       );
-      return row;
+      return fila;
     });
     return query.getResultList();
   }
 
   public List<Map<String, Object>> consultar(
     String sql,
-    Map<String, Object> params
+    Map<String, Object> parametros
   ) {
-    var query = em.createNativeQuery(sql);
-    params.forEach(query::setParameter);
+    var query = entityManager.createNativeQuery(sql);
+    parametros.forEach(query::setParameter);
     return mapas(query.unwrap(NativeQuery.class));
   }
 
-  public Object escalar(String sql, Map<String, Object> params) {
-    var query = em.createNativeQuery(sql);
-    params.forEach(query::setParameter);
+  /** Ejecuta una consulta que devuelve un único valor (por ejemplo, un count). */
+  public Object escalar(String sql, Map<String, Object> parametros) {
+    var query = entityManager.createNativeQuery(sql);
+    parametros.forEach(query::setParameter);
     return query.getSingleResult();
   }
 }

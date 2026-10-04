@@ -7,21 +7,22 @@ import java.util.List;
 
 public interface RotacionResidenteService {
   /**
-   * Con {@code espera} lista solo «Esperando cupo» por orden de llegada; sin él, el resto
+   * Con {@code soloEnEspera} lista solo «Esperando cupo» por orden de llegada; sin él, el resto
    * (asignados y cancelados) por nombre.
    */
   PaginaResponse<ResidenteRotacionResponse> listar(
     RotacionId id,
     int pagina,
-    boolean espera
+    boolean soloEnEspera
   );
-  List<CatalogoResponse> candidatos(RotacionId id, String q);
-  void asignar(RotacionId id, Integer residente);
+  List<CatalogoResponse> candidatos(RotacionId id, String busqueda);
+  void asignar(RotacionId id, Integer residenteId);
   /** Solo para la carga inicial desde Excel: admite rotaciones finalizadas. */
-  void asignarHistorica(RotacionId id, Integer residente);
-  void estado(RotacionId id, Integer residente, String estado);
+  void asignarHistorica(RotacionId id, Integer residenteId);
+  void cambiarEstado(RotacionId id, Integer residenteId, String nuevoEstado);
   /** Borra la relación de un residente sin cupo (en espera o cancelado). */
-  void eliminar(RotacionId id, Integer residente);
-  List<EsperaServicioResponse> espera(RotacionId id);
-  void trasladarEspera(RotacionId id, TrasladoEsperaRequest d);
+  void eliminar(RotacionId id, Integer residenteId);
+  /** Residentes en espera en otras rotaciones del mismo servicio. */
+  List<EsperaServicioResponse> listarEsperaDelServicio(RotacionId id);
+  void trasladarEspera(RotacionId id, TrasladoEsperaRequest traslado);
 }

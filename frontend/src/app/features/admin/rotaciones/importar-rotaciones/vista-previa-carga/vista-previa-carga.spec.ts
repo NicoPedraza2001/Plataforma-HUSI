@@ -84,7 +84,11 @@ describe('VistaPreviaCarga', () => {
     });
     fixture.detectChanges();
     const vistaPrevia = fixture.componentInstance as any;
-    expect(vistaPrevia.filasAGuardar().map((f: any) => [f.fila.residente, f.enEspera])).toEqual([
+    expect(
+      vistaPrevia
+        .filasAGuardar()
+        .map((filaAGuardar: any) => [filaAGuardar.fila.residente, filaAGuardar.enEspera]),
+    ).toEqual([
       ['Con cupo', false],
       ['Sin cupo', true],
     ]);

@@ -2,6 +2,7 @@ package co.edu.javeriana.husi.repository;
 
 import co.edu.javeriana.husi.dto.request.RotacionRequest;
 import co.edu.javeriana.husi.dto.response.PaginaResponse;
+import co.edu.javeriana.husi.model.entity.Rotacion;
 import co.edu.javeriana.husi.model.entity.RotacionId;
 import co.edu.javeriana.husi.repository.support.ConsultaSql;
 import jakarta.persistence.EntityManager;
@@ -13,9 +14,9 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class RotacionConsultaRepository {
 
-  private final ConsultaSql consultas;
-  private final EntityManager em;
-  private static final String SELECT = """
+  private final ConsultaSql consultaSql;
+  private final EntityManager entityManager;
+  private static final String SELECT_ROTACION = """
   select r.id_asignatura as "asignaturaId",r.fecha_inicio as inicio,r.fecha_fin as fin,
   a.nombre_asignatura as asignatura,s.nombre as servicio,s.id_servicio as "servicioId",
   r.activa,r.estado as disponibilidad,r.cupo_disponible as "cupoDisponible",
@@ -24,57 +25,58 @@ public class RotacionConsultaRepository {
   """;
 
   public PaginaResponse<Map<String, Object>> listar(
-    String q,
+    String busqueda,
     Boolean activa,
-    Integer servicio,
+    Integer servicioId,
     int pagina,
     int tamano
   ) {
-    Map<String, Object> params = new HashMap<>();
-    params.put("q", q);
+    Map<String, Object> parametros = new HashMap<>();
+    parametros.put("q", busqueda);
     String where =
       " where position(lower(:q) in lower(concat(asignatura,' ',servicio)))>0";
     if (activa != null) {
       where += " and activa=:activa";
-      params.put("activa", activa);
+      parametros.put("activa", activa);
     }
-    if (servicio != null) {
+    if (servicioId != null) {
       where += " and \"servicioId\"=:servicio";
-      params.put("servicio", servicio);
+      parametros.put("servicio", servicioId);
     }
-    String from = " from (" + SELECT + ") datos" + where;
+    String from = " from (" + SELECT_ROTACION + ") datos" + where;
     long total = (
-      (Number) consultas.escalar("select count(*)" + from, params)
+      (Number) consultaSql.escalar("select count(*)" + from, parametros)
     ).longValue();
-    int paginas = Math.max(1, (int) Math.ceil((double) total / tamano)),
-      actual = Math.min(pagina, paginas);
-    params.put("limite", tamano);
-    params.put("offset", (actual - 1) * tamano);
+    int totalPaginas = Math.max(1, (int) Math.ceil((double) total / tamano));
+    int paginaActual = Math.min(pagina, totalPaginas);
+    parametros.put("limite", tamano);
+    parametros.put("offset", (paginaActual - 1) * tamano);
     return new PaginaResponse<>(
-      consultas.consultar(
+      consultaSql.consultar(
         "select *" +
           from +
           " order by inicio desc,fin desc,\"asignaturaId\" limit :limite offset :offset",
-        params
+        parametros
       ),
       total,
-      paginas,
-      actual,
+      totalPaginas,
+      paginaActual,
       tamano
     );
   }
 
   public Map<String, Object> detalle(RotacionId id) {
-    return consultas
+    return consultaSql
       .consultar(
-        SELECT +
+        SELECT_ROTACION +
           " where r.id_asignatura=:id and r.fecha_inicio=:inicio and r.fecha_fin=:fin",
-        params(id)
+        parametrosDeId(id)
       )
       .getFirst();
   }
 
-  private Map<String, Object> params(RotacionId id) {
+  /** Parámetros {@code :id}, {@code :inicio} y {@code :fin} de la clave compuesta. */
+  private Map<String, Object> parametrosDeId(RotacionId id) {
     return Map.of(
       "id",
       id.getAsignaturaId(),
@@ -85,65 +87,68 @@ public class RotacionConsultaRepository {
     );
   }
 
-  public long relaciones(RotacionId id) {
+  /** Residentes relacionados con la rotación en cualquier estado (incluidos cancelados). */
+  public long contarResidentesRelacionados(RotacionId id) {
     return (
-      (Number) consultas.escalar(
+      (Number) consultaSql.escalar(
         "select count(*) from rotacion_residente where id_asignatura=:id and fecha_inicio=:inicio and fecha_fin=:fin",
-        params(id)
+        parametrosDeId(id)
       )
     ).longValue();
   }
 
-  public void insertar(co.edu.javeriana.husi.model.entity.Rotacion rotacion) {
-    em.persist(rotacion);
-    em.flush();
+  public void insertar(Rotacion rotacion) {
+    entityManager.persist(rotacion);
+    entityManager.flush();
   }
 
-  public void cambiarClave(RotacionId id, RotacionRequest datos) {
-    var query = em.createNativeQuery(
-      "update rotacion set id_asignatura=:nuevo,fecha_inicio=:desde,fecha_fin=:hasta where id_asignatura=:id and fecha_inicio=:inicio and fecha_fin=:fin"
+  /** Mueve la clave compuesta (asignatura y fechas) de la rotación {@code id} a {@code datos}. */
+  public void cambiarFechas(RotacionId id, RotacionRequest datos) {
+    var query = entityManager.createNativeQuery(
+      "update rotacion set id_asignatura=:nuevaAsignatura,fecha_inicio=:nuevoInicio,fecha_fin=:nuevoFin where id_asignatura=:id and fecha_inicio=:inicio and fecha_fin=:fin"
     );
-    params(id).forEach(query::setParameter);
+    parametrosDeId(id).forEach(query::setParameter);
     query
-      .setParameter("nuevo", datos.asignaturaId())
-      .setParameter("desde", datos.inicio())
-      .setParameter("hasta", datos.fin())
+      .setParameter("nuevaAsignatura", datos.asignaturaId())
+      .setParameter("nuevoInicio", datos.inicio())
+      .setParameter("nuevoFin", datos.fin())
       .executeUpdate();
-    em.clear();
+    entityManager.clear();
   }
 
   public List<Map<String, Object>> asignaturas() {
-    return consultas.consultar(
+    return consultaSql.consultar(
       "select a.id_asignatura as id,a.nombre_asignatura as nombre,s.nombre as servicio,s.id_servicio as \"servicioId\" from asignatura a join servicio s on s.id_servicio=a.id_servicio where a.estado='Activo' and s.estado='Activo' order by s.nombre,a.nombre_asignatura",
       Map.of()
     );
   }
 
   public List<Map<String, Object>> servicios() {
-    return consultas.consultar(
+    return consultaSql.consultar(
       "select id_servicio as id,nombre from servicio where estado<>'Eliminado' order by nombre",
       Map.of()
     );
   }
 
-  public boolean asignaturaActiva(Integer id) {
+  public boolean asignaturaActiva(Integer asignaturaId) {
     return (
       (
-        (Number) consultas.escalar(
+        (Number) consultaSql.escalar(
           "select count(*) from asignatura a join servicio s on s.id_servicio=a.id_servicio where a.id_asignatura=:id and a.estado='Activo' and s.estado='Activo'",
-          Map.of("id", id)
+          Map.of("id", asignaturaId)
         )
       ).intValue() == 1
     );
   }
 
-  public List<Map<String, Object>> resolver(
-    String asignatura,
-    String servicio
+  /** Asignaturas activas (de servicios activos) que coinciden por nombre, sin distinguir mayúsculas. */
+  public List<Map<String, Object>> buscarAsignaturasActivas(
+    String nombreAsignatura,
+    String nombreServicio
   ) {
-    return consultas.consultar(
-      "select a.id_asignatura as id from asignatura a join servicio s on s.id_servicio=a.id_servicio where lower(a.nombre_asignatura)=lower(:a) and lower(s.nombre)=lower(:s) and a.estado='Activo' and s.estado='Activo'",
-      Map.of("a", asignatura, "s", servicio)
+    return consultaSql.consultar(
+      "select a.id_asignatura as id from asignatura a join servicio s on s.id_servicio=a.id_servicio where lower(a.nombre_asignatura)=lower(:asignatura) and lower(s.nombre)=lower(:servicio) and a.estado='Activo' and s.estado='Activo'",
+      Map.of("asignatura", nombreAsignatura, "servicio", nombreServicio)
     );
   }
 }

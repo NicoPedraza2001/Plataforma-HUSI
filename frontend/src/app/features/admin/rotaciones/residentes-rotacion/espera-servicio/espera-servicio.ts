@@ -14,18 +14,20 @@ import { RotacionService } from '../../../../../services/rotacion.service';
 })
 export class EsperaServicio implements OnInit {
   // Dependencias
-  private readonly api = inject(RotacionService);
+  private readonly rotacionService = inject(RotacionService);
 
   // Estado de la pantalla
   readonly rotacion = input.required<RotacionGestion>();
   readonly trasladados = output<number>();
   protected readonly filas = signal<ResidenteEnEspera[]>([]);
-  protected readonly cupos = signal(0);
-  protected readonly seleccion = signal<ReadonlySet<string>>(new Set());
+  protected readonly cuposDisponibles = signal(0);
+  protected readonly seleccionados = signal<ReadonlySet<string>>(new Set());
   protected readonly cargando = signal(true);
   protected readonly guardando = signal(false);
   protected readonly error = signal('');
-  protected readonly excede = computed(() => this.seleccion().size > this.cupos());
+  protected readonly excedeCupos = computed(
+    () => this.seleccionados().size > this.cuposDisponibles(),
+  );
 
   ngOnInit() {
     this.cargar();
@@ -37,18 +39,18 @@ export class EsperaServicio implements OnInit {
     this.error.set('');
     try {
       const [rotacion, filas] = await Promise.all([
-        firstValueFrom(this.api.consultar(this.rotacion())),
-        firstValueFrom(this.api.espera(this.rotacion())),
+        firstValueFrom(this.rotacionService.consultar(this.rotacion())),
+        firstValueFrom(this.rotacionService.listarEsperaDelServicio(this.rotacion())),
       ]);
-      this.cupos.set(rotacion.cupoDisponible);
+      this.cuposDisponibles.set(rotacion.cupoDisponible);
       this.filas.set(filas);
       // Preselecciona por orden de llegada, sin quienes tienen cruce de fechas.
-      this.seleccion.set(
+      this.seleccionados.set(
         new Set(
           filas
-            .filter((f) => !f.cruce)
+            .filter((residente) => !residente.cruce)
             .slice(0, rotacion.cupoDisponible)
-            .map((f) => this.clave(f)),
+            .map((residente) => this.claveDe(residente)),
         ),
       );
     } catch (e) {
@@ -58,25 +60,27 @@ export class EsperaServicio implements OnInit {
     }
   }
 
-  protected clave(f: ResidenteEnEspera) {
-    return `${f.residenteId}|${f.asignaturaId}|${f.inicio}|${f.fin}`;
+  protected claveDe(residente: ResidenteEnEspera) {
+    return `${residente.residenteId}|${residente.asignaturaId}|${residente.inicio}|${residente.fin}`;
   }
 
-  protected alternar(f: ResidenteEnEspera) {
-    const seleccion = new Set(this.seleccion());
-    const clave = this.clave(f);
+  protected alternarSeleccion(residente: ResidenteEnEspera) {
+    const seleccion = new Set(this.seleccionados());
+    const clave = this.claveDe(residente);
     if (!seleccion.delete(clave)) seleccion.add(clave);
-    this.seleccion.set(seleccion);
+    this.seleccionados.set(seleccion);
   }
 
   protected async trasladar() {
-    const elegidos = this.filas().filter((f) => this.seleccion().has(this.clave(f)));
-    if (!elegidos.length || this.excede() || this.guardando()) return;
+    const elegidos = this.filas().filter((residente) =>
+      this.seleccionados().has(this.claveDe(residente)),
+    );
+    if (!elegidos.length || this.excedeCupos() || this.guardando()) return;
     this.guardando.set(true);
     this.error.set('');
     try {
       await firstValueFrom(
-        this.api.trasladarEspera(
+        this.rotacionService.trasladarEspera(
           this.rotacion(),
           elegidos.map(({ residenteId, asignaturaId, inicio, fin }) => ({
             residenteId,

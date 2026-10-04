@@ -19,24 +19,29 @@ import org.springframework.transaction.annotation.Transactional;
 )
 public class ConsultaServiceImpl implements ConsultaService {
 
-  private final ConsultaRepository repository;
+  private final ConsultaRepository consultaRepository;
 
   public PaginaResponse<Map<String, Object>> listar(
     String dominio,
     Map<String, String> parametros
   ) {
     validar(dominio, parametros);
-    int pagina = numero(parametros.getOrDefault("pagina", "1"), 1, 1000000);
-    int tamano = numero(parametros.getOrDefault("tamano", "10"), 1, 100);
+    int pagina = leerEnteroEnRango(
+      parametros.getOrDefault("pagina", "1"),
+      1,
+      1000000
+    );
+    int tamano = leerEnteroEnRango(parametros.getOrDefault("tamano", "10"), 1, 100);
     Map<String, String> filtros = new LinkedHashMap<>();
-    parametros.forEach((key, value) -> {
+    parametros.forEach((nombre, valor) -> {
       if (
-        !key.equals("pagina") && !key.equals("tamano") && !value.isBlank()
-      ) filtros.put(key, value.strip());
+        !nombre.equals("pagina") && !nombre.equals("tamano") && !valor.isBlank()
+      ) filtros.put(nombre, valor.strip());
     });
-    return repository.listar(dominio, filtros, pagina, tamano);
+    return consultaRepository.listar(dominio, filtros, pagina, tamano);
   }
 
+  /** Rechaza filtros que el listado {@code dominio} no admite o cuyo valor está mal formado. */
   public void validar(String dominio, Map<String, String> parametros) {
     Set<String> permitidos = new HashSet<>(Set.of("q", "pagina", "tamano"));
     permitidos.addAll(
@@ -65,23 +70,23 @@ public class ConsultaServiceImpl implements ConsultaService {
     if (!permitidos.containsAll(parametros.keySet())) throw error(
       "Uno de los filtros no está disponible para este listado."
     );
-    int pagina = numero(parametros.getOrDefault("pagina", "1"), 1, 1000000);
-    int tamano = numero(parametros.getOrDefault("tamano", "10"), 1, 100);
+    leerEnteroEnRango(parametros.getOrDefault("pagina", "1"), 1, 1000000);
+    leerEnteroEnRango(parametros.getOrDefault("tamano", "10"), 1, 100);
     Map<String, String> filtros = new LinkedHashMap<>();
-    parametros.forEach((key, value) -> {
-      if (key.equals("pagina") || key.equals("tamano")) return;
-      String limpio = value.strip();
+    parametros.forEach((nombre, valor) -> {
+      if (nombre.equals("pagina") || nombre.equals("tamano")) return;
+      String limpio = valor.strip();
       if (limpio.length() > 200) throw error(
         "Los filtros admiten hasta 200 caracteres."
       );
-      if (!limpio.isEmpty()) filtros.put(key, limpio);
+      if (!limpio.isEmpty()) filtros.put(nombre, limpio);
     });
-    if (filtros.containsKey("universidadId")) numero(
+    if (filtros.containsKey("universidadId")) leerEnteroEnRango(
       filtros.get("universidadId"),
       1,
       Integer.MAX_VALUE
     );
-    if (filtros.containsKey("servicioId")) numero(
+    if (filtros.containsKey("servicioId")) leerEnteroEnRango(
       filtros.get("servicioId"),
       1,
       Integer.MAX_VALUE
@@ -109,13 +114,13 @@ public class ConsultaServiceImpl implements ConsultaService {
   }
 
   public Map<String, List<String>> catalogos() {
-    return repository.catalogos();
+    return consultaRepository.catalogos();
   }
 
-  private int numero(String valor, int min, int max) {
+  private int leerEnteroEnRango(String valor, int minimo, int maximo) {
     try {
-      int n = Integer.parseInt(valor);
-      if (n >= min && n <= max) return n;
+      int numero = Integer.parseInt(valor);
+      if (numero >= minimo && numero <= maximo) return numero;
     } catch (NumberFormatException e) {}
     throw error("Revisa la página (1 a 1000000) y el tamaño (1 a 100).");
   }

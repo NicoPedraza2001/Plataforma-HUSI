@@ -18,75 +18,95 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class UniversidadServiceImpl implements UniversidadService {
 
-  private final UniversidadRepository universidades;
-  private final UniversidadMapper mapper;
-  private final ConsultaService consultas;
+  private final UniversidadRepository universidadRepository;
+  private final UniversidadMapper universidadMapper;
+  private final ConsultaService consultaService;
 
   public List<CatalogoResponse> catalogo() {
-    return universidades
+    return universidadRepository
       .findByEstadoOrderByNombreAsc("Activo")
       .stream()
-      .map(u -> new CatalogoResponse(u.getId(), u.getNombre()))
+      .map(universidad ->
+        new CatalogoResponse(universidad.getId(), universidad.getNombre())
+      )
       .toList();
   }
 
   public UniversidadResponse consultar(Integer id) {
-    return mapper.response(obtener(id, false));
+    return universidadMapper.toResponse(buscarUniversidad(id, false));
   }
 
-  private Universidad obtener(Integer id, boolean bloquear) {
+  private Universidad buscarUniversidad(Integer id, boolean bloquear) {
     if (id == null || id <= 0) throw error(
       HttpStatus.BAD_REQUEST,
       "La universidad indicada no es válida."
     );
-    Universidad u = (
-      bloquear ? universidades.bloquearPorId(id) : universidades.findById(id)
+    Universidad universidad = (
+      bloquear
+        ? universidadRepository.bloquearPorId(id)
+        : universidadRepository.findById(id)
     ).orElseThrow(() ->
       error(HttpStatus.NOT_FOUND, "No se encontró la universidad.")
     );
-    if ("Eliminado".equals(u.getEstado())) throw error(
+    if ("Eliminado".equals(universidad.getEstado())) throw error(
       HttpStatus.NOT_FOUND,
       "La universidad no está disponible."
     );
-    return u;
+    return universidad;
   }
 
-  private void aplicar(Universidad u, UniversidadRequest request) {
-    String nombre = texto(request.nombre(), 150, "nombre", true);
-    String pais = texto(request.pais(), 100, "país", true);
-    String perfil = texto(request.perfil(), 50, "perfil", false);
+  /** Valida la solicitud y copia sus datos sobre la universidad (nueva o existente). */
+  private void validarYAsignarDatos(
+    Universidad universidad,
+    UniversidadRequest request
+  ) {
+    String nombre = validarTexto(request.nombre(), 150, "nombre", true);
+    String pais = validarTexto(request.pais(), 100, "país", true);
+    String perfil = validarTexto(request.perfil(), 50, "perfil", false);
     if (
-      universidades.existsByNombreIgnoreCaseAndIdNot(
+      universidadRepository.existsByNombreIgnoreCaseAndIdNot(
         nombre,
-        u.getId() == null ? 0 : u.getId()
+        universidad.getId() == null ? 0 : universidad.getId()
       )
     ) throw error(
       HttpStatus.CONFLICT,
       "Ya existe una universidad con ese nombre. Revisa también las inactivas."
     );
-    u.setNombre(nombre);
-    u.setPais(pais);
-    u.setPerfil(perfil);
+    universidad.setNombre(nombre);
+    universidad.setPais(pais);
+    universidad.setPerfil(perfil);
   }
 
-  private String texto(String valor, int max, String campo, boolean requerido) {
+  /** Devuelve el texto sin espacios sobrantes, o null si queda vacío y no es obligatorio. */
+  private String validarTexto(
+    String valor,
+    int longitudMaxima,
+    String nombreCampo,
+    boolean obligatorio
+  ) {
     String limpio = valor == null ? "" : valor.strip();
-    if (requerido && limpio.isEmpty()) throw error(
+    if (obligatorio && limpio.isEmpty()) throw error(
       HttpStatus.BAD_REQUEST,
-      "El campo " + campo + " es obligatorio."
+      "El campo " + nombreCampo + " es obligatorio."
     );
-    if (limpio.length() > max) throw error(
+    if (limpio.length() > longitudMaxima) throw error(
       HttpStatus.BAD_REQUEST,
-      "El campo " + campo + " admite hasta " + max + " caracteres."
+      "El campo " +
+        nombreCampo +
+        " admite hasta " +
+        longitudMaxima +
+        " caracteres."
     );
     return limpio.isEmpty() ? null : limpio;
   }
 
   @Transactional
   public UniversidadResponse crear(UniversidadRequest request) {
-    Universidad u = new Universidad();
-    aplicar(u, request);
-    return mapper.response(universidades.saveAndFlush(u));
+    Universidad universidad = new Universidad();
+    validarYAsignarDatos(universidad, request);
+    return universidadMapper.toResponse(
+      universidadRepository.saveAndFlush(universidad)
+    );
   }
 
   @Transactional
@@ -94,9 +114,11 @@ public class UniversidadServiceImpl implements UniversidadService {
     Integer id,
     UniversidadRequest request
   ) {
-    Universidad u = obtener(id, true);
-    aplicar(u, request);
-    return mapper.response(universidades.saveAndFlush(u));
+    Universidad universidad = buscarUniversidad(id, true);
+    validarYAsignarDatos(universidad, request);
+    return universidadMapper.toResponse(
+      universidadRepository.saveAndFlush(universidad)
+    );
   }
 
   @Transactional
@@ -107,38 +129,40 @@ public class UniversidadServiceImpl implements UniversidadService {
       HttpStatus.BAD_REQUEST,
       "El estado debe ser Activo o Inactivo."
     );
-    Universidad u = obtener(id, true);
-    u.setEstado(estado);
+    Universidad universidad = buscarUniversidad(id, true);
+    universidad.setEstado(estado);
     // No hay cascada: programas y residentes conservan registros, relaciones y estados.
-    return mapper.response(universidades.saveAndFlush(u));
+    return universidadMapper.toResponse(
+      universidadRepository.saveAndFlush(universidad)
+    );
   }
 
   @Transactional
   public void eliminarDefinitivamente(Integer id) {
-    Universidad u = obtener(id, true);
-    long cantidad = universidades.contarProgramas(id);
-    if (cantidad > 0) throw error(
+    Universidad universidad = buscarUniversidad(id, true);
+    long programasAsociados = universidadRepository.contarProgramas(id);
+    if (programasAsociados > 0) throw error(
       HttpStatus.CONFLICT,
       "No se puede eliminar definitivamente: esta universidad tiene " +
-        cantidad +
+        programasAsociados +
         " programas asociados, incluidos los inactivos. Puedes desactivarla para conservar sus relaciones."
     );
-    universidades.delete(u);
-    universidades.flush();
+    universidadRepository.delete(universidad);
+    universidadRepository.flush();
   }
 
   public PaginaResponse<Map<String, Object>> programas(
     Integer id,
     Map<String, String> filtros
   ) {
-    obtener(id, false);
+    buscarUniversidad(id, false);
     Map<String, String> parametros = new HashMap<>(filtros);
     // El ID de la ruta tiene precedencia; nunca consultar otra universidad por un filtro recibido.
     parametros.put("universidadId", id.toString());
-    return consultas.listar("programas", parametros);
+    return consultaService.listar("programas", parametros);
   }
 
-  private NegocioException error(HttpStatus status, String mensaje) {
-    return new NegocioException(status, mensaje);
+  private NegocioException error(HttpStatus estado, String mensaje) {
+    return new NegocioException(estado, mensaje);
   }
 }

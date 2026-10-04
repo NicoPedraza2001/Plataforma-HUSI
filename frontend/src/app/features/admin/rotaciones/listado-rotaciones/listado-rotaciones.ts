@@ -30,24 +30,30 @@ import { ResidentesRotacion } from '../residentes-rotacion/residentes-rotacion';
 })
 export class ListadoRotaciones {
   // Dependencias
-  private readonly api = inject(RotacionService);
+  private readonly rotacionService = inject(RotacionService);
 
   // Estado de la pantalla y datos del formulario
-  protected readonly consulta = new Consulta<Pagina<RotacionGestion>>((p) => this.api.gestionar(p));
-  protected readonly catalogos = new Consulta<CatalogosRotacion>(() => this.api.catalogos());
+  protected readonly consulta = new Consulta<Pagina<RotacionGestion>>((parametros) =>
+    this.rotacionService.listarGestion(parametros),
+  );
+  protected readonly catalogos = new Consulta<CatalogosRotacion>(() =>
+    this.rotacionService.catalogos(),
+  );
   protected readonly filas = computed(() => this.consulta.datos()?.contenido ?? []);
   protected readonly paginas = computed(() => this.consulta.datos()?.totalPaginas ?? 1);
   protected readonly pagina = computed(() => this.consulta.datos()?.pagina ?? 1);
-  protected readonly rotacionResidentes = signal<RotacionGestion | null>(null);
-  protected readonly formulario = signal(false);
+  protected readonly rotacionVerResidentes = signal<RotacionGestion | null>(null);
+  protected readonly formularioAbierto = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
   protected readonly error = signal('');
-  protected readonly pendiente = signal<{ fila: RotacionGestion; eliminar: boolean } | null>(null);
-  protected edicion: RotacionGestion | null = null;
-  protected termino = '';
-  protected estado = '';
-  protected servicio = '';
+  protected readonly accionPendiente = signal<{ fila: RotacionGestion; eliminar: boolean } | null>(
+    null,
+  );
+  protected rotacionEnEdicion: RotacionGestion | null = null;
+  protected terminoBusqueda = '';
+  protected filtroEstado = '';
+  protected filtroServicioId = '';
   protected asignaturaId = 0;
   protected inicio = '';
   protected fin = '';
@@ -58,22 +64,24 @@ export class ListadoRotaciones {
   }
 
   protected cargar(pagina = 1, espera = 0) {
-    const params: Parametros = { q: this.termino, pagina, tamano: 10 };
-    if (this.estado) params['activa'] = this.estado;
-    if (this.servicio) params['servicioId'] = this.servicio;
+    const params: Parametros = { q: this.terminoBusqueda, pagina, tamano: 10 };
+    if (this.filtroEstado) params['activa'] = this.filtroEstado;
+    if (this.filtroServicioId) params['servicioId'] = this.filtroServicioId;
     this.consulta.cargar(params, espera);
   }
 
-  protected async abrir(fila: RotacionGestion | null = null) {
+  protected async abrirFormulario(fila: RotacionGestion | null = null) {
     if (this.guardando()) return;
     this.guardando.set(true);
     this.error.set('');
     try {
-      this.edicion = fila ? await firstValueFrom(this.api.consultar(fila)) : null;
-      this.asignaturaId = this.edicion?.asignaturaId ?? 0;
-      this.inicio = this.edicion?.inicio ?? '';
-      this.fin = this.edicion?.fin ?? '';
-      this.formulario.set(true);
+      this.rotacionEnEdicion = fila
+        ? await firstValueFrom(this.rotacionService.consultar(fila))
+        : null;
+      this.asignaturaId = this.rotacionEnEdicion?.asignaturaId ?? 0;
+      this.inicio = this.rotacionEnEdicion?.inicio ?? '';
+      this.fin = this.rotacionEnEdicion?.fin ?? '';
+      this.formularioAbierto.set(true);
       this.catalogos.cargar();
     } catch (e) {
       this.error.set(mensajeError(e));
@@ -90,7 +98,8 @@ export class ListadoRotaciones {
       );
       return;
     }
-    const fechasCambian = this.inicio !== this.edicion?.inicio || this.fin !== this.edicion?.fin;
+    const fechasCambian =
+      this.inicio !== this.rotacionEnEdicion?.inicio || this.fin !== this.rotacionEnEdicion?.fin;
     if (fechasCambian && this.inicio < hoyBogota()) {
       this.error.set('La fecha de inicio no puede ser anterior a hoy.');
       return;
@@ -100,12 +109,16 @@ export class ListadoRotaciones {
     try {
       const datos = { asignaturaId: Number(this.asignaturaId), inicio: this.inicio, fin: this.fin };
       const guardada = await firstValueFrom(
-        this.edicion ? this.api.editar(this.edicion, datos) : this.api.crear(datos),
+        this.rotacionEnEdicion
+          ? this.rotacionService.editar(this.rotacionEnEdicion, datos)
+          : this.rotacionService.crear(datos),
       );
-      this.formulario.set(false);
-      this.aviso.set(this.edicion ? 'Rotación actualizada.' : 'Rotación creada correctamente.');
+      this.formularioAbierto.set(false);
+      this.aviso.set(
+        this.rotacionEnEdicion ? 'Rotación actualizada.' : 'Rotación creada correctamente.',
+      );
       this.cargar();
-      if (!this.edicion) await this.ofrecerEspera(guardada);
+      if (!this.rotacionEnEdicion) await this.ofrecerTrasladoDeEspera(guardada);
     } catch (e) {
       this.error.set(mensajeError(e));
     } finally {
@@ -114,14 +127,14 @@ export class ListadoRotaciones {
   }
 
   /** Si hay residentes esperando cupo en el servicio, abre la rotación nueva para trasladarlos. */
-  private async ofrecerEspera(rotacion: RotacionGestion) {
+  private async ofrecerTrasladoDeEspera(rotacion: RotacionGestion) {
     try {
-      const espera = await firstValueFrom(this.api.espera(rotacion));
+      const espera = await firstValueFrom(this.rotacionService.listarEsperaDelServicio(rotacion));
       if (!espera.length) return;
       this.aviso.set(
         'Rotación creada. Hay residentes esperando cupo en este servicio: elige cuáles trasladar.',
       );
-      this.rotacionResidentes.set(rotacion);
+      this.rotacionVerResidentes.set(rotacion);
     } catch {
       // La rotación ya se creó; la espera puede revisarse desde "Ver residentes".
     }
@@ -133,7 +146,9 @@ export class ListadoRotaciones {
     this.error.set('');
     this.aviso.set('');
     try {
-      const actualizada = await firstValueFrom(this.api.estado(fila, !fila.activa));
+      const actualizada = await firstValueFrom(
+        this.rotacionService.cambiarEstado(fila, !fila.activa),
+      );
       this.cargar(this.pagina());
       this.aviso.set(
         actualizada.activa ? 'Rotación activada.' : 'Rotación desactivada. Sus datos se conservan.',
@@ -145,20 +160,20 @@ export class ListadoRotaciones {
     }
   }
 
-  protected solicitar(fila: RotacionGestion, eliminar = true) {
+  protected solicitarEliminar(fila: RotacionGestion, eliminar = true) {
     this.error.set('');
-    this.pendiente.set({ fila, eliminar });
+    this.accionPendiente.set({ fila, eliminar });
   }
 
   protected async confirmar() {
-    const accion = this.pendiente();
+    const accion = this.accionPendiente();
     if (!accion || this.guardando()) return;
     this.guardando.set(true);
     this.error.set('');
     try {
-      await firstValueFrom(this.api.eliminar(accion.fila));
+      await firstValueFrom(this.rotacionService.eliminar(accion.fila));
       this.aviso.set('Rotación eliminada definitivamente.');
-      this.pendiente.set(null);
+      this.accionPendiente.set(null);
       this.cargar(this.pagina());
     } catch (e) {
       this.error.set(mensajeError(e));

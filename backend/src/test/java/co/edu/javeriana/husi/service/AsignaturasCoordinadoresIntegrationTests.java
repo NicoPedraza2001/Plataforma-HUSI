@@ -59,28 +59,28 @@ class AsignaturasCoordinadoresIntegrationTests {
 
   @Test
   void asignaturaPersisteEditaBuscaPaginaCambiaEstadoYElimina() {
-    var s = servicio();
-    var a = asignaturas.crear(new AsignaturaRequest("Materia uno", s.id()));
-    asignaturas.crear(new AsignaturaRequest("Materia dos", s.id()));
+    var servicioCreado = servicio();
+    var asignaturaCreada = asignaturas.crear(new AsignaturaRequest("Materia uno", servicioCreado.id()));
+    asignaturas.crear(new AsignaturaRequest("Materia dos", servicioCreado.id()));
     assertThat(
       jdbc.queryForObject(
         "select id_servicio from asignatura where id_asignatura=?",
         Integer.class,
-        a.id()
+        asignaturaCreada.id()
       )
-    ).isEqualTo(s.id());
+    ).isEqualTo(servicioCreado.id());
     var pagina = consultas.listar(
       "asignaturas",
-      Map.of("servicioId", s.id().toString(), "tamano", "1", "pagina", "2")
+      Map.of("servicioId", servicioCreado.id().toString(), "tamano", "1", "pagina", "2")
     );
     assertThat(pagina.totalElementos()).isEqualTo(2);
     assertThat(pagina.pagina()).isEqualTo(2);
     assertThat(pagina.contenido()).hasSize(1);
     asignaturas.actualizar(
-      a.id(),
-      new AsignaturaRequest("Materia editada", s.id())
+      asignaturaCreada.id(),
+      new AsignaturaRequest("Materia editada", servicioCreado.id())
     );
-    asignaturas.cambiarEstado(a.id(), "Inactivo");
+    asignaturas.cambiarEstado(asignaturaCreada.id(), "Inactivo");
     assertThat(
       consultas
         .listar(
@@ -89,38 +89,38 @@ class AsignaturasCoordinadoresIntegrationTests {
             "q",
             "editada",
             "servicioId",
-            s.id().toString(),
+            servicioCreado.id().toString(),
             "estado",
             "Inactivo"
           )
         )
         .totalElementos()
     ).isEqualTo(1);
-    assertThat(asignaturas.cambiarEstado(a.id(), "Activo").activo()).isTrue();
-    asignaturas.eliminarDefinitivamente(a.id());
+    assertThat(asignaturas.cambiarEstado(asignaturaCreada.id(), "Activo").activo()).isTrue();
+    asignaturas.eliminarDefinitivamente(asignaturaCreada.id());
     assertThat(
       jdbc.queryForObject(
         "select count(*) from asignatura where id_asignatura=?",
         Integer.class,
-        a.id()
+        asignaturaCreada.id()
       )
     ).isZero();
   }
 
   @Test
   void asignaturaDuplicadaSeRechazaPorServicio() {
-    var s = servicio();
-    asignaturas.crear(new AsignaturaRequest("Materia", s.id()));
+    var servicioCreado = servicio();
+    asignaturas.crear(new AsignaturaRequest("Materia", servicioCreado.id()));
     assertThatThrownBy(() ->
-      asignaturas.crear(new AsignaturaRequest(" materia ", s.id()))
+      asignaturas.crear(new AsignaturaRequest(" materia ", servicioCreado.id()))
     ).isInstanceOf(NegocioException.class);
   }
 
   @Test
   void asignaturaPuedeRepetirseEnOtroServicio() {
-    var s = servicio();
+    var servicioCreado = servicio();
     var otro = servicio();
-    asignaturas.crear(new AsignaturaRequest("Materia", s.id()));
+    asignaturas.crear(new AsignaturaRequest("Materia", servicioCreado.id()));
     assertThat(
       asignaturas
         .crear(new AsignaturaRequest("Materia", otro.id()))
@@ -130,30 +130,30 @@ class AsignaturasCoordinadoresIntegrationTests {
 
   @Test
   void rotacionesProtegenAsignatura() {
-    var s = servicio();
+    var servicioCreado = servicio();
     var otro = servicio();
-    var a = asignaturas.crear(new AsignaturaRequest("Materia", s.id()));
+    var asignaturaCreada = asignaturas.crear(new AsignaturaRequest("Materia", servicioCreado.id()));
     jdbc.update(
       "insert into rotacion(id_asignatura,fecha_inicio,fecha_fin,cupo_disponible) values (?,'2099-01-01','2099-01-02',2)",
-      a.id()
+      asignaturaCreada.id()
     );
     assertThatThrownBy(() ->
-      asignaturas.eliminarDefinitivamente(a.id())
+      asignaturas.eliminarDefinitivamente(asignaturaCreada.id())
     ).hasMessageContaining("rotaciones");
   }
 
   @Test
   void rotacionesBloqueanCambioDeServicio() {
-    var s = servicio();
+    var servicioCreado = servicio();
     var otro = servicio();
-    var a = asignaturas.crear(new AsignaturaRequest("Materia", s.id()));
+    var asignaturaCreada = asignaturas.crear(new AsignaturaRequest("Materia", servicioCreado.id()));
     jdbc.update(
       "insert into rotacion(id_asignatura,fecha_inicio,fecha_fin,cupo_disponible) values (?,'2099-01-01','2099-01-02',2)",
-      a.id()
+      asignaturaCreada.id()
     );
     assertThatThrownBy(() ->
       asignaturas.actualizar(
-        a.id(),
+        asignaturaCreada.id(),
         new AsignaturaRequest("Materia", otro.id())
       )
     ).hasMessageContaining("historial");
@@ -161,25 +161,25 @@ class AsignaturasCoordinadoresIntegrationTests {
 
   @Test
   void coordinadorCompletaFlujoYNoBorraUsuario() {
-    var s = servicio();
+    var servicioCreado = servicio();
     var otro = servicio();
-    var u = usuario("Coordinador");
+    var usuarioCreado = usuario("Coordinador");
     assertThat(coordinadores.usuariosDisponibles())
       .extracting(CatalogoResponse::id)
-      .contains(u.id());
-    var c = coordinadores.crear(new CoordinadorRequest(u.id(), s.id()));
+      .contains(usuarioCreado.id());
+    var coordinadorCreado = coordinadores.crear(new CoordinadorRequest(usuarioCreado.id(), servicioCreado.id()));
     assertThat(coordinadores.usuariosDisponibles())
       .extracting(CatalogoResponse::id)
-      .doesNotContain(u.id());
-    coordinadores.actualizar(c.id(), new CoordinadorRequest(u.id(), otro.id()));
-    coordinadores.cambiarEstado(c.id(), "Inactivo");
+      .doesNotContain(usuarioCreado.id());
+    coordinadores.actualizar(coordinadorCreado.id(), new CoordinadorRequest(usuarioCreado.id(), otro.id()));
+    coordinadores.cambiarEstado(coordinadorCreado.id(), "Inactivo");
     assertThat(
       consultas
         .listar(
           "coordinadores",
           Map.of(
             "q",
-            u.correo(),
+            usuarioCreado.correo(),
             "estado",
             "Inactivo",
             "servicioId",
@@ -192,88 +192,88 @@ class AsignaturasCoordinadoresIntegrationTests {
       jdbc.queryForObject(
         "select id_servicio from coordinador where id_coordinador=?",
         Integer.class,
-        c.id()
+        coordinadorCreado.id()
       )
     ).isEqualTo(otro.id());
-    assertThat(coordinadores.cambiarEstado(c.id(), "Activo").activo()).isTrue();
-    coordinadores.eliminarDefinitivamente(c.id());
-    assertThat(usuarios.consultar(u.id()).id()).isEqualTo(u.id());
+    assertThat(coordinadores.cambiarEstado(coordinadorCreado.id(), "Activo").activo()).isTrue();
+    coordinadores.eliminarDefinitivamente(coordinadorCreado.id());
+    assertThat(usuarios.consultar(usuarioCreado.id()).id()).isEqualTo(usuarioCreado.id());
     assertThat(servicios.consultar(otro.id()).id()).isEqualTo(otro.id());
     assertThat(coordinadores.usuariosDisponibles())
       .extracting(CatalogoResponse::id)
-      .contains(u.id());
+      .contains(usuarioCreado.id());
   }
 
   @Test
   void noDuplicaUsuarioAunqueCoordinadorInactivo() {
-    var s = servicio();
-    var u = usuario("Coordinador");
-    var c = coordinadores.crear(new CoordinadorRequest(u.id(), s.id()));
-    coordinadores.cambiarEstado(c.id(), "Inactivo");
+    var servicioCreado = servicio();
+    var usuarioCreado = usuario("Coordinador");
+    var coordinadorCreado = coordinadores.crear(new CoordinadorRequest(usuarioCreado.id(), servicioCreado.id()));
+    coordinadores.cambiarEstado(coordinadorCreado.id(), "Inactivo");
     assertThatThrownBy(() ->
-      coordinadores.crear(new CoordinadorRequest(u.id(), s.id()))
+      coordinadores.crear(new CoordinadorRequest(usuarioCreado.id(), servicioCreado.id()))
     ).hasMessageContaining("ya tiene");
   }
 
   @Test
   void rechazaRolDistinto() {
-    var s = servicio();
-    var u = usuario("Administrador");
+    var servicioCreado = servicio();
+    var usuarioCreado = usuario("Administrador");
     assertThatThrownBy(() ->
-      coordinadores.crear(new CoordinadorRequest(u.id(), s.id()))
+      coordinadores.crear(new CoordinadorRequest(usuarioCreado.id(), servicioCreado.id()))
     ).hasMessageContaining("rol Coordinador");
   }
 
   @Test
   void rechazaUsuarioInactivo() {
-    var s = servicio();
-    var u = usuario("Coordinador");
-    usuarios.cambiarEstado(u.id(), "Inactivo");
+    var servicioCreado = servicio();
+    var usuarioCreado = usuario("Coordinador");
+    usuarios.cambiarEstado(usuarioCreado.id(), "Inactivo");
     assertThatThrownBy(() ->
-      coordinadores.crear(new CoordinadorRequest(u.id(), s.id()))
+      coordinadores.crear(new CoordinadorRequest(usuarioCreado.id(), servicioCreado.id()))
     ).hasMessageContaining("activo");
   }
 
   @Test
   void rechazaServicioInactivo() {
-    var s = servicio();
-    servicios.cambiarEstado(s.id(), "Inactivo");
+    var servicioCreado = servicio();
+    servicios.cambiarEstado(servicioCreado.id(), "Inactivo");
     assertThat(servicios.catalogo(true))
       .extracting(CatalogoResponse::id)
-      .doesNotContain(s.id());
+      .doesNotContain(servicioCreado.id());
     assertThat(servicios.catalogo(false))
       .extracting(CatalogoResponse::id)
-      .contains(s.id());
+      .contains(servicioCreado.id());
     assertThatThrownBy(() ->
-      asignaturas.crear(new AsignaturaRequest("Materia", s.id()))
+      asignaturas.crear(new AsignaturaRequest("Materia", servicioCreado.id()))
     ).hasMessageContaining("activo");
   }
 
   @Test
   void conservaReferenciaActualInactivaAlEditar() {
-    var s = servicio();
-    var a = asignaturas.crear(new AsignaturaRequest("Materia", s.id()));
-    servicios.cambiarEstado(s.id(), "Inactivo");
+    var servicioCreado = servicio();
+    var asignaturaCreada = asignaturas.crear(new AsignaturaRequest("Materia", servicioCreado.id()));
+    servicios.cambiarEstado(servicioCreado.id(), "Inactivo");
     assertThat(
       asignaturas
-        .actualizar(a.id(), new AsignaturaRequest("Editada", s.id()))
+        .actualizar(asignaturaCreada.id(), new AsignaturaRequest("Editada", servicioCreado.id()))
         .nombre()
     ).isEqualTo("Editada");
   }
 
   @Test
   void noCambiaRolMientrasTieneCoordinacion() {
-    var s = servicio();
-    var u = usuario("Coordinador");
-    coordinadores.crear(new CoordinadorRequest(u.id(), s.id()));
+    var servicioCreado = servicio();
+    var usuarioCreado = usuario("Coordinador");
+    coordinadores.crear(new CoordinadorRequest(usuarioCreado.id(), servicioCreado.id()));
     Integer rol = jdbc.queryForObject(
       "select id_rol from rol where nombre_rol='Administrador'",
       Integer.class
     );
     assertThatThrownBy(() ->
       usuarios.actualizar(
-        u.id(),
-        new UsuarioRequest("Prueba", "Coordinación", u.correo(), rol, "")
+        usuarioCreado.id(),
+        new UsuarioRequest("Prueba", "Coordinación", usuarioCreado.correo(), rol, "")
       )
     ).hasMessageContaining("asignación");
   }

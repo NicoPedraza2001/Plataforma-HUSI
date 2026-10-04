@@ -34,12 +34,12 @@ export class GraficoBarras {
     this.datos().map((dato) => ({
       ...dato,
       porcentaje: dato.maximo > 0 ? Math.min(100, (dato.valor / dato.maximo) * 100) : 0,
-      rotulo: this.rotulo(dato),
-      nivel: this.nivel(dato),
+      rotulo: this.calcularRotulo(dato),
+      nivel: this.calcularNivel(dato),
     })),
   );
 
-  private rotulo(dato: BarraDato): string {
+  private calcularRotulo(dato: BarraDato): string {
     if (this.formato() === 'valor') {
       return `${dato.valor}`;
     }
@@ -47,7 +47,7 @@ export class GraficoBarras {
     return dato.maximo > 0 ? `${Math.round((dato.valor / dato.maximo) * 100)}%` : '0%';
   }
 
-  private nivel(dato: BarraDato): Nivel {
+  private calcularNivel(dato: BarraDato): Nivel {
     if (!this.severidad() || dato.maximo <= 0) {
       return 'base';
     }

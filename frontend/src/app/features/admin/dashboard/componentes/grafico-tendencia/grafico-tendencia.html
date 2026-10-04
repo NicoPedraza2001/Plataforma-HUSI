@@ -33,14 +33,14 @@
     <!-- Zonas de contacto anchas: el objetivo no es el punto sino toda su banda,
          y al ser botones el teclado muestra exactamente lo mismo que el puntero. -->
     <div class="tendencia__zonas">
-      @for (punto of puntos(); track punto.etiqueta; let i = $index) {
+      @for (punto of puntos(); track punto.etiqueta; let indice = $index) {
         <button
           type="button"
           class="tendencia__zona"
           [attr.aria-label]="punto.etiqueta + ': ' + punto.valor + ' rotaciones'"
-          (mouseenter)="activo.set(i)"
+          (mouseenter)="activo.set(indice)"
           (mouseleave)="activo.set(null)"
-          (focus)="activo.set(i)"
+          (focus)="activo.set(indice)"
           (blur)="activo.set(null)"
         ></button>
       }

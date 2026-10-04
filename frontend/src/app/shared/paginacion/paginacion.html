@@ -4,7 +4,7 @@
     class="pag pag--nav"
     aria-label="Página anterior"
     [disabled]="paginaActual() === 1"
-    (click)="ir(paginaActual() - 1)"
+    (click)="irAPagina(paginaActual() - 1)"
   >
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path
@@ -25,7 +25,7 @@
         class="pag pag--num"
         [class.pag--activa]="item === paginaActual()"
         [attr.aria-current]="item === paginaActual() ? 'page' : null"
-        (click)="ir(item)"
+        (click)="irAPagina(item)"
       >
         {{ item }}
       </button>
@@ -39,7 +39,7 @@
     class="pag pag--nav"
     aria-label="Página siguiente"
     [disabled]="paginaActual() === totalPaginas()"
-    (click)="ir(paginaActual() + 1)"
+    (click)="irAPagina(paginaActual() + 1)"
   >
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path

@@ -3,7 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { FilaCargaInicial, ResultadoCargaInicial } from '../../../../../models/carga-inicial.model';
 import { mensajeError } from '../../../../../services/api-error';
 import { CargaInicialService } from '../../../../../services/carga-inicial.service';
-import { contar, segunCantidad } from '../emparejamiento';
+import { cantidadConPalabra, segunCantidad } from '../emparejamiento';
 import { CREAR_FALTANTES_EN_LA_VALIDACION, hayQueGuardar } from '../pasos-importacion';
 import { ResultadoCarga } from '../resultado-carga/resultado-carga';
 import { VistaPreviaCarga } from '../vista-previa-carga/vista-previa-carga';
@@ -45,7 +45,7 @@ export class PasoConfirmacion {
 
   protected readonly guardando = signal(false);
   protected readonly hayQueGuardar = hayQueGuardar;
-  protected readonly contar = contar;
+  protected readonly cantidadConPalabra = cantidadConPalabra;
   protected readonly segunCantidad = segunCantidad;
 
   /** Registros nuevos: los previstos antes de guardar o los creados después. */

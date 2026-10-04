@@ -22,7 +22,7 @@ describe('Programas de una universidad', () => {
     const fixture = TestBed.createComponent(ListadoProgramas),
       http = TestBed.inject(HttpTestingController);
     const pagina = { contenido: [], totalElementos: 0, totalPaginas: 1, pagina: 1, tamano: 10 };
-    http.expectOne((r) => r.url === '/api/universidades/72/programas').flush(pagina);
+    http.expectOne((peticion) => peticion.url === '/api/universidades/72/programas').flush(pagina);
     http.expectOne('/api/universidades').flush([{ id: 72, nombre: 'Universidad de prueba' }]);
     http
       .expectOne('/api/universidades/72')
@@ -42,7 +42,9 @@ describe('Programas de una universidad', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
-    const post = http.expectOne((r) => r.url === '/api/programas' && r.method === 'POST');
+    const post = http.expectOne(
+      (peticion) => peticion.url === '/api/programas' && peticion.method === 'POST',
+    );
     expect(post.request.body).toEqual({ nombre: 'Programa nuevo', universidadId: 72 });
     post.flush({
       id: 90,
@@ -53,7 +55,7 @@ describe('Programas de una universidad', () => {
     });
     await Promise.resolve();
     await Promise.resolve();
-    http.expectOne((r) => r.url === '/api/universidades/72/programas').flush(pagina);
+    http.expectOne((peticion) => peticion.url === '/api/universidades/72/programas').flush(pagina);
     http.expectOne('/api/universidades').flush([{ id: 72, nombre: 'Universidad de prueba' }]);
     http
       .expectOne('/api/universidades/72')

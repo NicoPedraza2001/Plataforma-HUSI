@@ -6,7 +6,7 @@
       ><span aria-current="page">Asignaturas</span>
     </nav>
   </div>
-  <button class="btn btn--add" [disabled]="guardando()" (click)="abrir()">
+  <button class="btn btn--add" [disabled]="guardando()" (click)="abrirFormulario()">
     + Agregar asignatura
   </button>
 </header>
@@ -27,7 +27,7 @@
         class="search__input"
         type="search"
         placeholder="Buscar por asignatura o servicio…"
-        [value]="termino()"
+        [value]="terminoBusqueda()"
         (input)="buscar($any($event.target).value)"
     /></label>
     <label class="filtro"
@@ -47,7 +47,7 @@
       ><span>Estado</span
       ><select
         class="filtro__select"
-        [value]="estado()"
+        [value]="filtroEstado()"
         (change)="filtrarPorEstado($any($event.target).value)"
       >
         <option value="todos">Todos</option>
@@ -89,7 +89,11 @@
                   >
                     {{ fila.activo ? 'Activo' : 'Inactivo' }}
                   </button>
-                  <button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(fila)">
+                  <button
+                    class="btn btn--navy"
+                    [disabled]="guardando()"
+                    (click)="abrirFormulario(fila)"
+                  >
                     Editar
                   </button>
                   <button
@@ -124,12 +128,12 @@
 @if (aviso()) {
   <p class="mensaje exito" role="status">{{ aviso() }}</p>
 }
-@if (errorFormulario() && !formulario() && !pendienteEliminar()) {
+@if (errorFormulario() && !formularioAbierto() && !pendienteEliminar()) {
   <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
 }
 
-@if (formulario()) {
-  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+@if (formularioAbierto()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formularioAbierto.set(false)">
     <section
       class="panel-modal"
       appFocoModal
@@ -138,15 +142,17 @@
       aria-labelledby="titulo-asignatura"
     >
       <header>
-        <h2 id="titulo-asignatura">{{ edicionId ? 'Editar asignatura' : 'Agregar asignatura' }}</h2>
+        <h2 id="titulo-asignatura">
+          {{ idEnEdicion ? 'Editar asignatura' : 'Agregar asignatura' }}
+        </h2>
       </header>
       <app-formulario-asignatura
-        [(datos)]="datos"
+        [(datos)]="datosFormulario"
         [servicios]="opcionesServicio()"
         [guardando]="guardando()"
         [errorFormulario]="errorFormulario()"
         (guardar)="guardar()"
-        (cancelar)="formulario.set(false)"
+        (cancelar)="formularioAbierto.set(false)"
       />
     </section>
   </div>

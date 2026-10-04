@@ -36,17 +36,17 @@ class ServicioIntegrationTests {
   @Test
   void crearEditarBuscarCambiarEstadoYEliminar() {
     String nombre = "SERVICIO-" + UUID.randomUUID();
-    var s = servicios.crear(datos(nombre, 2, 5));
+    var servicioCreado = servicios.crear(datos(nombre, 2, 5));
     assertThat(
       jdbc.queryForObject(
         "select nombre from servicio where id_servicio=?",
         String.class,
-        s.id()
+        servicioCreado.id()
       )
     ).isEqualTo(nombre);
-    servicios.cambiarEstado(s.id(), "Inactivo");
+    servicios.cambiarEstado(servicioCreado.id(), "Inactivo");
     var editado = servicios.actualizar(
-      s.id(),
+      servicioCreado.id(),
       datos(nombre + " editado", 3, 6)
     );
     assertThat(editado.activo()).isFalse();
@@ -56,16 +56,16 @@ class ServicioIntegrationTests {
         .listar("servicios", Map.of("q", nombre, "estado", "Inactivo"))
         .totalElementos()
     ).isEqualTo(1);
-    assertThat(servicios.cambiarEstado(s.id(), "Activo").activo()).isTrue();
-    servicios.eliminarDefinitivamente(s.id());
+    assertThat(servicios.cambiarEstado(servicioCreado.id(), "Activo").activo()).isTrue();
+    servicios.eliminarDefinitivamente(servicioCreado.id());
     assertThat(
       jdbc.queryForObject(
         "select count(*) from servicio where id_servicio=?",
         Integer.class,
-        s.id()
+        servicioCreado.id()
       )
     ).isZero();
-    assertThatThrownBy(() -> servicios.consultar(s.id())).isInstanceOf(
+    assertThatThrownBy(() -> servicios.consultar(servicioCreado.id())).isInstanceOf(
       NegocioException.class
     );
   }
@@ -90,71 +90,71 @@ class ServicioIntegrationTests {
 
   @Test
   void asignaturasInclusoInactivasBloqueanBorrado() {
-    var s = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 2, 5));
+    var servicioCreado = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 2, 5));
     jdbc.update(
       "insert into asignatura(id_servicio,nombre_asignatura,estado) values (?, 'Prueba','Inactivo')",
-      s.id()
+      servicioCreado.id()
     );
-    assertThatThrownBy(() -> servicios.eliminarDefinitivamente(s.id()))
+    assertThatThrownBy(() -> servicios.eliminarDefinitivamente(servicioCreado.id()))
       .isInstanceOf(NegocioException.class)
       .hasMessageContaining("asignaturas");
-    servicios.cambiarEstado(s.id(), "Inactivo");
-    assertThat(servicios.consultar(s.id()).activo()).isFalse();
+    servicios.cambiarEstado(servicioCreado.id(), "Inactivo");
+    assertThat(servicios.consultar(servicioCreado.id()).activo()).isFalse();
   }
 
   @Test
   void coordinadoresBloqueanBorrado() {
-    var s = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 2, 5));
-    Integer u = jdbc.queryForObject(
+    var servicioCreado = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 2, 5));
+    Integer usuarioId = jdbc.queryForObject(
       "insert into usuario(id_rol,nombre,apellido,correo,contrasena) values ((select min(id_rol) from rol),'Prueba','Servicio',?, 'hash-test-no-login') returning id_usuario",
       Integer.class,
       UUID.randomUUID() + "@example.test"
     );
     jdbc.update(
       "insert into coordinador(id_usuario,id_servicio) values (?,?)",
-      u,
-      s.id()
+      usuarioId,
+      servicioCreado.id()
     );
-    assertThatThrownBy(() -> servicios.eliminarDefinitivamente(s.id()))
+    assertThatThrownBy(() -> servicios.eliminarDefinitivamente(servicioCreado.id()))
       .isInstanceOf(NegocioException.class)
       .hasMessageContaining("coordinadores");
   }
 
   /** Crea una rotación del servicio con {@code asignados} residentes en estado Asignado. */
   private Integer rotacionConAsignados(Integer servicio, int asignados) {
-    Integer a = jdbc.queryForObject(
+    Integer asignaturaId = jdbc.queryForObject(
       "insert into asignatura(id_servicio,nombre_asignatura) values (?,'Prueba') returning id_asignatura",
       Integer.class,
       servicio
     );
     jdbc.update(
       "insert into rotacion(id_asignatura,fecha_inicio,fecha_fin) values (?,'2099-01-01','2099-01-02')",
-      a
+      asignaturaId
     );
-    int u = jdbc.queryForObject(
+    int universidadId = jdbc.queryForObject(
       "insert into universidad(nombre_universidad,pais) values(?,'Colombia') returning id_universidad",
       Integer.class,
       "TEST-SERV-U-" + UUID.randomUUID()
     );
-    int p = jdbc.queryForObject(
+    int programaId = jdbc.queryForObject(
       "insert into programa(id_universidad,nombre_programa) values(?,'TEST SERV') returning id_programa",
       Integer.class,
-      u
+      universidadId
     );
     for (int i = 0; i < asignados; i++) {
-      Integer r = jdbc.queryForObject(
+      Integer residenteId = jdbc.queryForObject(
         "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values(?,1,'Residente ficticio',?) returning id_residente",
         Integer.class,
-        p,
+        programaId,
         UUID.randomUUID().toString()
       );
       jdbc.update(
         "insert into rotacion_residente(id_residente,id_asignatura,fecha_inicio,fecha_fin) values (?,?,'2099-01-01','2099-01-02')",
-        r,
-        a
+        residenteId,
+        asignaturaId
       );
     }
-    return a;
+    return asignaturaId;
   }
 
   private Map<String, Object> rotacion(Integer asignatura) {
@@ -166,14 +166,14 @@ class ServicioIntegrationTests {
 
   @Test
   void cambiarCupoRecalculaRotacionesExistentes() {
-    var s = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 2, 10));
-    Integer a = rotacionConAsignados(s.id(), 2);
-    assertThat(rotacion(a)).containsEntry("cupo_disponible", 0).containsEntry(
+    var servicioCreado = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 2, 10));
+    Integer asignaturaId = rotacionConAsignados(servicioCreado.id(), 2);
+    assertThat(rotacion(asignaturaId)).containsEntry("cupo_disponible", 0).containsEntry(
       "estado",
       "Cupo Lleno"
     );
-    servicios.actualizar(s.id(), datos(s.nombre(), 5, 10));
-    assertThat(rotacion(a)).containsEntry("cupo_disponible", 3).containsEntry(
+    servicios.actualizar(servicioCreado.id(), datos(servicioCreado.nombre(), 5, 10));
+    assertThat(rotacion(asignaturaId)).containsEntry("cupo_disponible", 3).containsEntry(
       "estado",
       "Disponible"
     );
@@ -181,14 +181,14 @@ class ServicioIntegrationTests {
 
   @Test
   void noPermiteBajarCupoPorDebajoDeLosAsignados() {
-    var s = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 5, 10));
-    Integer a = rotacionConAsignados(s.id(), 3);
-    assertThatThrownBy(() -> servicios.actualizar(s.id(), datos(s.nombre(), 2, 10)))
+    var servicioCreado = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 5, 10));
+    Integer asignaturaId = rotacionConAsignados(servicioCreado.id(), 3);
+    assertThatThrownBy(() -> servicios.actualizar(servicioCreado.id(), datos(servicioCreado.nombre(), 2, 10)))
       .isInstanceOf(NegocioException.class)
       .hasMessageContaining("mínimo permitido es 3");
-    assertThat(rotacion(a)).containsEntry("cupo_disponible", 2);
-    servicios.actualizar(s.id(), datos(s.nombre(), 3, 10));
-    assertThat(rotacion(a)).containsEntry("cupo_disponible", 0).containsEntry(
+    assertThat(rotacion(asignaturaId)).containsEntry("cupo_disponible", 2);
+    servicios.actualizar(servicioCreado.id(), datos(servicioCreado.nombre(), 3, 10));
+    assertThat(rotacion(asignaturaId)).containsEntry("cupo_disponible", 0).containsEntry(
       "estado",
       "Cupo Lleno"
     );
@@ -196,10 +196,10 @@ class ServicioIntegrationTests {
 
   @Test
   void laBaseTambienBloqueaBajarCupoPorDebajoDeLosAsignados() {
-    var s = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 5, 10));
-    rotacionConAsignados(s.id(), 3);
+    var servicioCreado = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 5, 10));
+    rotacionConAsignados(servicioCreado.id(), 3);
     assertThatThrownBy(() ->
-      jdbc.update("update servicio set cupo_simultaneo=2 where id_servicio=?", s.id())
+      jdbc.update("update servicio set cupo_simultaneo=2 where id_servicio=?", servicioCreado.id())
     ).hasMessageContaining("asignados");
   }
 

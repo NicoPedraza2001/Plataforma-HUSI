@@ -6,7 +6,7 @@
     </nav>
   </div>
   <div class="acciones">
-    <button class="btn btn--add" type="button" [disabled]="guardando()" (click)="abrir()">
+    <button class="btn btn--add" type="button" [disabled]="guardando()" (click)="abrirFormulario()">
       + Agregar universidad
     </button>
   </div>
@@ -19,7 +19,7 @@
     {{ consulta.error() }} <button class="btn btn--navy" (click)="cargar()">Reintentar</button>
   </div>
 }
-@if (errorFormulario() && !formulario() && !pendienteEliminar()) {
+@if (errorFormulario() && !formularioAbierto() && !pendienteEliminar()) {
   <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
 }
 <section class="card" [attr.aria-busy]="consulta.cargando()">
@@ -30,12 +30,15 @@
         type="search"
         class="search__input"
         placeholder="Buscar universidad, país o perfil…"
-        [value]="termino()"
+        [value]="terminoBusqueda()"
         (input)="buscar($any($event.target).value)"
         maxlength="200"
     /></label>
     <label
-      >Estado<select [value]="estado()" (change)="filtrarEstado($any($event.target).value)">
+      >Estado<select
+        [value]="filtroEstado()"
+        (change)="filtrarPorEstado($any($event.target).value)"
+      >
         <option>Todos</option>
         <option>Activo</option>
         <option>Inactivo</option>
@@ -66,16 +69,16 @@
             <td colspan="5" class="tabla__vacia">No se pudo obtener el listado.</td>
           </tr>
         } @else {
-          @for (u of filas(); track u.id) {
+          @for (universidad of filas(); track universidad.id) {
             <tr>
-              <td>{{ u.nombre }}</td>
-              <td>{{ u.pais }}</td>
-              <td>{{ u.perfil || 'Sin perfil' }}</td>
+              <td>{{ universidad.nombre }}</td>
+              <td>{{ universidad.pais }}</td>
+              <td>{{ universidad.perfil || 'Sin perfil' }}</td>
               <td>
                 <a
                   class="btn btn--outline enlace-asociados"
-                  [routerLink]="['/admin/universidades', u.id, 'programas']"
-                  [attr.aria-label]="'Ver programas de ' + u.nombre"
+                  [routerLink]="['/admin/universidades', universidad.id, 'programas']"
+                  [attr.aria-label]="'Ver programas de ' + universidad.nombre"
                   >Ver programas</a
                 >
               </td>
@@ -83,33 +86,36 @@
                 <div class="acciones-registro">
                   <button
                     class="btn estado-directo"
-                    [class.estado-directo--activo]="u.estado === 'Activo'"
-                    [class.estado-directo--inactivo]="u.estado !== 'Activo'"
+                    [class.estado-directo--activo]="universidad.estado === 'Activo'"
+                    [class.estado-directo--inactivo]="universidad.estado !== 'Activo'"
                     [disabled]="guardando()"
-                    [attr.aria-pressed]="u.estado === 'Activo'"
+                    [attr.aria-pressed]="universidad.estado === 'Activo'"
                     [attr.aria-label]="
-                      (u.estado === 'Activo' ? 'Desactivar ' : 'Activar ') + u.nombre
+                      (universidad.estado === 'Activo' ? 'Desactivar ' : 'Activar ') +
+                      universidad.nombre
                     "
                     [title]="
-                      u.estado === 'Activo' ? 'Desactivar universidad' : 'Activar universidad'
+                      universidad.estado === 'Activo'
+                        ? 'Desactivar universidad'
+                        : 'Activar universidad'
                     "
-                    (click)="cambiarEstado(u)"
+                    (click)="cambiarEstado(universidad)"
                   >
-                    {{ u.estado }}
+                    {{ universidad.estado }}
                   </button>
                   <button
                     class="btn btn--navy"
                     [disabled]="guardando()"
-                    (click)="abrir(u)"
-                    [attr.aria-label]="'Editar ' + u.nombre"
+                    (click)="abrirFormulario(universidad)"
+                    [attr.aria-label]="'Editar ' + universidad.nombre"
                   >
                     Editar
                   </button>
                   <button
                     class="btn papelera"
                     [disabled]="guardando()"
-                    (click)="solicitarEliminar(u)"
-                    [attr.aria-label]="'Eliminar definitivamente ' + u.nombre"
+                    (click)="solicitarEliminar(universidad)"
+                    [attr.aria-label]="'Eliminar definitivamente ' + universidad.nombre"
                     title="Eliminar definitivamente"
                   >
                     <app-icono-papelera />
@@ -121,7 +127,7 @@
             <tr>
               <td colspan="5" class="tabla__vacia">
                 {{
-                  termino() || estado() !== 'Todos'
+                  terminoBusqueda() || filtroEstado() !== 'Todos'
                     ? 'No hay universidades que coincidan con los filtros.'
                     : 'No hay universidades registradas. Agrega la primera para comenzar.'
                 }}
@@ -138,8 +144,8 @@
     (cambio)="irAPagina($event)"
   />
 </section>
-@if (formulario()) {
-  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+@if (formularioAbierto()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formularioAbierto.set(false)">
     <section
       class="panel-modal"
       appFocoModal
@@ -161,12 +167,12 @@
         [errorFormulario]="errorFormulario()"
         [guardando]="guardando()"
         (guardar)="guardar()"
-        (cancelar)="formulario.set(false)"
+        (cancelar)="formularioAbierto.set(false)"
       />
     </section>
   </div>
 }
-@if (pendienteEliminar(); as u) {
+@if (pendienteEliminar(); as universidad) {
   <div class="fondo-modal" (keydown.escape)="!guardando() && pendienteEliminar.set(null)">
     <section
       class="panel-modal confirmacion"
@@ -177,7 +183,7 @@
     >
       <h2 id="titulo-eliminar-universidad">¿Eliminar definitivamente esta universidad?</h2>
       <p>
-        <strong>{{ u.nombre }}</strong>
+        <strong>{{ universidad.nombre }}</strong>
       </p>
       <p>
         Esta acción eliminará completamente la universidad de la base de datos y no podrá

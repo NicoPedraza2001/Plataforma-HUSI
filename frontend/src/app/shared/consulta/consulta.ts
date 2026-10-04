@@ -3,15 +3,18 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, Subject, catchError, of, switchMap, tap, timer } from 'rxjs';
 import { Parametros } from '../../models/pagina.model';
 import { mensajeError } from '../../services/api-error';
-/** Cancela inmediatamente la consulta anterior, incluso durante la espera al escribir. */
+/**
+ * Estado de una consulta al backend (datos, cargando, error). Cancela inmediatamente la
+ * consulta anterior, incluso durante la demora al escribir en un buscador.
+ */
 export class Consulta<T> {
   readonly datos = signal<T | null>(null);
   readonly cargando = signal(false);
   readonly error = signal('');
-  private readonly solicitudes = new Subject<{ params: Parametros; espera: number }>();
-  private ultima: Parametros = {};
+  private readonly solicitudes = new Subject<{ params: Parametros; demoraMs: number }>();
+  private ultimosParametros: Parametros = {};
 
-  constructor(peticion: (params: Parametros) => Observable<T>) {
+  constructor(consultarBackend: (params: Parametros) => Observable<T>) {
     this.solicitudes
       .pipe(
         tap(() => {
@@ -19,9 +22,9 @@ export class Consulta<T> {
           this.error.set('');
           this.cargando.set(true);
         }),
-        switchMap(({ params, espera }) =>
-          (espera ? timer(espera) : of(0)).pipe(
-            switchMap(() => peticion(params)),
+        switchMap(({ params, demoraMs }) =>
+          (demoraMs ? timer(demoraMs) : of(0)).pipe(
+            switchMap(() => consultarBackend(params)),
             catchError((e) => {
               this.error.set(mensajeError(e));
               return of(null);
@@ -36,8 +39,9 @@ export class Consulta<T> {
       });
   }
 
-  cargar(params: Parametros = this.ultima, espera = 0) {
-    this.ultima = { ...params };
-    this.solicitudes.next({ params: this.ultima, espera });
+  /** Sin parámetros repite la última consulta; `demoraMs` espera antes de pedir (buscadores). */
+  cargar(params: Parametros = this.ultimosParametros, demoraMs = 0) {
+    this.ultimosParametros = { ...params };
+    this.solicitudes.next({ params: this.ultimosParametros, demoraMs });
   }
 }

@@ -11,66 +11,78 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class RotacionResidenteRepository {
 
+  private static final int TAMANO_PAGINA = 10;
+
   private final JdbcTemplate jdbc;
 
-  /** Con {@code espera}: solo «Esperando cupo» por orden de llegada; si no, el resto por nombre. */
+  /** Con {@code soloEnEspera}: solo «Esperando cupo» por orden de llegada; si no, el resto por nombre. */
   public PaginaResponse<ResidenteRotacionResponse> listar(
     RotacionId id,
     int pagina,
-    boolean espera
+    boolean soloEnEspera
   ) {
-    String filtro = espera
+    String filtroEstado = soloEnEspera
       ? " and rr.estado='Esperando cupo'"
       : " and rr.estado<>'Esperando cupo'";
-    String orden = espera
+    String orden = soloEnEspera
       ? " order by rr.fecha_registro,rr.id_residente"
       : " order by lower(r.nombre_completo),rr.id_residente";
-    var args = new Object[] {
+    var claveRotacion = new Object[] {
       id.getAsignaturaId(),
       id.getInicio(),
       id.getFin(),
     };
     long total = jdbc.queryForObject(
       "select count(*) from rotacion_residente rr where rr.id_asignatura=? and rr.fecha_inicio=? and rr.fecha_fin=?" +
-        filtro,
+        filtroEstado,
       Long.class,
-      args
+      claveRotacion
     );
-    int paginas = Math.max(1, (int) Math.ceil(total / 10.0));
-    int actual = Math.min(pagina, paginas);
+    int totalPaginas = Math.max(1, (int) Math.ceil(total / (double) TAMANO_PAGINA));
+    int paginaActual = Math.min(pagina, totalPaginas);
     var filas = jdbc.query(
       "select rr.id_residente,r.nombre_completo,concat(td.codigo,' ',r.numero_documento) as documento,p.nombre_programa,rr.estado from rotacion_residente rr join residente r using(id_residente) join tipo_documento td on td.id_tipo_documento=r.id_tipo_documento join programa p on p.id_programa=r.id_programa where rr.id_asignatura=? and rr.fecha_inicio=? and rr.fecha_fin=?" +
-        filtro +
+        filtroEstado +
         orden +
-        " limit 10 offset ?",
-      (rs, n) ->
+        " limit " +
+        TAMANO_PAGINA +
+        " offset ?",
+      (resultado, numeroFila) ->
         new ResidenteRotacionResponse(
-          rs.getInt(1),
-          rs.getString(2),
-          rs.getString(3),
-          rs.getString(4),
-          rs.getString(5)
+          resultado.getInt(1),
+          resultado.getString(2),
+          resultado.getString(3),
+          resultado.getString(4),
+          resultado.getString(5)
         ),
       id.getAsignaturaId(),
       id.getInicio(),
       id.getFin(),
-      (actual - 1) * 10
+      (paginaActual - 1) * TAMANO_PAGINA
     );
-    return new PaginaResponse<>(filas, total, paginas, actual, 10);
+    return new PaginaResponse<>(
+      filas,
+      total,
+      totalPaginas,
+      paginaActual,
+      TAMANO_PAGINA
+    );
   }
 
-  public List<CatalogoResponse> candidatos(RotacionId id, String q) {
+  /** Residentes activos que coinciden con la búsqueda y aún no están en la rotación. */
+  public List<CatalogoResponse> candidatos(RotacionId id, String busqueda) {
     return jdbc.query(
       "select r.id_residente,concat(r.nombre_completo,' — ',td.codigo,' ',r.numero_documento) from residente r join tipo_documento td on td.id_tipo_documento=r.id_tipo_documento where r.estado='Activo' and position(lower(?) in lower(concat(r.nombre_completo,' ',r.numero_documento)))>0 and not exists(select 1 from rotacion_residente rr where rr.id_residente=r.id_residente and rr.id_asignatura=? and rr.fecha_inicio=? and rr.fecha_fin=?) order by lower(r.nombre_completo),r.id_residente limit 30",
-      (rs, n) -> new CatalogoResponse(rs.getInt(1), rs.getString(2)),
-      q,
+      (resultado, numeroFila) ->
+        new CatalogoResponse(resultado.getInt(1), resultado.getString(2)),
+      busqueda,
       id.getAsignaturaId(),
       id.getInicio(),
       id.getFin()
     );
   }
 
-  public int cupos(RotacionId id) {
+  public int cupoDisponible(RotacionId id) {
     return jdbc.queryForObject(
       "select cupo_disponible from rotacion where id_asignatura=? and fecha_inicio=? and fecha_fin=?",
       Integer.class,
@@ -80,7 +92,7 @@ public class RotacionResidenteRepository {
     );
   }
 
-  public boolean existe(RotacionId id, Integer residente) {
+  public boolean existe(RotacionId id, Integer residenteId) {
     return Boolean.TRUE.equals(
       jdbc.queryForObject(
         "select exists(select 1 from rotacion_residente where id_asignatura=? and fecha_inicio=? and fecha_fin=? and id_residente=?)",
@@ -88,26 +100,26 @@ public class RotacionResidenteRepository {
         id.getAsignaturaId(),
         id.getInicio(),
         id.getFin(),
-        residente
+        residenteId
       )
     );
   }
 
-  public String estado(RotacionId id, Integer residente) {
+  public String consultarEstado(RotacionId id, Integer residenteId) {
     return jdbc.queryForObject(
       "select estado from rotacion_residente where id_asignatura=? and fecha_inicio=? and fecha_fin=? and id_residente=?",
       String.class,
       id.getAsignaturaId(),
       id.getInicio(),
       id.getFin(),
-      residente
+      residenteId
     );
   }
 
-  public void insertar(RotacionId id, Integer residente) {
+  public void insertar(RotacionId id, Integer residenteId) {
     jdbc.update(
       "insert into rotacion_residente(id_residente,id_asignatura,fecha_inicio,fecha_fin) values (?,?,?,?)",
-      residente,
+      residenteId,
       id.getAsignaturaId(),
       id.getInicio(),
       id.getFin()
@@ -115,7 +127,7 @@ public class RotacionResidenteRepository {
   }
 
   /** Esperas en otras rotaciones del mismo servicio, en orden de llegada. */
-  public List<EsperaServicioResponse> espera(RotacionId id) {
+  public List<EsperaServicioResponse> listarEsperaDelServicio(RotacionId id) {
     return jdbc.query(
       "select rr.id_residente,r.nombre_completo,concat(td.codigo,' ',r.numero_documento),rr.id_asignatura,a.nombre_asignatura,rr.fecha_inicio,rr.fecha_fin," +
         "exists(select 1 from rotacion_residente o where o.id_residente=rr.id_residente and o.estado='Asignado' and o.fecha_inicio<=? and o.fecha_fin>=?) " +
@@ -123,16 +135,16 @@ public class RotacionResidenteRepository {
         "where rr.estado='Esperando cupo' and r.estado='Activo' and a.id_servicio=(select id_servicio from asignatura where id_asignatura=?) " +
         "and not exists(select 1 from rotacion_residente t where t.id_residente=rr.id_residente and t.id_asignatura=? and t.fecha_inicio=? and t.fecha_fin=?) " +
         "order by rr.fecha_registro,rr.id_residente limit 200",
-      (rs, n) ->
+      (resultado, numeroFila) ->
         new EsperaServicioResponse(
-          rs.getInt(1),
-          rs.getString(2),
-          rs.getString(3),
-          rs.getInt(4),
-          rs.getString(5),
-          rs.getObject(6, java.time.LocalDate.class),
-          rs.getObject(7, java.time.LocalDate.class),
-          rs.getBoolean(8)
+          resultado.getInt(1),
+          resultado.getString(2),
+          resultado.getString(3),
+          resultado.getInt(4),
+          resultado.getString(5),
+          resultado.getObject(6, java.time.LocalDate.class),
+          resultado.getObject(7, java.time.LocalDate.class),
+          resultado.getBoolean(8)
         ),
       id.getFin(),
       id.getInicio(),
@@ -150,7 +162,7 @@ public class RotacionResidenteRepository {
   public int trasladar(
     RotacionId origen,
     RotacionId destino,
-    Integer residente
+    Integer residenteId
   ) {
     return jdbc.update(
       "update rotacion_residente set id_asignatura=?,fecha_inicio=?,fecha_fin=?,estado='Asignado' " +
@@ -159,7 +171,7 @@ public class RotacionResidenteRepository {
       destino.getAsignaturaId(),
       destino.getInicio(),
       destino.getFin(),
-      residente,
+      residenteId,
       origen.getAsignaturaId(),
       origen.getInicio(),
       origen.getFin(),
@@ -168,18 +180,18 @@ public class RotacionResidenteRepository {
     );
   }
 
-  public void eliminar(RotacionId id, Integer residente) {
+  public void eliminar(RotacionId id, Integer residenteId) {
     jdbc.update(
       "delete from rotacion_residente where id_asignatura=? and fecha_inicio=? and fecha_fin=? and id_residente=?",
       id.getAsignaturaId(),
       id.getInicio(),
       id.getFin(),
-      residente
+      residenteId
     );
   }
 
   /** Volver a «Esperando cupo» lo pone al final de la lista (nueva fecha de registro). */
-  public void cambiarEstado(RotacionId id, Integer residente, String estado) {
+  public void cambiarEstado(RotacionId id, Integer residenteId, String estado) {
     jdbc.update(
       "update rotacion_residente set estado=?,fecha_registro=case when ?='Esperando cupo' then ? else fecha_registro end where id_asignatura=? and fecha_inicio=? and fecha_fin=? and id_residente=?",
       estado,
@@ -188,7 +200,7 @@ public class RotacionResidenteRepository {
       id.getAsignaturaId(),
       id.getInicio(),
       id.getFin(),
-      residente
+      residenteId
     );
   }
 }

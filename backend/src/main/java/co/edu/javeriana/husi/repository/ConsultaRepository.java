@@ -15,8 +15,8 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ConsultaRepository {
 
-  private final EntityManager em;
-  private final ConsultaSql sql;
+  private final EntityManager entityManager;
+  private final ConsultaSql consultaSql;
 
   public PaginaResponse<Map<String, Object>> listar(
     String dominio,
@@ -26,7 +26,8 @@ public class ConsultaRepository {
   ) {
     var parametros = new HashMap<String, Object>();
     StringBuilder where = new StringBuilder(" where 1=1");
-    String campos = switch (dominio) {
+    // Columnas donde busca el texto libre (filtro q) en cada listado.
+    String camposBusqueda = switch (dominio) {
       case "asignaturas" -> "concat(nombre,' ',servicio)";
       case "coordinadores" -> "concat(nombre,' ',correo,' ',servicio)";
       case "programas" -> "concat(nombre,' ',universidad)";
@@ -45,7 +46,7 @@ public class ConsultaRepository {
           " and \"universidadId\"=:universidadId"
         );
         case "q" -> where.append(
-          " and position(lower(:q) in lower(" + campos + "))>0"
+          " and position(lower(:q) in lower(" + camposBusqueda + "))>0"
         );
         case "desde" -> where.append(
           " and cast(fecha as timestamp with time zone)>=:desde"
@@ -80,34 +81,34 @@ public class ConsultaRepository {
             : valor
       );
     });
-    String consulta = " from (" + base(dominio) + ") datos" + where;
+    String from = " from (" + base(dominio) + ") datos" + where;
     long total = (
-      (Number) sql.escalar("select count(*)" + consulta, parametros)
+      (Number) consultaSql.escalar("select count(*)" + from, parametros)
     ).longValue();
-    int paginas = Math.max(1, (int) Math.ceil((double) total / tamano));
-    int actual = Math.min(pagina, paginas);
+    int totalPaginas = Math.max(1, (int) Math.ceil((double) total / tamano));
+    int paginaActual = Math.min(pagina, totalPaginas);
     String orden = dominio.equals("historial")
       ? "cast(fecha as timestamp with time zone) desc,id desc"
       : dominio.equals("rotaciones")
         ? "inicio,id"
         : "lower(nombre),id";
-    var query = em.createNativeQuery(
-      "select *" + consulta + " order by " + orden
+    var query = entityManager.createNativeQuery(
+      "select *" + from + " order by " + orden
     );
     parametros.forEach(query::setParameter);
-    query.setFirstResult((actual - 1) * tamano).setMaxResults(tamano);
+    query.setFirstResult((paginaActual - 1) * tamano).setMaxResults(tamano);
     return new PaginaResponse<>(
-      sql.mapas(query.unwrap(NativeQuery.class)),
+      consultaSql.mapas(query.unwrap(NativeQuery.class)),
       total,
-      paginas,
-      actual,
+      totalPaginas,
+      paginaActual,
       tamano
     );
   }
 
   public Map<String, List<String>> catalogos() {
-    Map<String, List<String>> result = new LinkedHashMap<>();
-    Map<String, String> sql = Map.of(
+    Map<String, List<String>> catalogos = new LinkedHashMap<>();
+    Map<String, String> consultaPorCatalogo = Map.of(
       "universidades",
       "select nombre_universidad as nombre from universidad where estado<>'Eliminado' order by nombre",
       "programas",
@@ -125,16 +126,16 @@ public class ConsultaRepository {
         PERIODO +
         " as nombre from rotacion order by nombre desc"
     );
-    sql.forEach((key, value) ->
-      result.put(
-        key,
-        this.sql
-          .consultar(value, Map.of())
+    consultaPorCatalogo.forEach((catalogo, consulta) ->
+      catalogos.put(
+        catalogo,
+        consultaSql
+          .consultar(consulta, Map.of())
           .stream()
-          .map(row -> row.get("nombre").toString())
+          .map(fila -> fila.get("nombre").toString())
           .toList()
       )
     );
-    return result;
+    return catalogos;
   }
 }

@@ -22,7 +22,7 @@ public class RotacionController {
   private final ImportacionRotacionesService importacion;
 
   @GetMapping
-  public PaginaResponse<RotacionResponse> listar(
+  public PaginaResponse<RotacionResponse> listarGestion(
     @RequestParam Map<String, String> filtros
   ) {
     return rotaciones.listar(filtros);
@@ -35,8 +35,8 @@ public class RotacionController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public RotacionResponse crear(@Valid @RequestBody RotacionRequest d) {
-    return rotaciones.crear(d);
+  public RotacionResponse crear(@Valid @RequestBody RotacionRequest request) {
+    return rotaciones.crear(request);
   }
 
   @GetMapping("/{asignatura}/{inicio}/{fin}")
@@ -53,21 +53,21 @@ public class RotacionController {
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin,
-    @Valid @RequestBody RotacionRequest d
+    @Valid @RequestBody RotacionRequest request
   ) {
-    return rotaciones.editar(new RotacionId(asignatura, inicio, fin), d);
+    return rotaciones.editar(new RotacionId(asignatura, inicio, fin), request);
   }
 
   @PatchMapping("/{asignatura}/{inicio}/{fin}/estado")
-  public RotacionResponse estado(
+  public RotacionResponse cambiarEstado(
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin,
-    @Valid @RequestBody EstadoRotacionRequest d
+    @Valid @RequestBody EstadoRotacionRequest request
   ) {
-    return rotaciones.estado(
+    return rotaciones.cambiarEstado(
       new RotacionId(asignatura, inicio, fin),
-      d.activa()
+      request.activa()
     );
   }
 
@@ -83,15 +83,15 @@ public class RotacionController {
 
   @PostMapping("/importar/validar")
   public ImportacionRotacionesResponse validar(
-    @Valid @RequestBody ImportacionRotacionesRequest d
+    @Valid @RequestBody ImportacionRotacionesRequest request
   ) {
-    return importacion.procesar(d, false);
+    return importacion.procesar(request, false);
   }
 
   @PostMapping("/importar")
   public ImportacionRotacionesResponse importar(
-    @Valid @RequestBody ImportacionRotacionesRequest d
+    @Valid @RequestBody ImportacionRotacionesRequest request
   ) {
-    return importacion.procesar(d, true);
+    return importacion.procesar(request, true);
   }
 }

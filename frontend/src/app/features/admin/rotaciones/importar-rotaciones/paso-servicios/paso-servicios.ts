@@ -15,7 +15,7 @@ import {
   GrupoEmparejamiento,
   indexarPorNumeroDeFila,
   procesarEnLote,
-  contar,
+  cantidadConPalabra,
   segunCantidad,
 } from '../emparejamiento';
 import {
@@ -58,7 +58,7 @@ export class PasoServicios {
   protected readonly guardando = signal(false);
   protected readonly error = signal('');
   protected readonly aviso = signal('');
-  protected readonly contar = contar;
+  protected readonly cantidadConPalabra = cantidadConPalabra;
   protected readonly grupoPorExcluir = signal<GrupoEmparejamiento | null>(null);
 
   // Formulario de creación (reutiliza FormularioServicio del módulo de servicios).
@@ -147,7 +147,7 @@ export class PasoServicios {
       this.filasCambiadas.emit(this.aplicarServicioEnFilas(this.filas(), grupo, servicioCreado));
       this.grupoEnCreacion.set(null);
       this.mostrarAviso(
-        `Servicio «${servicioCreado.nombre}» creado y asignado a ${contar(grupo.numerosFila.length, 'fila', 'filas')}.`,
+        `Servicio «${servicioCreado.nombre}» creado y asignado a ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')}.`,
       );
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
@@ -178,7 +178,7 @@ export class PasoServicios {
     this.filasCambiadas.emit(filasActualizadas);
     this.guardando.set(false);
     this.mostrarAviso(
-      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${contar(procesados, 'servicio', 'servicios')}.`,
+      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${cantidadConPalabra(procesados, 'servicio', 'servicios')}.`,
     );
     if (errores.length) this.error.set('No se pudieron crear: ' + errores.join(' · '));
   }
@@ -204,7 +204,7 @@ export class PasoServicios {
     if (!servicioElegido) return;
     this.filasCambiadas.emit(this.aplicarServicioEnFilas(this.filas(), grupo, servicioElegido));
     this.mostrarAviso(
-      `${contar(grupo.numerosFila.length, 'fila', 'filas')} ${segunCantidad(grupo.numerosFila.length, 'ahora usa', 'ahora usan')} «${servicioElegido.nombre}» y sus cupos.`,
+      `${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')} ${segunCantidad(grupo.numerosFila.length, 'ahora usa', 'ahora usan')} «${servicioElegido.nombre}» y sus cupos.`,
     );
   }
 
@@ -237,7 +237,7 @@ export class PasoServicios {
     this.filasCambiadas.emit(excluirFilas(this.filas(), grupo.numerosFila));
     this.grupoPorExcluir.set(null);
     this.mostrarAviso(
-      `${segunCantidad(grupo.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${contar(grupo.numerosFila.length, 'fila', 'filas')} de la importación.`,
+      `${segunCantidad(grupo.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')} de la importación.`,
     );
   }
 

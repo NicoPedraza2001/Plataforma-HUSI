@@ -4,7 +4,7 @@ import {
   buscarSugerencias,
   buscarValoresOriginales,
   calcularSimilitud,
-  contar,
+  cantidadConPalabra,
   describirFilas,
   esMismoTexto,
   excluirFilas,
@@ -59,8 +59,8 @@ describe('emparejamiento', () => {
   });
 
   it('concuerda la palabra con la cantidad', () => {
-    expect(contar(1, 'fila', 'filas')).toBe('1 fila');
-    expect(contar(3, 'fila', 'filas')).toBe('3 filas');
+    expect(cantidadConPalabra(1, 'fila', 'filas')).toBe('1 fila');
+    expect(cantidadConPalabra(3, 'fila', 'filas')).toBe('3 filas');
   });
 
   it('resume listas largas de filas', () => {

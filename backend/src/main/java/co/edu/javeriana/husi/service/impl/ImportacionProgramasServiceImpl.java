@@ -16,17 +16,17 @@ public class ImportacionProgramasServiceImpl
   implements ImportacionProgramasService
 {
 
-  private final ProgramaService programas;
+  private final ProgramaService programaService;
 
   // Deliberadamente sin transacción de lote: cada crear confirma o revierte su propia fila.
   public ImportacionProgramasResponse procesar(
     ImportacionProgramasRequest request,
     boolean guardar
   ) {
-    Set<String> vistos = new HashSet<>();
-    Set<Integer> numeros = new HashSet<>();
+    Set<String> programasYaLeidos = new HashSet<>();
+    Set<Integer> numerosDeFila = new HashSet<>();
     for (var fila : request.filas()) {
-      if (!numeros.add(fila.fila())) throw new NegocioException(
+      if (!numerosDeFila.add(fila.fila())) throw new NegocioException(
         HttpStatus.BAD_REQUEST,
         "Cada registro debe indicar una fila de Excel diferente."
       );
@@ -35,19 +35,21 @@ public class ImportacionProgramasServiceImpl
     for (var fila : request.filas()) {
       String estado = "VALIDO",
         mensaje = "Información completa. Se creará un programa.";
-      Integer id = null;
+      Integer idCreado = null;
       try {
-        ProgramaRequest datos = programas.validarImportacion(
+        ProgramaRequest programa = programaService.validarImportacion(
           fila.nombre(),
           fila.universidad()
         );
-        String clave =
-          datos.universidadId() + "|" + datos.nombre().toLowerCase(Locale.ROOT);
-        if (!vistos.add(clave)) {
+        String claveUnica =
+          programa.universidadId() +
+          "|" +
+          programa.nombre().toLowerCase(Locale.ROOT);
+        if (!programasYaLeidos.add(claveUnica)) {
           estado = "OMITIDO";
           mensaje = "Programa repetido dentro del archivo.";
         } else if (guardar) {
-          id = programas.crear(datos).id();
+          idCreado = programaService.crear(programa).id();
           estado = "CREADO";
           mensaje = "Programa guardado correctamente.";
         }
@@ -66,7 +68,7 @@ public class ImportacionProgramasServiceImpl
           fila.universidad(),
           estado,
           mensaje,
-          id
+          idCreado
         )
       );
     }

@@ -20,7 +20,7 @@ describe('Universidades conectado', () => {
     const fixture = TestBed.createComponent(ListadoUniversidades);
     const http = TestBed.inject(HttpTestingController);
     http
-      .expectOne((r) => r.url === '/api/universidades/buscar')
+      .expectOne((peticion) => peticion.url === '/api/universidades/buscar')
       .flush({
         contenido: [universidad],
         totalElementos: 1,
@@ -46,14 +46,14 @@ describe('Universidades conectado', () => {
     const botones = () =>
       Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
     botones()
-      .find((b) => b.textContent?.includes('Agregar universidad'))!
+      .find((boton) => boton.textContent?.includes('Agregar universidad'))!
       .click();
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(botones().find((b) => b.textContent?.includes('Guardar universidad'))!.disabled).toBe(
-      true,
-    );
+    expect(
+      botones().find((boton) => boton.textContent?.includes('Guardar universidad'))!.disabled,
+    ).toBe(true);
     for (const [id, value] of [
       ['nombre-universidad', 'Nueva universidad'],
       ['pais-universidad', 'Colombia'],
@@ -66,7 +66,9 @@ describe('Universidades conectado', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
-    const post = http.expectOne((r) => r.url === '/api/universidades' && r.method === 'POST');
+    const post = http.expectOne(
+      (peticion) => peticion.url === '/api/universidades' && peticion.method === 'POST',
+    );
     expect(post.request.body).toEqual({
       nombre: 'Nueva universidad',
       pais: 'Colombia',
@@ -76,7 +78,7 @@ describe('Universidades conectado', () => {
     await Promise.resolve();
     await Promise.resolve();
     http
-      .expectOne((r) => r.url === '/api/universidades/buscar')
+      .expectOne((peticion) => peticion.url === '/api/universidades/buscar')
       .flush({ contenido: [], totalElementos: 0, totalPaginas: 1, pagina: 1, tamano: 10 });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Universidad creada correctamente.');
@@ -87,7 +89,7 @@ describe('Universidades conectado', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
     const req = http.expectOne(
-      (r) => r.url === '/api/universidades/55/estado' && r.method === 'PATCH',
+      (peticion) => peticion.url === '/api/universidades/55/estado' && peticion.method === 'PATCH',
     );
     expect(req.request.body).toEqual({ estado: 'Inactivo' });
     req.flush(
@@ -108,23 +110,26 @@ describe('Universidades conectado', () => {
       3,
     );
     expect(fixture.nativeElement.querySelector('thead').textContent).toContain('Asociados');
-    const c = fixture.componentInstance as any;
-    c.solicitarEliminar(universidad);
+    const componente = fixture.componentInstance as any;
+    componente.solicitarEliminar(universidad);
     fixture.detectChanges();
-    http.expectNone((r) => r.method === 'DELETE');
+    http.expectNone((peticion) => peticion.method === 'DELETE');
     expect(fixture.nativeElement.querySelector('[role="dialog"]').textContent).toContain(
       'no podrá recuperarse',
     );
-    c.pendienteEliminar.set(null);
-    http.expectNone((r) => r.method === 'DELETE');
-    c.solicitarEliminar(universidad);
-    const promesa = c.confirmarEliminar();
+    componente.pendienteEliminar.set(null);
+    http.expectNone((peticion) => peticion.method === 'DELETE');
+    componente.solicitarEliminar(universidad);
+    const promesa = componente.confirmarEliminar();
     http
-      .expectOne((r) => r.url === '/api/universidades/55/definitivo' && r.method === 'DELETE')
+      .expectOne(
+        (peticion) =>
+          peticion.url === '/api/universidades/55/definitivo' && peticion.method === 'DELETE',
+      )
       .flush(null);
     await promesa;
     http
-      .expectOne((r) => r.url === '/api/universidades/buscar')
+      .expectOne((peticion) => peticion.url === '/api/universidades/buscar')
       .flush({ contenido: [], pagina: 1, totalPaginas: 1, totalElementos: 0 });
   });
 });

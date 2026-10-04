@@ -30,17 +30,17 @@ export function letraColumna(indice: number): string {
 }
 
 /** Lee todas las hojas de un .xlsx. Lanza `Error` con un mensaje listo para mostrar. */
-export async function leerExcel(file: File, maxFilas = 1100): Promise<HojaExcel[]> {
-  if (!/\.xlsx$/i.test(file.name))
+export async function leerExcel(archivo: File, maxFilas = 1100): Promise<HojaExcel[]> {
+  if (!/\.xlsx$/i.test(archivo.name))
     throw new Error(
       'Selecciona un archivo .xlsx. Si es .xls, guárdalo como Libro de Excel (.xlsx).',
     );
-  if (file.size > 5 * 1024 * 1024)
+  if (archivo.size > 5 * 1024 * 1024)
     throw new Error('El archivo supera 5 MB. Divide los datos en archivos más pequeños.');
   const { Workbook } = await import('exceljs');
   const libro = new Workbook();
   try {
-    await libro.xlsx.load(await file.arrayBuffer());
+    await libro.xlsx.load(await archivo.arrayBuffer());
   } catch {
     throw new Error(
       'No se pudo leer el Excel. Comprueba que no esté dañado ni protegido con contraseña.',
@@ -53,10 +53,10 @@ export async function leerExcel(file: File, maxFilas = 1100): Promise<HojaExcel[
         `La hoja supera ${maxFilas} filas o 100 columnas. Divide el archivo o elimina filas y columnas sobrantes.`,
       );
     const filas: string[][] = [];
-    for (let i = 1; i <= hoja.rowCount; i++) {
+    for (let numeroFila = 1; numeroFila <= hoja.rowCount; numeroFila++) {
       const celdas: string[] = [];
-      for (let j = 1; j <= hoja.columnCount; j++) {
-        const celda = hoja.getCell(i, j);
+      for (let numeroColumna = 1; numeroColumna <= hoja.columnCount; numeroColumna++) {
+        const celda = hoja.getCell(numeroFila, numeroColumna);
         celdas.push(
           celda.formula
             ? MARCA_FORMULA
@@ -82,10 +82,10 @@ export async function descargarLibro(
   const libro: Workbook = new Workbook();
   const hoja = libro.addWorksheet(nombreHoja);
   hoja.addRow(columnas);
-  filas.forEach((f) => hoja.addRow(f));
+  filas.forEach((fila) => hoja.addRow(fila));
   hoja.getRow(1).font = { bold: true };
-  hoja.columns.forEach((c) => {
-    c.width = 35;
+  hoja.columns.forEach((columna) => {
+    columna.width = 35;
   });
   const buffer = await libro.xlsx.writeBuffer();
   const url = URL.createObjectURL(

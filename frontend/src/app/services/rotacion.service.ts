@@ -21,91 +21,108 @@ export class RotacionService {
   // Dependencias
   private readonly http = inject(HttpClient);
 
-  private readonly gestion = `${API_URL}/rotaciones/gestion`;
+  private readonly urlGestion = `${API_URL}/rotaciones/gestion`;
 
   /** GET /api/rotaciones/gestion */
-  gestionar(params: Parametros): Observable<Pagina<RotacionGestion>> {
-    return this.http.get<Pagina<RotacionGestion>>(this.gestion, { params });
+  listarGestion(params: Parametros): Observable<Pagina<RotacionGestion>> {
+    return this.http.get<Pagina<RotacionGestion>>(this.urlGestion, { params });
   }
 
   /** GET /api/rotaciones/gestion/catalogos */
   catalogos(): Observable<CatalogosRotacion> {
-    return this.http.get<CatalogosRotacion>(this.gestion + '/catalogos');
+    return this.http.get<CatalogosRotacion>(this.urlGestion + '/catalogos');
   }
 
   /** GET /api/rotaciones/gestion/{asignatura}/{inicio}/{fin} */
-  consultar(r: RotacionDatos): Observable<RotacionGestion> {
-    return this.http.get<RotacionGestion>(this.ruta(r));
+  consultar(rotacion: RotacionDatos): Observable<RotacionGestion> {
+    return this.http.get<RotacionGestion>(this.urlDeRotacion(rotacion));
   }
 
   /**
    * GET /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/residentes
-   * Con `espera` trae solo «Esperando cupo» por orden de llegada; sin él, el resto por nombre.
+   * Con `soloEnEspera` trae solo «Esperando cupo» por orden de llegada; sin él, el resto por
+   * nombre.
    */
-  residentes(r: RotacionDatos, pagina = 1, espera = false): Observable<Pagina<ResidenteRotacion>> {
-    return this.http.get<Pagina<ResidenteRotacion>>(this.ruta(r) + '/residentes', {
-      params: { pagina, espera },
+  listarResidentes(
+    rotacion: RotacionDatos,
+    pagina = 1,
+    soloEnEspera = false,
+  ): Observable<Pagina<ResidenteRotacion>> {
+    return this.http.get<Pagina<ResidenteRotacion>>(this.urlDeRotacion(rotacion) + '/residentes', {
+      params: { pagina, espera: soloEnEspera },
     });
   }
 
   /** GET /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/candidatos */
-  candidatos(r: RotacionDatos, q: string): Observable<OpcionCatalogo[]> {
-    return this.http.get<OpcionCatalogo[]>(this.ruta(r) + '/candidatos', { params: { q } });
+  candidatos(rotacion: RotacionDatos, busqueda: string): Observable<OpcionCatalogo[]> {
+    return this.http.get<OpcionCatalogo[]>(this.urlDeRotacion(rotacion) + '/candidatos', {
+      params: { q: busqueda },
+    });
   }
 
   /** POST /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/residentes */
-  asignar(r: RotacionDatos, residenteId: number): Observable<void> {
-    return this.http.post<void>(this.ruta(r) + '/residentes', { residenteId });
+  asignar(rotacion: RotacionDatos, residenteId: number): Observable<void> {
+    return this.http.post<void>(this.urlDeRotacion(rotacion) + '/residentes', { residenteId });
   }
 
   /** PATCH /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/residentes/{residente}/estado */
-  estadoResidente(r: RotacionDatos, residente: number, estado: string): Observable<void> {
-    return this.http.patch<void>(this.ruta(r) + '/residentes/' + residente + '/estado', { estado });
+  cambiarEstadoResidente(
+    rotacion: RotacionDatos,
+    residenteId: number,
+    estado: string,
+  ): Observable<void> {
+    return this.http.patch<void>(
+      this.urlDeRotacion(rotacion) + '/residentes/' + residenteId + '/estado',
+      { estado },
+    );
   }
 
   /** DELETE /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/residentes/{residente} */
-  eliminarResidente(r: RotacionDatos, residente: number): Observable<void> {
-    return this.http.delete<void>(this.ruta(r) + '/residentes/' + residente);
+  eliminarResidente(rotacion: RotacionDatos, residenteId: number): Observable<void> {
+    return this.http.delete<void>(this.urlDeRotacion(rotacion) + '/residentes/' + residenteId);
   }
 
-  /** GET /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/espera */
-  espera(r: RotacionDatos): Observable<ResidenteEnEspera[]> {
-    return this.http.get<ResidenteEnEspera[]>(this.ruta(r) + '/espera');
+  /**
+   * GET /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/espera
+   * Residentes en espera en otras rotaciones del mismo servicio.
+   */
+  listarEsperaDelServicio(rotacion: RotacionDatos): Observable<ResidenteEnEspera[]> {
+    return this.http.get<ResidenteEnEspera[]>(this.urlDeRotacion(rotacion) + '/espera');
   }
 
   /** POST /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/espera */
-  trasladarEspera(r: RotacionDatos, residentes: OrigenEspera[]): Observable<void> {
-    return this.http.post<void>(this.ruta(r) + '/espera', { residentes });
+  trasladarEspera(rotacion: RotacionDatos, residentes: OrigenEspera[]): Observable<void> {
+    return this.http.post<void>(this.urlDeRotacion(rotacion) + '/espera', { residentes });
   }
 
   /** POST /api/rotaciones/gestion */
-  crear(d: RotacionDatos): Observable<RotacionGestion> {
-    return this.http.post<RotacionGestion>(this.gestion, d);
+  crear(datos: RotacionDatos): Observable<RotacionGestion> {
+    return this.http.post<RotacionGestion>(this.urlGestion, datos);
   }
 
   /** PUT /api/rotaciones/gestion/{asignatura}/{inicio}/{fin} */
-  editar(r: RotacionDatos, d: RotacionDatos): Observable<RotacionGestion> {
-    return this.http.put<RotacionGestion>(this.ruta(r), d);
+  editar(rotacion: RotacionDatos, datos: RotacionDatos): Observable<RotacionGestion> {
+    return this.http.put<RotacionGestion>(this.urlDeRotacion(rotacion), datos);
   }
 
   /** PATCH /api/rotaciones/gestion/{asignatura}/{inicio}/{fin}/estado */
-  estado(r: RotacionDatos, activa: boolean): Observable<RotacionGestion> {
-    return this.http.patch<RotacionGestion>(this.ruta(r) + '/estado', { activa });
+  cambiarEstado(rotacion: RotacionDatos, activa: boolean): Observable<RotacionGestion> {
+    return this.http.patch<RotacionGestion>(this.urlDeRotacion(rotacion) + '/estado', { activa });
   }
 
   /** DELETE /api/rotaciones/gestion/{asignatura}/{inicio}/{fin} */
-  eliminar(r: RotacionDatos): Observable<void> {
-    return this.http.delete<void>(this.ruta(r));
+  eliminar(rotacion: RotacionDatos): Observable<void> {
+    return this.http.delete<void>(this.urlDeRotacion(rotacion));
   }
 
   /** POST /api/rotaciones/gestion/importar/validar */
   validar(filas: FilaRotacion[]): Observable<ResultadoRotaciones> {
-    return this.http.post<ResultadoRotaciones>(this.gestion + '/importar/validar', { filas });
+    return this.http.post<ResultadoRotaciones>(this.urlGestion + '/importar/validar', { filas });
   }
 
   /** POST /api/rotaciones/gestion/importar */
   importar(filas: FilaRotacion[]): Observable<ResultadoRotaciones> {
-    return this.http.post<ResultadoRotaciones>(this.gestion + '/importar', { filas });
+    return this.http.post<ResultadoRotaciones>(this.urlGestion + '/importar', { filas });
   }
 
   /** GET /api/rotaciones */
@@ -113,7 +130,8 @@ export class RotacionService {
     return this.http.get<Pagina<Rotacion>>(`${API_URL}/rotaciones`, { params });
   }
 
-  private ruta(r: RotacionDatos) {
-    return `${this.gestion}/${r.asignaturaId}/${r.inicio}/${r.fin}`;
+  /** La rotación se identifica por su clave compuesta: asignatura, inicio y fin. */
+  private urlDeRotacion(rotacion: RotacionDatos) {
+    return `${this.urlGestion}/${rotacion.asignaturaId}/${rotacion.inicio}/${rotacion.fin}`;
   }
 }

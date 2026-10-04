@@ -64,7 +64,7 @@ export class Paginacion {
     return item !== CORTE;
   }
 
-  protected ir(pagina: number): void {
+  protected irAPagina(pagina: number): void {
     if (pagina < 1 || pagina > this.totalPaginas() || pagina === this.paginaActual()) {
       return;
     }

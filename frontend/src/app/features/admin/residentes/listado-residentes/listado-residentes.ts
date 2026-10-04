@@ -25,24 +25,24 @@ import { FormularioResidente } from '../formulario-residente/formulario-resident
 })
 export class ListadoResidentes {
   // Dependencias
-  private readonly api = inject(ResidenteService);
-  private readonly catalogosApi = inject(CatalogoService);
-  private readonly opcionesApi = inject(ProgramaService);
-  private readonly tiposDocumentoApi = inject(TipoDocumentoService);
-  private readonly perfilesApi = inject(PerfilAcademicoService);
+  private readonly residenteService = inject(ResidenteService);
+  private readonly catalogoService = inject(CatalogoService);
+  private readonly programaService = inject(ProgramaService);
+  private readonly tipoDocumentoService = inject(TipoDocumentoService);
+  private readonly perfilAcademicoService = inject(PerfilAcademicoService);
 
   // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<Residente>>((params) =>
-    this.api.listar(params),
+    this.residenteService.listar(params),
   );
-  protected readonly catalogos = new Consulta<Catalogos>(() => this.catalogosApi.listar());
-  protected readonly termino = signal('');
+  protected readonly catalogos = new Consulta<Catalogos>(() => this.catalogoService.listar());
+  protected readonly terminoBusqueda = signal('');
   protected readonly paginaActual = computed(
     () => this.consulta.datos()?.pagina ?? this.paginaSolicitada(),
   );
   private readonly paginaSolicitada = signal(1);
   protected readonly totalPaginas = computed(() => this.consulta.datos()?.totalPaginas ?? 1);
-  protected readonly desde = computed(() => (this.paginaActual() - 1) * 8);
+  protected readonly indicePrimeraFila = computed(() => (this.paginaActual() - 1) * 8);
   protected readonly residentesPagina = computed(() => this.consulta.datos()?.contenido ?? []);
   protected readonly cargando = computed(
     () => this.consulta.cargando() || this.catalogos.cargando(),
@@ -65,7 +65,7 @@ export class ListadoResidentes {
     ...(this.catalogos.datos()?.periodos ?? []),
   ]);
   protected readonly estados = ['Todos', 'ACTIVO', 'INACTIVO'];
-  protected readonly formulario = signal(false);
+  protected readonly formularioAbierto = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
   protected readonly errorFormulario = signal('');
@@ -73,8 +73,8 @@ export class ListadoResidentes {
   protected readonly tiposDocumento = signal<TipoDocumento[]>([]);
   protected readonly perfiles = signal<OpcionCatalogo[]>([]);
   protected readonly pendienteEliminar = signal<Residente | null>(null);
-  protected edicionId: number | null = null;
-  protected datos: ResidenteRequest = {
+  protected idEnEdicion: number | null = null;
+  protected datosFormulario: ResidenteRequest = {
     nombre: '',
     tipoDocumento: 'CC',
     numeroDocumento: '',
@@ -93,7 +93,11 @@ export class ListadoResidentes {
   }
 
   protected cargar(espera = 0) {
-    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 8 };
+    const params: Parametros = {
+      q: this.terminoBusqueda(),
+      pagina: this.paginaSolicitada(),
+      tamano: 8,
+    };
     if (this.universidadSeleccionada() !== 'Todas')
       params['universidad'] = this.universidadSeleccionada();
     if (this.programaSeleccionado() !== 'Todos') params['programa'] = this.programaSeleccionado();
@@ -103,7 +107,7 @@ export class ListadoResidentes {
   }
 
   protected buscar(valor: string) {
-    this.termino.set(valor);
+    this.terminoBusqueda.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar(300);
   }
@@ -138,32 +142,37 @@ export class ListadoResidentes {
     this.cargar();
   }
 
-  protected async abrir(fila: Residente | null = null) {
+  protected async abrirFormulario(fila: Residente | null = null) {
     if (this.guardando()) return;
     this.guardando.set(true);
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
       const [programas, tipos, perfiles] = await Promise.all([
-        firstValueFrom(this.opcionesApi.listar()),
-        firstValueFrom(this.tiposDocumentoApi.listar()),
-        firstValueFrom(this.perfilesApi.listar()),
+        firstValueFrom(this.programaService.listar()),
+        firstValueFrom(this.tipoDocumentoService.listar()),
+        firstValueFrom(this.perfilAcademicoService.listar()),
       ]);
-      const opciones = programas.map((p) => ({
-        id: p.id,
-        nombre: p.nombre + ' — ' + p.universidad,
+      const opciones = programas.map((programa) => ({
+        id: programa.id,
+        nombre: programa.nombre + ' — ' + programa.universidad,
       }));
-      this.edicionId = fila?.id ?? null;
+      this.idEnEdicion = fila?.id ?? null;
       if (fila) {
-        const detalle = await firstValueFrom(this.api.consultar(fila.id));
-        if (!opciones.some((o) => o.id === detalle.programaId)) {
-          const p = await firstValueFrom(this.opcionesApi.consultar(detalle.programaId!));
-          opciones.push({ id: p.id, nombre: p.nombre + ' — ' + p.universidad + ' (actual)' });
+        const detalle = await firstValueFrom(this.residenteService.consultar(fila.id));
+        if (!opciones.some((opcion) => opcion.id === detalle.programaId)) {
+          const programaActual = await firstValueFrom(
+            this.programaService.consultar(detalle.programaId!),
+          );
+          opciones.push({
+            id: programaActual.id,
+            nombre: programaActual.nombre + ' — ' + programaActual.universidad + ' (actual)',
+          });
         }
         // El backend omite los campos nulos: sin perfil llega undefined.
-        this.datos = { ...detalle, perfilAcademico: detalle.perfilAcademico ?? '' };
+        this.datosFormulario = { ...detalle, perfilAcademico: detalle.perfilAcademico ?? '' };
       } else
-        this.datos = {
+        this.datosFormulario = {
           nombre: '',
           tipoDocumento: 'CC',
           numeroDocumento: '',
@@ -173,7 +182,7 @@ export class ListadoResidentes {
       this.opciones.set(opciones);
       this.tiposDocumento.set(tipos);
       this.perfiles.set(perfiles);
-      this.formulario.set(true);
+      this.formularioAbierto.set(true);
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
     } finally {
@@ -187,11 +196,11 @@ export class ListadoResidentes {
     this.errorFormulario.set('');
     try {
       await firstValueFrom(
-        this.edicionId
-          ? this.api.actualizar(this.edicionId, this.datos)
-          : this.api.crear(this.datos),
+        this.idEnEdicion
+          ? this.residenteService.actualizar(this.idEnEdicion, this.datosFormulario)
+          : this.residenteService.crear(this.datosFormulario),
       );
-      this.formulario.set(false);
+      this.formularioAbierto.set(false);
       this.aviso.set('Residente guardado correctamente.');
       this.cargar();
       this.catalogos.cargar();
@@ -209,7 +218,7 @@ export class ListadoResidentes {
     this.aviso.set('');
     try {
       await firstValueFrom(
-        this.api.cambiarEstado(
+        this.residenteService.cambiarEstado(
           fila.id,
           fila.estado.toLowerCase() === 'activo' ? 'Inactivo' : 'Activo',
         ),
@@ -234,7 +243,7 @@ export class ListadoResidentes {
     this.guardando.set(true);
     this.errorFormulario.set('');
     try {
-      await firstValueFrom(this.api.eliminarDefinitivamente(fila.id));
+      await firstValueFrom(this.residenteService.eliminarDefinitivamente(fila.id));
       this.pendienteEliminar.set(null);
       this.aviso.set('Residente eliminado definitivamente.');
       this.cargar();

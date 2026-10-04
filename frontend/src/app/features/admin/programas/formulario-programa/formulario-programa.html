@@ -20,8 +20,8 @@
     [disabled]="guardando() || universidadRuta() !== null"
   >
     <option [ngValue]="null">Selecciona una universidad</option>
-    @for (u of universidades(); track u.id) {
-      <option [ngValue]="u.id">{{ u.nombre }}</option>
+    @for (opcionUniversidad of universidades(); track opcionUniversidad.id) {
+      <option [ngValue]="opcionUniversidad.id">{{ opcionUniversidad.nombre }}</option>
     }
   </select>
   <p class="ayuda">

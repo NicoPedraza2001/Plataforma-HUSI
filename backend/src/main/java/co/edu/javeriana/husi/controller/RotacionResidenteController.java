@@ -16,17 +16,17 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/rotaciones/gestion/{asignatura}/{inicio}/{fin}")
 public class RotacionResidenteController {
 
-  private final RotacionResidenteService service;
+  private final RotacionResidenteService rotacionResidenteService;
 
   @GetMapping("/residentes")
-  public PaginaResponse<ResidenteRotacionResponse> listar(
+  public PaginaResponse<ResidenteRotacionResponse> listarResidentes(
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin,
     @RequestParam(defaultValue = "1") int pagina,
     @RequestParam(defaultValue = "false") boolean espera
   ) {
-    return service.listar(
+    return rotacionResidenteService.listar(
       new RotacionId(asignatura, inicio, fin),
       pagina,
       espera
@@ -38,9 +38,9 @@ public class RotacionResidenteController {
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin,
-    @RequestParam(defaultValue = "") String q
+    @RequestParam(name = "q", defaultValue = "") String busqueda
   ) {
-    return service.candidatos(new RotacionId(asignatura, inicio, fin), q);
+    return rotacionResidenteService.candidatos(new RotacionId(asignatura, inicio, fin), busqueda);
   }
 
   @PostMapping("/residentes")
@@ -49,45 +49,45 @@ public class RotacionResidenteController {
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin,
-    @Valid @RequestBody AsignarResidenteRequest d
+    @Valid @RequestBody AsignarResidenteRequest request
   ) {
-    service.asignar(new RotacionId(asignatura, inicio, fin), d.residenteId());
+    rotacionResidenteService.asignar(new RotacionId(asignatura, inicio, fin), request.residenteId());
   }
 
   @PatchMapping("/residentes/{residente}/estado")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void estado(
+  public void cambiarEstadoResidente(
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin,
     @PathVariable Integer residente,
-    @Valid @RequestBody EstadoAsignacionRequest d
+    @Valid @RequestBody EstadoAsignacionRequest request
   ) {
-    service.estado(
+    rotacionResidenteService.cambiarEstado(
       new RotacionId(asignatura, inicio, fin),
       residente,
-      d.estado()
+      request.estado()
     );
   }
 
   @DeleteMapping("/residentes/{residente}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void eliminar(
+  public void eliminarResidente(
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin,
     @PathVariable Integer residente
   ) {
-    service.eliminar(new RotacionId(asignatura, inicio, fin), residente);
+    rotacionResidenteService.eliminar(new RotacionId(asignatura, inicio, fin), residente);
   }
 
   @GetMapping("/espera")
-  public List<EsperaServicioResponse> espera(
+  public List<EsperaServicioResponse> listarEsperaDelServicio(
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin
   ) {
-    return service.espera(new RotacionId(asignatura, inicio, fin));
+    return rotacionResidenteService.listarEsperaDelServicio(new RotacionId(asignatura, inicio, fin));
   }
 
   @PostMapping("/espera")
@@ -96,8 +96,8 @@ public class RotacionResidenteController {
     @PathVariable Integer asignatura,
     @PathVariable LocalDate inicio,
     @PathVariable LocalDate fin,
-    @Valid @RequestBody TrasladoEsperaRequest d
+    @Valid @RequestBody TrasladoEsperaRequest request
   ) {
-    service.trasladarEspera(new RotacionId(asignatura, inicio, fin), d);
+    rotacionResidenteService.trasladarEspera(new RotacionId(asignatura, inicio, fin), request);
   }
 }

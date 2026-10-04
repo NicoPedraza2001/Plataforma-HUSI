@@ -7,14 +7,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class AsignaturaMapper {
 
-  public AsignaturaResponse response(Asignatura e) {
+  public AsignaturaResponse toResponse(Asignatura asignatura) {
     return new AsignaturaResponse(
-      e.getId(),
-      e.getNombre(),
-      e.getServicio().getId(),
-      e.getServicio().getNombre(),
-      e.getEstado(),
-      "Activo".equals(e.getEstado())
+      asignatura.getId(),
+      asignatura.getNombre(),
+      asignatura.getServicio().getId(),
+      asignatura.getServicio().getNombre(),
+      asignatura.getEstado(),
+      "Activo".equals(asignatura.getEstado())
     );
   }
 }

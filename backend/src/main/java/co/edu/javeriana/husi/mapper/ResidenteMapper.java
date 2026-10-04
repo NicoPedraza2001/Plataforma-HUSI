@@ -7,15 +7,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class ResidenteMapper {
 
-  public ResidenteResponse response(Residente e) {
+  public ResidenteResponse toResponse(Residente residente) {
     return new ResidenteResponse(
-      e.getId(),
-      e.getNombre(),
-      e.getTipoDocumento().getCodigo(),
-      e.getNumeroDocumento(),
-      e.getPerfilAcademico() == null ? null : e.getPerfilAcademico().getNombre(),
-      e.getProgramaId(),
-      e.getEstado()
+      residente.getId(),
+      residente.getNombre(),
+      residente.getTipoDocumento().getCodigo(),
+      residente.getNumeroDocumento(),
+      residente.getPerfilAcademico() == null ? null : residente.getPerfilAcademico().getNombre(),
+      residente.getProgramaId(),
+      residente.getEstado()
     );
   }
 }

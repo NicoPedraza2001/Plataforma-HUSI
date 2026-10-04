@@ -8,16 +8,16 @@ import { HojaExcel } from '../../../../shared/excel/excel';
  */
 export function mapearFilas(
   hoja: HojaExcel,
-  encabezado: number,
-  nombre: number,
-  universidad: number,
+  filaEncabezado: number,
+  columnaNombre: number,
+  columnaUniversidad: number,
 ): FilaImportacion[] {
   return hoja.filas
-    .slice(encabezado)
-    .map((celdas, i) => ({
-      fila: encabezado + i + 1,
-      nombre: (celdas[nombre] ?? '').trim(),
-      universidad: (celdas[universidad] ?? '').trim(),
+    .slice(filaEncabezado)
+    .map((celdas, posicion) => ({
+      fila: filaEncabezado + posicion + 1,
+      nombre: (celdas[columnaNombre] ?? '').trim(),
+      universidad: (celdas[columnaUniversidad] ?? '').trim(),
     }))
-    .filter((f) => f.nombre !== '' || f.universidad !== '');
+    .filter((fila) => fila.nombre !== '' || fila.universidad !== '');
 }

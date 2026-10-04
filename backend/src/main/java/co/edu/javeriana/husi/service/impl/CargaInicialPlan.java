@@ -10,60 +10,84 @@ import java.util.*;
 /**
  * Simulación sin escrituras: cada fila válida reserva sus relaciones y su cupo. Si la
  * rotación ya no tiene cupo, la fila igual se importa y queda en lista de espera.
+ *
+ * <p>Trabaja sobre una copia en memoria de las tablas. Los registros que habría que crear se
+ * acumulan en {@link #registrosNuevos} con ids temporales negativos; al confirmar, el
+ * servicio los guarda en ese mismo orden y traduce cada id temporal al id real.
  */
 final class CargaInicialPlan {
 
-  record Alta(String tabla, Map<String, Object> datos) {}
+  /** Fila que la importación insertaría en {@code tabla} con los {@code valores} dados. */
+  record RegistroNuevo(String tabla, Map<String, Object> valores) {}
 
-  private Map<String, List<Map<String, Object>>> datos;
-  final List<Alta> altas = new ArrayList<>();
+  private static final List<String> TABLAS_IMPORTABLES = List.of(
+    "universidad",
+    "programa",
+    "residente",
+    "servicio",
+    "asignatura",
+    "rotacion",
+    "rotacion_residente"
+  );
+
+  /** Copia en memoria de cada tabla (nombre de tabla → filas). */
+  private final Map<String, List<Map<String, Object>>> tablas;
+  final List<RegistroNuevo> registrosNuevos = new ArrayList<>();
   final List<Detalle> detalles = new ArrayList<>();
-  private final boolean crear;
-  private int siguiente = -1;
+  private final boolean crearFaltantes;
+  private int siguienteIdTemporal = -1;
 
   CargaInicialPlan(
-    Map<String, List<Map<String, Object>>> origen,
+    Map<String, List<Map<String, Object>>> tablasActuales,
     CargaInicialRequest solicitud
   ) {
-    datos = copiar(origen);
-    crear = solicitud.crearFaltantes();
-    Set<Integer> filas = new HashSet<>();
-    for (Fila f : solicitud.filas()) {
+    tablas = copiar(tablasActuales);
+    crearFaltantes = solicitud.crearFaltantes();
+    Set<Integer> numerosDeFila = new HashSet<>();
+    for (Fila fila : solicitud.filas()) {
       if (
-        f == null || f.fila() == null || f.fila() < 1 || !filas.add(f.fila())
+        fila == null ||
+        fila.fila() == null ||
+        fila.fila() < 1 ||
+        !numerosDeFila.add(fila.fila())
       ) throw new IllegalArgumentException(
         "Las filas deben tener números positivos únicos."
       );
-      Map<String, Integer> tamanos = new HashMap<>();
-      datos.forEach((tabla, lista) -> tamanos.put(tabla, lista.size()));
-      int inicio = altas.size();
+      // Punto de restauración: si la fila se rechaza, se deshace lo que alcanzó a crear.
+      Map<String, Integer> tamanoPorTabla = new HashMap<>();
+      tablas.forEach((tabla, filas) -> tamanoPorTabla.put(tabla, filas.size()));
+      int primerRegistroDeLaFila = registrosNuevos.size();
       try {
-        String espera = procesar(f);
-        String nuevos = altas
-          .subList(inicio, altas.size())
+        String avisoEspera = procesarFila(fila);
+        String tablasCreadas = registrosNuevos
+          .subList(primerRegistroDeLaFila, registrosNuevos.size())
           .stream()
-          .map(Alta::tabla)
+          .map(RegistroNuevo::tabla)
           .distinct()
-          .reduce((a, b) -> a + ", " + b)
+          .reduce((anterior, siguiente) -> anterior + ", " + siguiente)
           .orElse("");
-        String creaciones = nuevos.isEmpty()
+        String resumenCreaciones = tablasCreadas.isEmpty()
           ? ""
-          : " Se crearán: " + nuevos + ".";
+          : " Se crearán: " + tablasCreadas + ".";
         detalles.add(
-          espera == null
+          avisoEspera == null
             ? new Detalle(
-                f.fila(),
+                fila.fila(),
                 "VALIDO",
-                "Residente y rotación relacionados con cupo." + creaciones
+                "Residente y rotación relacionados con cupo." + resumenCreaciones
               )
-            : new Detalle(f.fila(), "ESPERA", espera + creaciones)
+            : new Detalle(fila.fila(), "ESPERA", avisoEspera + resumenCreaciones)
         );
-      } catch (Incidencia e) {
-        datos.forEach((tabla, lista) ->
-          lista.subList(tamanos.get(tabla), lista.size()).clear()
+      } catch (FilaRechazada rechazo) {
+        tablas.forEach((tabla, filas) ->
+          filas.subList(tamanoPorTabla.get(tabla), filas.size()).clear()
         );
-        altas.subList(inicio, altas.size()).clear();
-        detalles.add(new Detalle(f.fila(), e.estado, e.getMessage()));
+        registrosNuevos
+          .subList(primerRegistroDeLaFila, registrosNuevos.size())
+          .clear();
+        detalles.add(
+          new Detalle(fila.fila(), rechazo.estado, rechazo.getMessage())
+        );
       }
     }
   }
@@ -78,7 +102,7 @@ final class CargaInicialPlan {
         new ArrayList<>(
           filas
             .stream()
-            .map(f -> (Map<String, Object>) new LinkedHashMap<>(f))
+            .map(fila -> (Map<String, Object>) new LinkedHashMap<>(fila))
             .toList()
         )
       )
@@ -86,66 +110,77 @@ final class CargaInicialPlan {
     return copia;
   }
 
-  static String texto(Object x) {
-    return x == null ? "" : x.toString().strip();
+  static String texto(Object valor) {
+    return valor == null ? "" : valor.toString().strip();
   }
 
-  static int numero(Object x) {
-    return ((Number) x).intValue();
+  static int entero(Object valor) {
+    return ((Number) valor).intValue();
   }
 
-  private String campo(
+  /** Limpia el valor de una celda y valida que exista, su longitud y que no sea una fórmula. */
+  private String leerCampo(
     String valor,
-    String nombre,
-    int max,
+    String nombreCampo,
+    int longitudMaxima,
     boolean obligatorio
   ) {
-    String v = texto(valor);
-    if (obligatorio && v.isEmpty()) fallo("Falta " + nombre + ".");
-    if (v.length() > max) fallo(
-      nombre + " admite hasta " + max + " caracteres."
+    String limpio = texto(valor);
+    if (obligatorio && limpio.isEmpty()) rechazarFila("Falta " + nombreCampo + ".");
+    if (limpio.length() > longitudMaxima) rechazarFila(
+      nombreCampo + " admite hasta " + longitudMaxima + " caracteres."
     );
-    if (v.contains("[FÓRMULA:")) fallo(
-      "Reemplaza la fórmula de " + nombre + " por su valor."
+    if (limpio.contains("[FÓRMULA:")) rechazarFila(
+      "Reemplaza la fórmula de " + nombreCampo + " por su valor."
     );
-    return v;
+    return limpio;
   }
 
-  private int cupo(String valor, String nombre) {
+  private int leerCupo(String valor, String nombreCampo) {
     try {
       if (!texto(valor).matches("[0-9]+")) throw new Exception();
       return Integer.parseInt(valor.strip());
     } catch (Exception e) {
-      throw new Incidencia(
+      throw new FilaRechazada(
         "ERROR",
-        nombre +
+        nombreCampo +
           " debe ser un entero entre 0 y 2147483647 para crear el servicio."
       );
     }
   }
 
-  private Map<String, Object> buscar(String tabla, Map<String, Object> clave) {
-    var encontrados = datos
+  /**
+   * Busca en {@code tabla} la única fila cuyos campos coinciden (sin distinguir mayúsculas)
+   * con {@code criterios}. Devuelve null si no hay ninguna y rechaza la fila si hay varias o
+   * si la encontrada está inactiva.
+   */
+  private Map<String, Object> buscarRegistro(
+    String tabla,
+    Map<String, Object> criterios
+  ) {
+    var coincidencias = tablas
       .get(tabla)
       .stream()
-      .filter(r ->
-        clave
+      .filter(registro ->
+        criterios
           .entrySet()
           .stream()
-          .allMatch(e ->
-            texto(r.get(e.getKey())).equalsIgnoreCase(texto(e.getValue()))
+          .allMatch(criterio ->
+            texto(registro.get(criterio.getKey())).equalsIgnoreCase(
+              texto(criterio.getValue())
+            )
           )
       )
       .toList();
-    if (encontrados.size() > 1) fallo(
+    if (coincidencias.size() > 1) rechazarFila(
       "Coincidencia ambigua en " + tabla + ". Corrige los nombres del catálogo."
     );
-    if (encontrados.isEmpty()) return null;
-    var encontrado = encontrados.getFirst();
+    if (coincidencias.isEmpty()) return null;
+    var encontrado = coincidencias.getFirst();
     if (
       encontrado.containsKey("estado") &&
       !"Activo".equals(encontrado.get("estado"))
-    ) fallo(
+    ) rechazarFila(
       "El registro de " +
         tabla +
         " existe pero está inactivo. Revísalo en su módulo."
@@ -153,316 +188,351 @@ final class CargaInicialPlan {
     return encontrado;
   }
 
-  private Map<String, Object> alta(String tabla, Map<String, Object> valores) {
-    if (!crear) fallo(
+  /** Agrega a la simulación un registro que no existe, con un id temporal negativo. */
+  private Map<String, Object> registrarNuevo(
+    String tabla,
+    Map<String, Object> valores
+  ) {
+    if (!crearFaltantes) rechazarFila(
       "No existe " + tabla + ". Regístralo o habilita crear datos faltantes."
     );
-    var fila = new LinkedHashMap<>(valores);
+    var registro = new LinkedHashMap<>(valores);
     if (!tabla.equals("rotacion") && !tabla.equals("rotacion_residente")) {
-      fila.put("id_" + tabla, siguiente--);
-      fila.put("estado", "Activo");
+      registro.put("id_" + tabla, siguienteIdTemporal--);
+      registro.put("estado", "Activo");
     }
-    datos.get(tabla).add(fila);
-    altas.add(new Alta(tabla, new LinkedHashMap<>(fila)));
-    return fila;
+    tablas.get(tabla).add(registro);
+    registrosNuevos.add(new RegistroNuevo(tabla, new LinkedHashMap<>(registro)));
+    return registro;
   }
 
-  private void coincide(
+  /** Un valor del Excel no puede contradecir al registro existente; si viene vacío se ignora. */
+  private void validarCoincidencia(
     Map<String, Object> registro,
-    String campo,
-    String valor,
-    String etiqueta
+    String columna,
+    String valorExcel,
+    String descripcion
   ) {
     if (
-      !valor.isEmpty() && !texto(registro.get(campo)).equalsIgnoreCase(valor)
-    ) fallo(
-      etiqueta +
+      !valorExcel.isEmpty() &&
+      !texto(registro.get(columna)).equalsIgnoreCase(valorExcel)
+    ) rechazarFila(
+      descripcion +
         " no coincide con el registro existente. No se sobrescribirá; corrígelo antes de importar."
     );
   }
 
   /** Devuelve null si la fila toma cupo, o el aviso de su posición en la lista de espera. */
-  private String procesar(Fila f) {
-    String universidad = campo(f.universidad(), "universidad", 150, true),
-      pais = campo(f.pais(), "país", 100, false);
-    String programa = campo(f.programa(), "programa", 150, true),
-      nombre = campo(f.residente(), "nombre del residente", 200, true);
-    String documento = campo(f.documento(), "documento", 50, true),
-      tipo = campo(f.tipoDocumento(), "tipo de documento", 30, true);
-    String perfil = campo(f.perfilAcademico(), "perfil académico", 100, false);
+  private String procesarFila(Fila fila) {
+    String nombreUniversidad = leerCampo(fila.universidad(), "universidad", 150, true);
+    String pais = leerCampo(fila.pais(), "país", 100, false);
+    String nombrePrograma = leerCampo(fila.programa(), "programa", 150, true);
+    String nombreResidente = leerCampo(fila.residente(), "nombre del residente", 200, true);
+    String documento = leerCampo(fila.documento(), "documento", 50, true);
+    String tipoDocumento = leerCampo(fila.tipoDocumento(), "tipo de documento", 30, true);
+    String perfilAcademico = leerCampo(
+      fila.perfilAcademico(),
+      "perfil académico",
+      100,
+      false
+    );
     // Los catálogos del residente no se crean desde el Excel: se aceptan el
     // código (CC) o el nombre (Cédula de ciudadanía) y se guarda el código.
-    var td = buscar("tipo_documento", Map.of("codigo", tipo));
-    if (td == null) td = buscar("tipo_documento", Map.of("nombre", tipo));
-    if (td == null) fallo(
-      "Tipo de documento «" + tipo + "» no reconocido. Usa un código del catálogo (CC, TI, CE, PA…)."
+    var tipoEncontrado = buscarRegistro(
+      "tipo_documento",
+      Map.of("codigo", tipoDocumento)
     );
-    tipo = texto(td.get("codigo"));
-    if (!perfil.isEmpty()) {
-      var pa = buscar("perfil_academico", Map.of("nombre", perfil));
-      if (pa == null) fallo(
-        "Perfil académico «" + perfil + "» no reconocido. Usa Pregrado o Posgrado."
+    if (tipoEncontrado == null) tipoEncontrado = buscarRegistro(
+      "tipo_documento",
+      Map.of("nombre", tipoDocumento)
+    );
+    if (tipoEncontrado == null) rechazarFila(
+      "Tipo de documento «" + tipoDocumento + "» no reconocido. Usa un código del catálogo (CC, TI, CE, PA…)."
+    );
+    tipoDocumento = texto(tipoEncontrado.get("codigo"));
+    if (!perfilAcademico.isEmpty()) {
+      var perfilEncontrado = buscarRegistro(
+        "perfil_academico",
+        Map.of("nombre", perfilAcademico)
       );
-      perfil = texto(pa.get("nombre"));
+      if (perfilEncontrado == null) rechazarFila(
+        "Perfil académico «" + perfilAcademico + "» no reconocido. Usa Pregrado o Posgrado."
+      );
+      perfilAcademico = texto(perfilEncontrado.get("nombre"));
     }
-    String servicio = campo(f.servicio(), "servicio", 150, true),
-      asignatura = campo(f.asignatura(), "asignatura", 200, true);
+    String nombreServicio = leerCampo(fila.servicio(), "servicio", 150, true);
+    String nombreAsignatura = leerCampo(fila.asignatura(), "asignatura", 200, true);
     LocalDate inicio, fin;
     try {
-      inicio = LocalDate.parse(texto(f.inicio()));
-      fin = LocalDate.parse(texto(f.fin()));
+      inicio = LocalDate.parse(texto(fila.inicio()));
+      fin = LocalDate.parse(texto(fila.fin()));
     } catch (Exception e) {
-      throw new Incidencia(
+      throw new FilaRechazada(
         "ERROR",
         "Fechas inválidas. Usa celdas de fecha o AAAA-MM-DD."
       );
     }
     if (
       inicio.getYear() < 1900 || fin.getYear() > 9999 || fin.isBefore(inicio)
-    ) fallo("Revisa el orden de las fechas y el rango 1900–9999.");
+    ) rechazarFila("Revisa el orden de las fechas y el rango 1900–9999.");
 
-    var u = buscar("universidad", Map.of("nombre_universidad", universidad));
-    if (u == null) {
-      if (pais.isEmpty()) fallo("Indica el país para crear la universidad.");
-      u = alta(
+    var universidad = buscarRegistro(
+      "universidad",
+      Map.of("nombre_universidad", nombreUniversidad)
+    );
+    if (universidad == null) {
+      if (pais.isEmpty()) rechazarFila("Indica el país para crear la universidad.");
+      universidad = registrarNuevo(
         "universidad",
-        Map.of("nombre_universidad", universidad, "pais", pais)
+        Map.of("nombre_universidad", nombreUniversidad, "pais", pais)
       );
-    } else coincide(u, "pais", pais, "El país de la universidad");
-    var p = buscar(
-      "programa",
-      Map.of(
-        "id_universidad",
-        u.get("id_universidad"),
-        "nombre_programa",
-        programa
-      )
+    } else validarCoincidencia(
+      universidad,
+      "pais",
+      pais,
+      "El país de la universidad"
     );
-    if (p == null) p = alta(
-      "programa",
-      Map.of(
-        "id_universidad",
-        u.get("id_universidad"),
-        "nombre_programa",
-        programa
-      )
+
+    var criteriosPrograma = Map.<String, Object>of(
+      "id_universidad",
+      universidad.get("id_universidad"),
+      "nombre_programa",
+      nombrePrograma
     );
-    var r = buscar("residente", Map.of("numero_documento", documento));
-    if (r == null) r = alta(
+    var programa = buscarRegistro("programa", criteriosPrograma);
+    if (programa == null) programa = registrarNuevo(
+      "programa",
+      criteriosPrograma
+    );
+
+    var residente = buscarRegistro(
+      "residente",
+      Map.of("numero_documento", documento)
+    );
+    if (residente == null) residente = registrarNuevo(
       "residente",
       Map.of(
         "id_programa",
-        p.get("id_programa"),
+        programa.get("id_programa"),
         "nombre_completo",
-        nombre,
+        nombreResidente,
         "tipo_documento",
-        tipo,
+        tipoDocumento,
         "numero_documento",
         documento,
         "perfil_academico",
-        perfil
+        perfilAcademico
       )
     );
     else {
-      coincide(
-        r,
+      validarCoincidencia(
+        residente,
         "id_programa",
-        texto(p.get("id_programa")),
+        texto(programa.get("id_programa")),
         "El programa del residente"
       );
-      coincide(r, "nombre_completo", nombre, "El nombre del residente");
-      coincide(r, "tipo_documento", tipo, "El tipo de documento");
-      coincide(r, "perfil_academico", perfil, "El perfil académico");
+      validarCoincidencia(
+        residente,
+        "nombre_completo",
+        nombreResidente,
+        "El nombre del residente"
+      );
+      validarCoincidencia(
+        residente,
+        "tipo_documento",
+        tipoDocumento,
+        "El tipo de documento"
+      );
+      validarCoincidencia(
+        residente,
+        "perfil_academico",
+        perfilAcademico,
+        "El perfil académico"
+      );
     }
-    var s = buscar("servicio", Map.of("nombre", servicio));
-    if (s == null) {
-      int max = cupo(f.cupoMaximo(), "Cupo máximo"),
-        simultaneo = cupo(f.cupoSimultaneo(), "Cupo simultáneo");
-      if (simultaneo > max) fallo(
+
+    var servicio = buscarRegistro("servicio", Map.of("nombre", nombreServicio));
+    if (servicio == null) {
+      int cupoMaximo = leerCupo(fila.cupoMaximo(), "Cupo máximo");
+      int cupoSimultaneo = leerCupo(fila.cupoSimultaneo(), "Cupo simultáneo");
+      if (cupoSimultaneo > cupoMaximo) rechazarFila(
         "El cupo simultáneo no puede superar el máximo instalado."
       );
-      s = alta(
+      servicio = registrarNuevo(
         "servicio",
         Map.of(
           "nombre",
-          servicio,
+          nombreServicio,
           "cupo_maximo_instalado",
-          max,
+          cupoMaximo,
           "cupo_simultaneo",
-          simultaneo
+          cupoSimultaneo
         )
       );
     } else {
-      if (!texto(f.cupoMaximo()).isEmpty()) coincide(
-        s,
+      if (!texto(fila.cupoMaximo()).isEmpty()) validarCoincidencia(
+        servicio,
         "cupo_maximo_instalado",
-        String.valueOf(cupo(f.cupoMaximo(), "Cupo máximo")),
+        String.valueOf(leerCupo(fila.cupoMaximo(), "Cupo máximo")),
         "El cupo máximo"
       );
-      if (!texto(f.cupoSimultaneo()).isEmpty()) coincide(
-        s,
+      if (!texto(fila.cupoSimultaneo()).isEmpty()) validarCoincidencia(
+        servicio,
         "cupo_simultaneo",
-        String.valueOf(cupo(f.cupoSimultaneo(), "Cupo simultáneo")),
+        String.valueOf(leerCupo(fila.cupoSimultaneo(), "Cupo simultáneo")),
         "El cupo simultáneo"
       );
     }
-    var a = buscar(
-      "asignatura",
-      Map.of(
-        "id_servicio",
-        s.get("id_servicio"),
-        "nombre_asignatura",
-        asignatura
-      )
+
+    var criteriosAsignatura = Map.<String, Object>of(
+      "id_servicio",
+      servicio.get("id_servicio"),
+      "nombre_asignatura",
+      nombreAsignatura
     );
-    if (a == null) a = alta(
+    var asignatura = buscarRegistro("asignatura", criteriosAsignatura);
+    if (asignatura == null) asignatura = registrarNuevo(
       "asignatura",
-      Map.of(
-        "id_servicio",
-        s.get("id_servicio"),
-        "nombre_asignatura",
-        asignatura
-      )
+      criteriosAsignatura
     );
-    var clave = Map.<String, Object>of(
+
+    var claveRotacion = Map.<String, Object>of(
       "id_asignatura",
-      a.get("id_asignatura"),
+      asignatura.get("id_asignatura"),
       "fecha_inicio",
       inicio,
       "fecha_fin",
       fin
     );
-    var rot = datos
+    var rotacion = tablas
       .get("rotacion")
       .stream()
-      .filter(x -> mismaClave(x, clave))
+      .filter(registro -> coincidenCampos(registro, claveRotacion))
       .findFirst()
       .orElse(null);
-    var relacion = new LinkedHashMap<>(clave);
-    relacion.put("id_residente", r.get("id_residente"));
+    var asignacion = new LinkedHashMap<>(claveRotacion);
+    asignacion.put("id_residente", residente.get("id_residente"));
     if (
-      datos
+      tablas
         .get("rotacion_residente")
         .stream()
-        .anyMatch(x -> mismaClave(x, relacion))
-    ) throw new Incidencia(
+        .anyMatch(registro -> coincidenCampos(registro, asignacion))
+    ) throw new FilaRechazada(
       "OMITIDO",
       "El residente ya está relacionado con esta rotación (incluidos cancelados), o la fila está repetida."
     );
-    if (rot == null) {
-      rot = new LinkedHashMap<>(clave);
-      rot.put("activa", true);
-      rot.put("cupo_disponible", s.get("cupo_simultaneo"));
+    if (rotacion == null) {
+      rotacion = new LinkedHashMap<>(claveRotacion);
+      rotacion.put("activa", true);
+      rotacion.put("cupo_disponible", servicio.get("cupo_simultaneo"));
       // Crear la rotación está permitido también cuando todos los catálogos ya existen.
-      datos.get("rotacion").add(rot);
-      altas.add(new Alta("rotacion", new LinkedHashMap<>(rot)));
+      tablas.get("rotacion").add(rotacion);
+      registrosNuevos.add(
+        new RegistroNuevo("rotacion", new LinkedHashMap<>(rotacion))
+      );
     }
-    if (!Boolean.TRUE.equals(rot.get("activa"))) fallo(
+    if (!Boolean.TRUE.equals(rotacion.get("activa"))) rechazarFila(
       "La rotación existe pero está inactiva."
     );
-    int disponibles = numero(rot.get("cupo_disponible"));
-    if (disponibles < 1) {
+    int cuposDisponibles = entero(rotacion.get("cupo_disponible"));
+    if (cuposDisponibles < 1) {
       // Al guardar, el trigger de la base la deja en «Esperando cupo» en este mismo orden.
-      long posicion =
+      long posicionEnEspera =
         1 +
-        datos
+        tablas
           .get("rotacion_residente")
           .stream()
-          .filter(x -> mismaClave(x, clave))
-          .filter(x -> "Esperando cupo".equals(texto(x.get("estado"))))
+          .filter(registro -> coincidenCampos(registro, claveRotacion))
+          .filter(registro -> "Esperando cupo".equals(texto(registro.get("estado"))))
           .count();
-      relacion.put("estado", "Esperando cupo");
-      datos.get("rotacion_residente").add(relacion);
-      altas.add(new Alta("rotacion_residente", relacion));
+      asignacion.put("estado", "Esperando cupo");
+      tablas.get("rotacion_residente").add(asignacion);
+      registrosNuevos.add(new RegistroNuevo("rotacion_residente", asignacion));
       return (
         "Sin cupo en esta rotación: quedará en lista de espera (posición " +
-        posicion +
+        posicionEnEspera +
         ")."
       );
     }
-    rot.put("cupo_disponible", disponibles - 1);
-    relacion.put("estado", "Asignado");
-    datos.get("rotacion_residente").add(relacion);
-    altas.add(new Alta("rotacion_residente", relacion));
+    rotacion.put("cupo_disponible", cuposDisponibles - 1);
+    asignacion.put("estado", "Asignado");
+    tablas.get("rotacion_residente").add(asignacion);
+    registrosNuevos.add(new RegistroNuevo("rotacion_residente", asignacion));
     return null;
   }
 
-  private boolean mismaClave(
-    Map<String, Object> fila,
-    Map<String, Object> clave
+  /** Compara como texto exacto cada campo de {@code criterios} con el de {@code registro}. */
+  private boolean coincidenCampos(
+    Map<String, Object> registro,
+    Map<String, Object> criterios
   ) {
-    return clave
+    return criterios
       .entrySet()
       .stream()
-      .allMatch(e -> texto(fila.get(e.getKey())).equals(texto(e.getValue())));
+      .allMatch(criterio ->
+        texto(registro.get(criterio.getKey())).equals(texto(criterio.getValue()))
+      );
   }
 
-  CargaInicialResponse respuesta(String huella, boolean guardado) {
-    Map<String, Integer> nuevos = new LinkedHashMap<>();
-    for (String tabla : List.of(
-      "universidad",
-      "programa",
-      "residente",
-      "servicio",
-      "asignatura",
-      "rotacion",
-      "rotacion_residente"
-    ))
-      nuevos.put(
-        tabla,
-        (int) altas
-          .stream()
-          .filter(a -> a.tabla().equals(tabla))
-          .count()
-      );
+  CargaInicialResponse construirRespuesta(String huella, boolean guardado) {
+    Map<String, Integer> nuevosPorTabla = new LinkedHashMap<>();
+    for (String tabla : TABLAS_IMPORTABLES) nuevosPorTabla.put(
+      tabla,
+      (int) registrosNuevos
+        .stream()
+        .filter(registro -> registro.tabla().equals(tabla))
+        .count()
+    );
     return new CargaInicialResponse(
       huella,
       guardado,
       detalles.size(),
-      contar("VALIDO"),
-      contar("ESPERA"),
-      contar("ERROR"),
-      contar("OMITIDO"),
-      nuevos,
+      contarDetalles("VALIDO"),
+      contarDetalles("ESPERA"),
+      contarDetalles("ERROR"),
+      contarDetalles("OMITIDO"),
+      nuevosPorTabla,
       detalles
         .stream()
-        .map(d ->
-          !guardado
-            ? d
-            : d.estado().equals("VALIDO")
-              ? new Detalle(
-                  d.fila(),
-                  "CREADO",
-                  "Asignación creada correctamente."
-                )
-              : d.estado().equals("ESPERA")
-                ? new Detalle(
-                    d.fila(),
-                    "ESPERA",
-                    d.mensaje().replace("quedará en", "quedó en")
-                  )
-                : d
-        )
+        .map(detalle -> guardado ? detalleTrasGuardar(detalle) : detalle)
         .toList()
     );
   }
 
-  private int contar(String estado) {
+  /** Tras confirmar, los mensajes de la simulación pasan a tiempo pasado. */
+  private Detalle detalleTrasGuardar(Detalle detalle) {
+    return switch (detalle.estado()) {
+      case "VALIDO" -> new Detalle(
+        detalle.fila(),
+        "CREADO",
+        "Asignación creada correctamente."
+      );
+      case "ESPERA" -> new Detalle(
+        detalle.fila(),
+        "ESPERA",
+        detalle.mensaje().replace("quedará en", "quedó en")
+      );
+      default -> detalle;
+    };
+  }
+
+  private int contarDetalles(String estado) {
     return (int) detalles
       .stream()
-      .filter(d -> d.estado().equals(estado))
+      .filter(detalle -> detalle.estado().equals(estado))
       .count();
   }
 
-  private void fallo(String mensaje) {
-    throw new Incidencia("ERROR", mensaje);
+  private void rechazarFila(String mensaje) {
+    throw new FilaRechazada("ERROR", mensaje);
   }
 
-  private static final class Incidencia extends RuntimeException {
+  /** Interrumpe el procesamiento de una fila; {@code estado} es ERROR u OMITIDO. */
+  private static final class FilaRechazada extends RuntimeException {
 
     final String estado;
 
-    Incidencia(String estado, String mensaje) {
+    FilaRechazada(String estado, String mensaje) {
       super(mensaje);
       this.estado = estado;
     }

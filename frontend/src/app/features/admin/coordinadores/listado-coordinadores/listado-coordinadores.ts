@@ -20,14 +20,14 @@ import { FormularioCoordinador } from '../formulario-coordinador/formulario-coor
 })
 export class ListadoCoordinadores {
   // Dependencias
-  private readonly api = inject(CoordinadorService);
-  private readonly serviciosApi = inject(ServicioService);
+  private readonly coordinadorService = inject(CoordinadorService);
+  private readonly servicioService = inject(ServicioService);
 
   // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<Coordinador>>((params) =>
-    this.api.listar(params),
+    this.coordinadorService.listar(params),
   );
-  protected readonly termino = signal('');
+  protected readonly terminoBusqueda = signal('');
   protected readonly paginaActual = computed(
     () => this.consulta.datos()?.pagina ?? this.paginaSolicitada(),
   );
@@ -36,19 +36,19 @@ export class ListadoCoordinadores {
   protected readonly coordinadoresPagina = computed(() => this.consulta.datos()?.contenido ?? []);
   protected readonly cargando = computed(() => this.consulta.cargando());
   protected readonly error = computed(() => this.consulta.error());
-  protected readonly estado = signal('todos');
+  protected readonly filtroEstado = signal('todos');
   protected readonly opcionesServicio = signal<OpcionCatalogo[]>([]);
   protected readonly serviciosFiltro = signal<OpcionCatalogo[]>([]);
   protected readonly servicioFiltro = signal('');
   protected readonly errorCatalogo = signal('');
   protected readonly opcionesUsuario = signal<OpcionCatalogo[]>([]);
-  protected readonly formulario = signal(false);
+  protected readonly formularioAbierto = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
   protected readonly errorFormulario = signal('');
   protected readonly pendienteEliminar = signal<Coordinador | null>(null);
-  protected edicionId: number | null = null;
-  protected datos: CoordinadorRequest = { usuarioId: null, servicioId: null };
+  protected idEnEdicion: number | null = null;
+  protected datosFormulario: CoordinadorRequest = { usuarioId: null, servicioId: null };
 
   constructor() {
     this.cargar();
@@ -67,21 +67,25 @@ export class ListadoCoordinadores {
   }
 
   protected cargar(espera = 0) {
-    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 10 };
+    const params: Parametros = {
+      q: this.terminoBusqueda(),
+      pagina: this.paginaSolicitada(),
+      tamano: 10,
+    };
     if (this.servicioFiltro()) params['servicioId'] = this.servicioFiltro();
-    if (this.estado() !== 'todos')
-      params['estado'] = this.estado() === 'activos' ? 'Activo' : 'Inactivo';
+    if (this.filtroEstado() !== 'todos')
+      params['estado'] = this.filtroEstado() === 'activos' ? 'Activo' : 'Inactivo';
     this.consulta.cargar(params, espera);
   }
 
   protected buscar(valor: string) {
-    this.termino.set(valor);
+    this.terminoBusqueda.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar(300);
   }
 
   protected filtrarPorEstado(valor: string) {
-    this.estado.set(valor);
+    this.filtroEstado.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
@@ -92,33 +96,33 @@ export class ListadoCoordinadores {
     this.cargar();
   }
 
-  protected async abrir(fila: Coordinador | null = null) {
+  protected async abrirFormulario(fila: Coordinador | null = null) {
     if (this.guardando()) return;
     this.guardando.set(true);
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      this.edicionId = fila?.id ?? null;
-      this.opcionesServicio.set(await firstValueFrom(this.serviciosApi.catalogo()));
-      this.opcionesUsuario.set(await firstValueFrom(this.api.usuariosDisponibles()));
+      this.idEnEdicion = fila?.id ?? null;
+      this.opcionesServicio.set(await firstValueFrom(this.servicioService.catalogo()));
+      this.opcionesUsuario.set(await firstValueFrom(this.coordinadorService.usuariosDisponibles()));
       if (fila) {
-        const detalle = await firstValueFrom(this.api.consultar(fila.id));
-        this.datos = { usuarioId: detalle.usuarioId, servicioId: detalle.servicioId };
-        if (!this.opcionesServicio().some((o) => o.id === detalle.servicioId))
-          this.opcionesServicio.update((o) => [
-            ...o,
+        const detalle = await firstValueFrom(this.coordinadorService.consultar(fila.id));
+        this.datosFormulario = { usuarioId: detalle.usuarioId, servicioId: detalle.servicioId };
+        if (!this.opcionesServicio().some((opcion) => opcion.id === detalle.servicioId))
+          this.opcionesServicio.update((opcionesActuales) => [
+            ...opcionesActuales,
             { id: detalle.servicioId, nombre: detalle.servicio + ' (actual)' },
           ]);
-        if (!this.opcionesUsuario().some((o) => o.id === detalle.usuarioId))
-          this.opcionesUsuario.update((o) => [
-            ...o,
+        if (!this.opcionesUsuario().some((opcion) => opcion.id === detalle.usuarioId))
+          this.opcionesUsuario.update((opcionesActuales) => [
+            ...opcionesActuales,
             {
               id: detalle.usuarioId,
               nombre: detalle.nombre + ' — ' + detalle.correo + ' (actual)',
             },
           ]);
-      } else this.datos = { usuarioId: null, servicioId: null };
-      this.formulario.set(true);
+      } else this.datosFormulario = { usuarioId: null, servicioId: null };
+      this.formularioAbierto.set(true);
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
     } finally {
@@ -132,11 +136,11 @@ export class ListadoCoordinadores {
     this.errorFormulario.set('');
     try {
       await firstValueFrom(
-        this.edicionId
-          ? this.api.actualizar(this.edicionId, this.datos)
-          : this.api.crear(this.datos),
+        this.idEnEdicion
+          ? this.coordinadorService.actualizar(this.idEnEdicion, this.datosFormulario)
+          : this.coordinadorService.crear(this.datosFormulario),
       );
-      this.formulario.set(false);
+      this.formularioAbierto.set(false);
       this.aviso.set('Coordinador guardado correctamente.');
       this.cargar();
     } catch (e) {
@@ -152,7 +156,9 @@ export class ListadoCoordinadores {
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      await firstValueFrom(this.api.cambiarEstado(fila.id, fila.activo ? 'Inactivo' : 'Activo'));
+      await firstValueFrom(
+        this.coordinadorService.cambiarEstado(fila.id, fila.activo ? 'Inactivo' : 'Activo'),
+      );
       this.aviso.set('Estado actualizado correctamente.');
       this.cargar();
     } catch (e) {
@@ -173,7 +179,7 @@ export class ListadoCoordinadores {
     this.guardando.set(true);
     this.errorFormulario.set('');
     try {
-      await firstValueFrom(this.api.eliminarDefinitivamente(fila.id));
+      await firstValueFrom(this.coordinadorService.eliminarDefinitivamente(fila.id));
       this.pendienteEliminar.set(null);
       this.aviso.set('Coordinador eliminado definitivamente.');
       this.cargar();
@@ -187,7 +193,7 @@ export class ListadoCoordinadores {
   private async cargarCatalogoFiltro() {
     this.errorCatalogo.set('');
     try {
-      this.serviciosFiltro.set(await firstValueFrom(this.serviciosApi.catalogo(false)));
+      this.serviciosFiltro.set(await firstValueFrom(this.servicioService.catalogo(false)));
     } catch (e) {
       this.errorCatalogo.set(mensajeError(e));
     }

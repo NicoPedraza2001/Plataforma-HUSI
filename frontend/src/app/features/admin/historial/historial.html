@@ -45,7 +45,7 @@
         class="search__input"
         type="search"
         placeholder="Buscar usuario, registro o detalle..."
-        [value]="termino()"
+        [value]="terminoBusqueda()"
         (input)="buscar($any($event.target).value)"
       />
     </label>

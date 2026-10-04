@@ -7,13 +7,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class UniversidadMapper {
 
-  public UniversidadResponse response(Universidad u) {
+  public UniversidadResponse toResponse(Universidad universidad) {
     return new UniversidadResponse(
-      u.getId(),
-      u.getNombre(),
-      u.getPais(),
-      u.getPerfil(),
-      u.getEstado()
+      universidad.getId(),
+      universidad.getNombre(),
+      universidad.getPais(),
+      universidad.getPerfil(),
+      universidad.getEstado()
     );
   }
 }

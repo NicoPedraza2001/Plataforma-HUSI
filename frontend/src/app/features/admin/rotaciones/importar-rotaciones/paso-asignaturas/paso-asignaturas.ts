@@ -19,7 +19,7 @@ import {
   GrupoEmparejamiento,
   indexarPorNumeroDeFila,
   procesarEnLote,
-  contar,
+  cantidadConPalabra,
   segunCantidad,
 } from '../emparejamiento';
 import {
@@ -58,7 +58,7 @@ export class PasoAsignaturas {
   protected readonly guardando = signal(false);
   protected readonly error = signal('');
   protected readonly aviso = signal('');
-  protected readonly contar = contar;
+  protected readonly cantidadConPalabra = cantidadConPalabra;
   protected readonly grupoPorExcluir = signal<GrupoEmparejamiento | null>(null);
 
   // Formulario de creación (reutiliza FormularioAsignatura del módulo de asignaturas).
@@ -147,7 +147,7 @@ export class PasoAsignaturas {
       );
       this.grupoEnCreacion.set(null);
       this.mostrarAviso(
-        `Asignatura «${asignaturaCreada.nombre}» creada y asignada a ${contar(grupo.numerosFila.length, 'fila', 'filas')}.`,
+        `Asignatura «${asignaturaCreada.nombre}» creada y asignada a ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')}.`,
       );
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
@@ -181,7 +181,7 @@ export class PasoAsignaturas {
     this.filasCambiadas.emit(filasActualizadas);
     this.guardando.set(false);
     this.mostrarAviso(
-      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${contar(procesados, 'asignatura', 'asignaturas')}.`,
+      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${cantidadConPalabra(procesados, 'asignatura', 'asignaturas')}.`,
     );
     if (errores.length) this.error.set('No se pudieron crear: ' + errores.join(' · '));
   }
@@ -203,7 +203,7 @@ export class PasoAsignaturas {
     if (!asignaturaElegida) return;
     this.filasCambiadas.emit(this.aplicarAsignaturaEnFilas(this.filas(), grupo, asignaturaElegida));
     this.mostrarAviso(
-      `${contar(grupo.numerosFila.length, 'fila', 'filas')} ${segunCantidad(grupo.numerosFila.length, 'ahora usa', 'ahora usan')} «${asignaturaElegida.nombre}».`,
+      `${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')} ${segunCantidad(grupo.numerosFila.length, 'ahora usa', 'ahora usan')} «${asignaturaElegida.nombre}».`,
     );
   }
 
@@ -232,7 +232,7 @@ export class PasoAsignaturas {
     this.filasCambiadas.emit(excluirFilas(this.filas(), grupo.numerosFila));
     this.grupoPorExcluir.set(null);
     this.mostrarAviso(
-      `${segunCantidad(grupo.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${contar(grupo.numerosFila.length, 'fila', 'filas')} de la importación.`,
+      `${segunCantidad(grupo.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')} de la importación.`,
     );
   }
 

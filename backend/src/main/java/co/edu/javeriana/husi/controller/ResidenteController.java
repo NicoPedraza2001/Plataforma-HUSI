@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ResidenteController {
 
-  private final ResidenteService service;
+  private final ResidenteService residenteService;
 
   @GetMapping("/{id}")
   public ResidenteResponse consultar(@PathVariable Integer id) {
-    return service.consultar(id);
+    return residenteService.consultar(id);
   }
 
   /** Residentes cuyos documentos coinciden con la lista (sin distinguir mayúsculas). */
@@ -26,13 +26,13 @@ public class ResidenteController {
   public List<ResidenteResponse> buscarPorDocumentos(
     @Valid @RequestBody BusquedaDocumentosRequest request
   ) {
-    return service.buscarPorDocumentos(request.documentos());
+    return residenteService.buscarPorDocumentos(request.documentos());
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public ResidenteResponse crear(@Valid @RequestBody ResidenteRequest request) {
-    return service.crear(request);
+    return residenteService.crear(request);
   }
 
   @PutMapping("/{id}")
@@ -40,20 +40,20 @@ public class ResidenteController {
     @PathVariable Integer id,
     @Valid @RequestBody ResidenteRequest request
   ) {
-    return service.actualizar(id, request);
+    return residenteService.actualizar(id, request);
   }
 
   @PatchMapping("/{id}/estado")
-  public ResidenteResponse estado(
+  public ResidenteResponse cambiarEstado(
     @PathVariable Integer id,
     @Valid @RequestBody EstadoRequest request
   ) {
-    return service.cambiarEstado(id, request.estado());
+    return residenteService.cambiarEstado(id, request.estado());
   }
 
   @DeleteMapping("/{id}/definitivo")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void eliminar(@PathVariable Integer id) {
-    service.eliminarDefinitivamente(id);
+    residenteService.eliminarDefinitivamente(id);
   }
 }

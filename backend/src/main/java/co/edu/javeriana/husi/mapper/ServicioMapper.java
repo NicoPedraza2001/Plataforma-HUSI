@@ -7,15 +7,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class ServicioMapper {
 
-  public ServicioResponse response(Servicio s) {
+  public ServicioResponse toResponse(Servicio servicio) {
     return new ServicioResponse(
-      s.getId(),
-      s.getNombre(),
-      s.getDescripcion(),
-      s.getCupoSimultaneo(),
-      s.getCupoMaximoInstalado(),
-      s.getEstado(),
-      "Activo".equals(s.getEstado())
+      servicio.getId(),
+      servicio.getNombre(),
+      servicio.getDescripcion(),
+      servicio.getCupoSimultaneo(),
+      servicio.getCupoMaximoInstalado(),
+      servicio.getEstado(),
+      "Activo".equals(servicio.getEstado())
     );
   }
 }

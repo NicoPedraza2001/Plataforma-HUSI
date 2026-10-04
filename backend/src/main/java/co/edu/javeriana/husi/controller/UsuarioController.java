@@ -13,17 +13,17 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UsuarioController {
 
-  private final UsuarioService service;
+  private final UsuarioService usuarioService;
 
   @GetMapping("/{id}")
   public UsuarioResponse consultar(@PathVariable Integer id) {
-    return service.consultar(id);
+    return usuarioService.consultar(id);
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public UsuarioResponse crear(@Valid @RequestBody UsuarioRequest request) {
-    return service.crear(request);
+    return usuarioService.crear(request);
   }
 
   @PutMapping("/{id}")
@@ -31,20 +31,20 @@ public class UsuarioController {
     @PathVariable Integer id,
     @Valid @RequestBody UsuarioRequest request
   ) {
-    return service.actualizar(id, request);
+    return usuarioService.actualizar(id, request);
   }
 
   @PatchMapping("/{id}/estado")
-  public UsuarioResponse estado(
+  public UsuarioResponse cambiarEstado(
     @PathVariable Integer id,
     @Valid @RequestBody EstadoRequest request
   ) {
-    return service.cambiarEstado(id, request.estado());
+    return usuarioService.cambiarEstado(id, request.estado());
   }
 
   @DeleteMapping("/{id}/definitivo")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void eliminar(@PathVariable Integer id) {
-    service.eliminarDefinitivamente(id);
+    usuarioService.eliminarDefinitivamente(id);
   }
 }

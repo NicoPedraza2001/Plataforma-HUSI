@@ -35,10 +35,15 @@
 
     <!-- ---------- Formulario ---------- -->
     <div class="login__panel">
-      <form class="login__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <form
+        class="login__form"
+        [formGroup]="formularioLogin"
+        (ngSubmit)="iniciarSesion()"
+        novalidate
+      >
         <h1 class="login__title">Inicia Sesión</h1>
 
-        <div class="field" [class.field--error]="isInvalid('usuario')">
+        <div class="field" [class.field--error]="esCampoInvalido('usuario')">
           <span class="field__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <circle cx="12" cy="8" r="4" fill="currentColor" />
@@ -60,7 +65,7 @@
           />
         </div>
 
-        <div class="field" [class.field--error]="isInvalid('contrasena')">
+        <div class="field" [class.field--error]="esCampoInvalido('contrasena')">
           <span class="field__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <rect x="4.5" y="10.5" width="15" height="10" rx="2.4" fill="currentColor" />
@@ -82,7 +87,7 @@
           />
         </div>
 
-        @if (showErrors()) {
+        @if (mostrarErrores()) {
           <p class="login__hint" role="alert">Ingresa tu usuario y tu contraseña para continuar.</p>
         }
 

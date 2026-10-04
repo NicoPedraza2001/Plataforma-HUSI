@@ -20,14 +20,14 @@ export class FormularioServicio {
   readonly cancelar = output<void>();
 
   protected cuposValidos() {
-    const d = this.datos();
+    const servicio = this.datos();
     return (
-      d.cupoSimultaneo !== null &&
-      d.cupoMaximoInstalado !== null &&
-      Number.isInteger(d.cupoSimultaneo) &&
-      Number.isInteger(d.cupoMaximoInstalado) &&
-      d.cupoSimultaneo >= 0 &&
-      d.cupoMaximoInstalado >= d.cupoSimultaneo
+      servicio.cupoSimultaneo !== null &&
+      servicio.cupoMaximoInstalado !== null &&
+      Number.isInteger(servicio.cupoSimultaneo) &&
+      Number.isInteger(servicio.cupoMaximoInstalado) &&
+      servicio.cupoSimultaneo >= 0 &&
+      servicio.cupoMaximoInstalado >= servicio.cupoSimultaneo
     );
   }
 }

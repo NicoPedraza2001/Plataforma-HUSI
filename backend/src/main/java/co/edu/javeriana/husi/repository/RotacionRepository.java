@@ -10,5 +10,5 @@ public interface RotacionRepository
 {
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select r from Rotacion r where r.id=:id")
-  Optional<Rotacion> bloquear(RotacionId id);
+  Optional<Rotacion> bloquearPorId(RotacionId id);
 }

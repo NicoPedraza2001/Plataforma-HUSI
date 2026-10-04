@@ -50,7 +50,7 @@ public class UniversidadController {
   }
 
   @PatchMapping("/{id}/estado")
-  public UniversidadResponse estado(
+  public UniversidadResponse cambiarEstado(
     @PathVariable Integer id,
     @Valid @RequestBody EstadoUniversidadRequest request
   ) {

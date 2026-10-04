@@ -21,19 +21,19 @@ describe('ListadoCoordinadores', () => {
     return TestBed.createComponent(ListadoCoordinadores);
   }
   it('muestra un listado vacío sin inventar registros', async () => {
-    const f = preparar();
-    f.detectChanges();
-    await f.whenStable();
-    f.detectChanges();
-    expect(f.nativeElement.textContent).toContain('No se encontraron coordinadores');
+    const fixture = preparar();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No se encontraron coordinadores');
   });
   it('muestra el error de conexión y permite reintentar', async () => {
-    const f = preparar(true);
-    f.detectChanges();
-    await f.whenStable();
-    f.detectChanges();
-    expect(f.nativeElement.querySelector('[role=alert]')).toBeTruthy();
-    expect(f.nativeElement.textContent).toContain('Reintentar');
-    expect(f.nativeElement.textContent).not.toContain('No se encontraron coordinadores');
+    const fixture = preparar(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role=alert]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Reintentar');
+    expect(fixture.nativeElement.textContent).not.toContain('No se encontraron coordinadores');
   });
 });

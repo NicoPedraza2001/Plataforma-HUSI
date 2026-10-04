@@ -15,7 +15,7 @@ import {
   GrupoEmparejamiento,
   indexarPorNumeroDeFila,
   procesarEnLote,
-  contar,
+  cantidadConPalabra,
   segunCantidad,
 } from '../emparejamiento';
 import {
@@ -51,7 +51,7 @@ export class PasoUniversidades {
   protected readonly guardando = signal(false);
   protected readonly error = signal('');
   protected readonly aviso = signal('');
-  protected readonly contar = contar;
+  protected readonly cantidadConPalabra = cantidadConPalabra;
   protected readonly grupoPorExcluir = signal<GrupoEmparejamiento | null>(null);
 
   // Formulario de creación (reutiliza FormularioUniversidad del módulo de universidades).
@@ -138,7 +138,7 @@ export class PasoUniversidades {
       );
       this.grupoEnCreacion.set(null);
       this.mostrarAviso(
-        `Universidad «${universidadCreada.nombre}» creada y asignada a ${contar(grupo.numerosFila.length, 'fila', 'filas')}.`,
+        `Universidad «${universidadCreada.nombre}» creada y asignada a ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')}.`,
       );
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
@@ -173,7 +173,7 @@ export class PasoUniversidades {
     this.filasCambiadas.emit(filasActualizadas);
     this.guardando.set(false);
     this.mostrarAviso(
-      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${contar(procesados, 'universidad', 'universidades')}.`,
+      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${cantidadConPalabra(procesados, 'universidad', 'universidades')}.`,
     );
     if (errores.length) this.error.set('No se pudieron crear: ' + errores.join(' · '));
   }
@@ -199,7 +199,7 @@ export class PasoUniversidades {
       this.aplicarUniversidadEnFilas(this.filas(), grupo, universidadElegida),
     );
     this.mostrarAviso(
-      `${contar(grupo.numerosFila.length, 'fila', 'filas')} ${segunCantidad(grupo.numerosFila.length, 'ahora usa', 'ahora usan')} «${universidadElegida.nombre}».`,
+      `${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')} ${segunCantidad(grupo.numerosFila.length, 'ahora usa', 'ahora usan')} «${universidadElegida.nombre}».`,
     );
   }
 
@@ -232,7 +232,7 @@ export class PasoUniversidades {
     this.filasCambiadas.emit(excluirFilas(this.filas(), grupo.numerosFila));
     this.grupoPorExcluir.set(null);
     this.mostrarAviso(
-      `${segunCantidad(grupo.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${contar(grupo.numerosFila.length, 'fila', 'filas')} de la importación.`,
+      `${segunCantidad(grupo.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')} de la importación.`,
     );
   }
 

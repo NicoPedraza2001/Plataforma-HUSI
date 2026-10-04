@@ -18,16 +18,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ResidenteServiceImpl implements ResidenteService {
 
-  private final ResidenteRepository residentes;
-  private final ProgramaRepository programas;
-  private final TipoDocumentoRepository tiposDocumento;
-  private final PerfilAcademicoRepository perfiles;
-  private final ResidenteMapper mapper;
+  private final ResidenteRepository residenteRepository;
+  private final ProgramaRepository programaRepository;
+  private final TipoDocumentoRepository tipoDocumentoRepository;
+  private final PerfilAcademicoRepository perfilAcademicoRepository;
+  private final ResidenteMapper residenteMapper;
 
-  private Residente obtener(Integer id) {
-    return residentes
+  private Residente buscarResidenteBloqueado(Integer id) {
+    return residenteRepository
       .bloquearPorId(id)
-      .filter(e -> !"Eliminado".equals(e.getEstado()))
+      .filter(residente -> !"Eliminado".equals(residente.getEstado()))
       .orElseThrow(() ->
         new NegocioException(
           HttpStatus.NOT_FOUND,
@@ -36,59 +36,65 @@ public class ResidenteServiceImpl implements ResidenteService {
       );
   }
 
-  private void aplicar(Residente e, ResidenteRequest d) {
-    var p = programas
-      .bloquearPorId(d.programaId())
+  /** Valida la solicitud y copia sus datos sobre el residente (nuevo o existente). */
+  private void validarYAsignarDatos(
+    Residente residente,
+    ResidenteRequest request
+  ) {
+    var programa = programaRepository
+      .bloquearPorId(request.programaId())
       .orElseThrow(() ->
         new NegocioException(HttpStatus.BAD_REQUEST, "El programa no existe.")
       );
+    // Un programa inactivo solo se acepta si el residente ya pertenecía a él.
     if (
-      !d.programaId().equals(e.getProgramaId()) &&
-      (!"Activo".equals(p.getEstado()) ||
-        !"Activo".equals(p.getUniversidad().getEstado()))
+      !request.programaId().equals(residente.getProgramaId()) &&
+      (!"Activo".equals(programa.getEstado()) ||
+        !"Activo".equals(programa.getUniversidad().getEstado()))
     ) throw new NegocioException(
       HttpStatus.BAD_REQUEST,
       "Selecciona un programa y una universidad activos."
     );
     if (
-      residentes.existsByNumeroDocumentoIgnoreCaseAndIdNot(
-        d.numeroDocumento().strip(),
-        e.getId() == null ? 0 : e.getId()
+      residenteRepository.existsByNumeroDocumentoIgnoreCaseAndIdNot(
+        request.numeroDocumento().strip(),
+        residente.getId() == null ? 0 : residente.getId()
       )
     ) throw new NegocioException(
       HttpStatus.CONFLICT,
       "Ya existe un residente con ese documento."
     );
-    var tipo = tiposDocumento
-      .findByCodigoIgnoreCase(d.tipoDocumento().strip())
+    var tipoDocumento = tipoDocumentoRepository
+      .findByCodigoIgnoreCase(request.tipoDocumento().strip())
       .orElseThrow(() ->
         new NegocioException(
           HttpStatus.BAD_REQUEST,
           "El tipo de documento no existe."
         )
       );
-    String perfil =
-      d.perfilAcademico() == null ? "" : d.perfilAcademico().strip();
-    var perfilAcademico = perfil.isEmpty()
+    String nombrePerfil = request.perfilAcademico() == null
+      ? ""
+      : request.perfilAcademico().strip();
+    var perfilAcademico = nombrePerfil.isEmpty()
       ? null
-      : perfiles
-        .findByNombreIgnoreCase(perfil)
+      : perfilAcademicoRepository
+        .findByNombreIgnoreCase(nombrePerfil)
         .orElseThrow(() ->
           new NegocioException(
             HttpStatus.BAD_REQUEST,
             "El perfil académico no existe."
           )
         );
-    e.setNombre(d.nombre().strip());
-    e.setTipoDocumento(tipo);
-    e.setNumeroDocumento(d.numeroDocumento().strip());
-    e.setPerfilAcademico(perfilAcademico);
-    e.setProgramaId(d.programaId());
+    residente.setNombre(request.nombre().strip());
+    residente.setTipoDocumento(tipoDocumento);
+    residente.setNumeroDocumento(request.numeroDocumento().strip());
+    residente.setPerfilAcademico(perfilAcademico);
+    residente.setProgramaId(request.programaId());
   }
 
   @Transactional
   public ResidenteResponse consultar(Integer id) {
-    return mapper.response(obtener(id));
+    return residenteMapper.toResponse(buscarResidenteBloqueado(id));
   }
 
   public List<ResidenteResponse> buscarPorDocumentos(List<String> documentos) {
@@ -98,25 +104,25 @@ public class ResidenteServiceImpl implements ResidenteService {
       .distinct()
       .toList();
     if (documentosNormalizados.isEmpty()) return List.of();
-    return residentes
+    return residenteRepository
       .buscarPorDocumentos(documentosNormalizados)
       .stream()
-      .map(mapper::response)
+      .map(residenteMapper::toResponse)
       .toList();
   }
 
   @Transactional
-  public ResidenteResponse crear(ResidenteRequest d) {
-    var e = new Residente();
-    aplicar(e, d);
-    return mapper.response(residentes.saveAndFlush(e));
+  public ResidenteResponse crear(ResidenteRequest request) {
+    var residente = new Residente();
+    validarYAsignarDatos(residente, request);
+    return residenteMapper.toResponse(residenteRepository.saveAndFlush(residente));
   }
 
   @Transactional
-  public ResidenteResponse actualizar(Integer id, ResidenteRequest d) {
-    var e = obtener(id);
-    aplicar(e, d);
-    return mapper.response(residentes.saveAndFlush(e));
+  public ResidenteResponse actualizar(Integer id, ResidenteRequest request) {
+    var residente = buscarResidenteBloqueado(id);
+    validarYAsignarDatos(residente, request);
+    return residenteMapper.toResponse(residenteRepository.saveAndFlush(residente));
   }
 
   @Transactional
@@ -124,19 +130,19 @@ public class ResidenteServiceImpl implements ResidenteService {
     if (
       !"Activo".equals(estado) && !"Inactivo".equals(estado)
     ) throw new NegocioException(HttpStatus.BAD_REQUEST, "Estado inválido.");
-    var e = obtener(id);
-    e.setEstado(estado);
-    return mapper.response(residentes.saveAndFlush(e));
+    var residente = buscarResidenteBloqueado(id);
+    residente.setEstado(estado);
+    return residenteMapper.toResponse(residenteRepository.saveAndFlush(residente));
   }
 
   @Transactional
   public void eliminarDefinitivamente(Integer id) {
-    var e = obtener(id);
-    if (residentes.contarReferencias(id) > 0) throw new NegocioException(
+    var residente = buscarResidenteBloqueado(id);
+    if (residenteRepository.contarReferencias(id) > 0) throw new NegocioException(
       HttpStatus.CONFLICT,
       "El residente tiene rotaciones asociadas. Puedes desactivarlo para conservar su historial."
     );
-    residentes.delete(e);
-    residentes.flush();
+    residenteRepository.delete(residente);
+    residenteRepository.flush();
   }
 }

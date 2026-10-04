@@ -19,21 +19,21 @@ import { FormularioUniversidad } from '../formulario-universidad/formulario-univ
 })
 export class ListadoUniversidades {
   // Dependencias
-  private readonly api = inject(UniversidadService);
+  private readonly universidadService = inject(UniversidadService);
 
   // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<UniversidadDetalle>>((params) =>
-    this.api.buscar(params),
+    this.universidadService.buscar(params),
   );
-  protected readonly termino = signal('');
-  protected readonly estado = signal('Todos');
+  protected readonly terminoBusqueda = signal('');
+  protected readonly filtroEstado = signal('Todos');
   private readonly paginaSolicitada = signal(1);
   protected readonly pagina = computed(
     () => this.consulta.datos()?.pagina ?? this.paginaSolicitada(),
   );
   protected readonly totalPaginas = computed(() => this.consulta.datos()?.totalPaginas ?? 1);
   protected readonly filas = computed(() => this.consulta.datos()?.contenido ?? []);
-  protected readonly formulario = signal(false);
+  protected readonly formularioAbierto = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
   protected readonly errorFormulario = signal('');
@@ -48,19 +48,23 @@ export class ListadoUniversidades {
   }
 
   protected cargar(espera = 0) {
-    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 10 };
-    if (this.estado() !== 'Todos') params['estado'] = this.estado();
+    const params: Parametros = {
+      q: this.terminoBusqueda(),
+      pagina: this.paginaSolicitada(),
+      tamano: 10,
+    };
+    if (this.filtroEstado() !== 'Todos') params['estado'] = this.filtroEstado();
     this.consulta.cargar(params, espera);
   }
 
   protected buscar(valor: string) {
-    this.termino.set(valor);
+    this.terminoBusqueda.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar(300);
   }
 
-  protected filtrarEstado(valor: string) {
-    this.estado.set(valor);
+  protected filtrarPorEstado(valor: string) {
+    this.filtroEstado.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
@@ -71,14 +75,14 @@ export class ListadoUniversidades {
     this.cargar();
   }
 
-  protected abrir(universidad: UniversidadDetalle | null = null) {
+  protected abrirFormulario(universidad: UniversidadDetalle | null = null) {
     this.edicion = universidad;
     this.nombre = universidad?.nombre ?? '';
     this.pais = universidad?.pais ?? '';
     this.perfil = universidad?.perfil ?? '';
     this.errorFormulario.set('');
     this.aviso.set('');
-    this.formulario.set(true);
+    this.formularioAbierto.set(true);
   }
 
   protected async guardar() {
@@ -104,14 +108,16 @@ export class ListadoUniversidades {
     this.errorFormulario.set('');
     try {
       await firstValueFrom(
-        this.edicion ? this.api.actualizar(this.edicion.id, datos) : this.api.crear(datos),
+        this.edicion
+          ? this.universidadService.actualizar(this.edicion.id, datos)
+          : this.universidadService.crear(datos),
       );
       this.aviso.set(
         this.edicion
           ? 'Universidad actualizada correctamente.'
           : 'Universidad creada correctamente.',
       );
-      this.formulario.set(false);
+      this.formularioAbierto.set(false);
       this.cargar();
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
@@ -127,15 +133,20 @@ export class ListadoUniversidades {
     this.aviso.set('');
     try {
       const actualizada = await firstValueFrom(
-        this.api.cambiarEstado(
+        this.universidadService.cambiarEstado(
           universidad.id,
           universidad.estado === 'Activo' ? 'Inactivo' : 'Activo',
         ),
       );
-      this.consulta.datos.update((p) =>
-        p
-          ? { ...p, contenido: p.contenido.map((f) => (f.id === actualizada.id ? actualizada : f)) }
-          : p,
+      this.consulta.datos.update((pagina) =>
+        pagina
+          ? {
+              ...pagina,
+              contenido: pagina.contenido.map((registro) =>
+                registro.id === actualizada.id ? actualizada : registro,
+              ),
+            }
+          : pagina,
       );
       this.aviso.set(
         'Universidad ' +
@@ -160,7 +171,7 @@ export class ListadoUniversidades {
     this.guardando.set(true);
     this.errorFormulario.set('');
     try {
-      await firstValueFrom(this.api.eliminarDefinitivamente(universidad.id));
+      await firstValueFrom(this.universidadService.eliminarDefinitivamente(universidad.id));
       this.pendienteEliminar.set(null);
       this.aviso.set('Universidad eliminada definitivamente de la base de datos.');
       this.cargar();

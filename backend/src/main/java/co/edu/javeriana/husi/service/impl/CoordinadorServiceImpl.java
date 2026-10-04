@@ -7,6 +7,7 @@ import co.edu.javeriana.husi.mapper.CoordinadorMapper;
 import co.edu.javeriana.husi.model.entity.Coordinador;
 import co.edu.javeriana.husi.repository.*;
 import co.edu.javeriana.husi.service.CoordinadorService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,90 +18,103 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class CoordinadorServiceImpl implements CoordinadorService {
 
-  private final CoordinadorRepository registros;
-  private final ServicioRepository servicios;
-  private final CoordinadorMapper mapper;
-  private final UsuarioRepository usuarios;
+  private final CoordinadorRepository coordinadorRepository;
+  private final ServicioRepository servicioRepository;
+  private final CoordinadorMapper coordinadorMapper;
+  private final UsuarioRepository usuarioRepository;
 
   private NegocioException error(HttpStatus estado, String mensaje) {
     return new NegocioException(estado, mensaje);
   }
 
-  private Coordinador obtener(Integer id, boolean bloquear) {
-    return (bloquear ? registros.bloquearPorId(id) : registros.findById(id))
-      .filter(e -> !"Eliminado".equals(e.getEstado()))
+  private Coordinador buscarCoordinador(Integer id, boolean bloquear) {
+    return (
+      bloquear
+        ? coordinadorRepository.bloquearPorId(id)
+        : coordinadorRepository.findById(id)
+    )
+      .filter(coordinador -> !"Eliminado".equals(coordinador.getEstado()))
       .orElseThrow(() ->
         error(HttpStatus.NOT_FOUND, "No se encontró el registro.")
       );
   }
 
-  private void aplicar(Coordinador e, CoordinadorRequest d) {
-    if (d.servicioId() == null || d.servicioId() < 1) throw error(
+  /** Valida la solicitud y copia usuario y servicio sobre el coordinador (nuevo o existente). */
+  private void validarYAsignarDatos(
+    Coordinador coordinador,
+    CoordinadorRequest request
+  ) {
+    if (request.servicioId() == null || request.servicioId() < 1) throw error(
       HttpStatus.BAD_REQUEST,
       "Selecciona un servicio."
     );
-    var servicio = servicios
-      .bloquearPorId(d.servicioId())
+    var servicio = servicioRepository
+      .bloquearPorId(request.servicioId())
       .orElseThrow(() ->
         error(HttpStatus.BAD_REQUEST, "El servicio no existe.")
       );
-    boolean mismo =
-      e.getServicio() != null &&
-      e.getServicio().getId().equals(servicio.getId());
+    // Un servicio o usuario inactivo solo se acepta si ya estaba asignado.
+    boolean conservaServicio =
+      coordinador.getServicio() != null &&
+      coordinador.getServicio().getId().equals(servicio.getId());
     if (
       "Eliminado".equals(servicio.getEstado()) ||
-      (!mismo && !"Activo".equals(servicio.getEstado()))
+      (!conservaServicio && !"Activo".equals(servicio.getEstado()))
     ) throw error(HttpStatus.CONFLICT, "Selecciona un servicio activo.");
 
-    if (d.usuarioId() == null || d.usuarioId() < 1) throw error(
+    if (request.usuarioId() == null || request.usuarioId() < 1) throw error(
       HttpStatus.BAD_REQUEST,
       "Selecciona un usuario."
     );
-    var usuario = usuarios
-      .bloquearPorId(d.usuarioId())
+    var usuario = usuarioRepository
+      .bloquearPorId(request.usuarioId())
       .orElseThrow(() ->
         error(HttpStatus.BAD_REQUEST, "El usuario no existe.")
       );
-    boolean mismoUsuario =
-      e.getUsuario() != null && e.getUsuario().getId().equals(usuario.getId());
+    boolean conservaUsuario =
+      coordinador.getUsuario() != null &&
+      coordinador.getUsuario().getId().equals(usuario.getId());
     if (
       "Eliminado".equals(usuario.getEstado()) ||
-      (!mismoUsuario && !"Activo".equals(usuario.getEstado()))
+      (!conservaUsuario && !"Activo".equals(usuario.getEstado()))
     ) throw error(HttpStatus.CONFLICT, "Selecciona un usuario activo.");
-    if (!usuarios.tieneRolCoordinador(usuario.getId())) throw error(
+    if (!usuarioRepository.tieneRolCoordinador(usuario.getId())) throw error(
       HttpStatus.CONFLICT,
       "El usuario debe tener el rol Coordinador."
     );
     if (
-      registros.existsByUsuarioIdAndIdNot(
+      coordinadorRepository.existsByUsuarioIdAndIdNot(
         usuario.getId(),
-        e.getId() == null ? 0 : e.getId()
+        coordinador.getId() == null ? 0 : coordinador.getId()
       )
     ) throw error(
       HttpStatus.CONFLICT,
       "Este usuario ya tiene una asignación de coordinador. Edita la existente, incluso si está inactiva."
     );
-    e.setUsuario(usuario);
-
-    e.setServicio(servicio);
+    coordinador.setUsuario(usuario);
+    coordinador.setServicio(servicio);
   }
 
   public CoordinadorResponse consultar(Integer id) {
-    return mapper.response(obtener(id, false));
+    return coordinadorMapper.toResponse(buscarCoordinador(id, false));
   }
 
   @Transactional
-  public CoordinadorResponse crear(CoordinadorRequest d) {
-    var e = new Coordinador();
-    aplicar(e, d);
-    return mapper.response(registros.saveAndFlush(e));
+  public CoordinadorResponse crear(CoordinadorRequest request) {
+    var coordinador = new Coordinador();
+    validarYAsignarDatos(coordinador, request);
+    return coordinadorMapper.toResponse(
+      coordinadorRepository.saveAndFlush(coordinador)
+    );
   }
 
   @Transactional
-  public CoordinadorResponse actualizar(Integer id, CoordinadorRequest d) {
-    var e = obtener(id, true);
-    aplicar(e, d);
-    return mapper.response(registros.saveAndFlush(e));
+  public CoordinadorResponse actualizar(Integer id, CoordinadorRequest request) {
+    var coordinador = buscarCoordinador(id, true);
+    validarYAsignarDatos(coordinador, request);
+    return coordinadorMapper.toResponse(
+      coordinadorRepository.saveAndFlush(coordinador)
+    );
   }
 
   @Transactional
@@ -109,26 +123,32 @@ public class CoordinadorServiceImpl implements CoordinadorService {
       HttpStatus.BAD_REQUEST,
       "Estado inválido."
     );
-    var e = obtener(id, true);
-    e.setEstado(estado);
-    return mapper.response(registros.saveAndFlush(e));
+    var coordinador = buscarCoordinador(id, true);
+    coordinador.setEstado(estado);
+    return coordinadorMapper.toResponse(
+      coordinadorRepository.saveAndFlush(coordinador)
+    );
   }
 
   @Transactional
   public void eliminarDefinitivamente(Integer id) {
-    var e = obtener(id, true);
-    registros.delete(e);
-    registros.flush();
+    var coordinador = buscarCoordinador(id, true);
+    coordinadorRepository.delete(coordinador);
+    coordinadorRepository.flush();
   }
 
-  public java.util.List<CatalogoResponse> usuariosDisponibles() {
-    return usuarios
+  public List<CatalogoResponse> usuariosDisponibles() {
+    return usuarioRepository
       .usuariosDisponiblesParaCoordinacion()
       .stream()
-      .map(u ->
+      .map(usuario ->
         new CatalogoResponse(
-          u.getId(),
-          u.getNombre() + " " + u.getApellido() + " — " + u.getCorreo()
+          usuario.getId(),
+          usuario.getNombre() +
+            " " +
+            usuario.getApellido() +
+            " — " +
+            usuario.getCorreo()
         )
       )
       .toList();

@@ -28,7 +28,7 @@ import {
   excluirFilas,
   OPCIONES_FILTRO_ESTADO,
   procesarEnLote,
-  contar,
+  cantidadConPalabra,
   segunCantidad,
 } from '../emparejamiento';
 import { FiltroDeTabla } from '../filtro-de-tabla';
@@ -84,7 +84,7 @@ export class PasoResidentes implements OnInit {
   protected readonly guardando = signal(false);
   protected readonly error = signal('');
   protected readonly aviso = signal('');
-  protected readonly contar = contar;
+  protected readonly cantidadConPalabra = cantidadConPalabra;
   protected readonly revisionPorExcluir = signal<RevisionResidente | null>(null);
 
   // Formulario (reutiliza FormularioResidente del módulo de residentes)
@@ -259,7 +259,7 @@ export class PasoResidentes implements OnInit {
     this.filasCambiadas.emit(filasActualizadas);
     this.guardando.set(false);
     this.mostrarAviso(
-      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${contar(procesados, 'residente', 'residentes')}.`,
+      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${cantidadConPalabra(procesados, 'residente', 'residentes')}.`,
     );
     if (errores.length) this.error.set('No se pudieron crear: ' + errores.join(' · '));
   }
@@ -322,7 +322,7 @@ export class PasoResidentes implements OnInit {
     this.filasCambiadas.emit(excluirFilas(this.filas(), revision.numerosFila));
     this.revisionPorExcluir.set(null);
     this.mostrarAviso(
-      `${segunCantidad(revision.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${contar(revision.numerosFila.length, 'fila', 'filas')} de la importación.`,
+      `${segunCantidad(revision.numerosFila.length, 'Se excluyó', 'Se excluyeron')} ${cantidadConPalabra(revision.numerosFila.length, 'fila', 'filas')} de la importación.`,
     );
   }
 

@@ -15,15 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 )
 public class DashboardServiceImpl implements DashboardService {
 
-  private final ConsultaService consultas;
-  private final DashboardRepository repository;
+  private final ConsultaService consultaService;
+  private final DashboardRepository dashboardRepository;
 
   public Map<String, Object> consultar(Map<String, String> filtros) {
-    consultas.validar("rotaciones", filtros);
-    Map<String, String> normalizados = new HashMap<>();
-    filtros.forEach((key, value) -> {
-      if (!value.isBlank()) normalizados.put(key, value.strip());
+    consultaService.validar("rotaciones", filtros);
+    Map<String, String> filtrosLimpios = new HashMap<>();
+    filtros.forEach((nombre, valor) -> {
+      if (!valor.isBlank()) filtrosLimpios.put(nombre, valor.strip());
     });
-    return repository.consultar(normalizados);
+    return dashboardRepository.consultar(filtrosLimpios);
   }
 }

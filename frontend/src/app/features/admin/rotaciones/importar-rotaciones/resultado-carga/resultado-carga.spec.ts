@@ -63,12 +63,12 @@ describe('ResultadoCarga', () => {
       ],
     });
     fixture.detectChanges();
-    const boton = [...fixture.nativeElement.querySelectorAll('button')].find((b: any) =>
-      b.textContent.includes('registros no creados'),
+    const boton = [...fixture.nativeElement.querySelectorAll('button')].find((candidato: any) =>
+      candidato.textContent.includes('registros no creados'),
     ) as HTMLButtonElement;
     expect(boton.textContent).toContain('(2)');
     const noCreados = (fixture.componentInstance as any).noCreados();
-    expect(noCreados.map((r: any) => [r.fila.fila, r.motivo])).toEqual([
+    expect(noCreados.map((noCreado: any) => [noCreado.fila.fila, noCreado.motivo])).toEqual([
       [3, 'Error'],
       [4, 'Excluida'],
     ]);

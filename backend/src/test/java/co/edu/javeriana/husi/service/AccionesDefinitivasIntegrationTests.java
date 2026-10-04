@@ -40,95 +40,95 @@ class AccionesDefinitivasIntegrationTests {
 
   @Test
   void estadosSonReversiblesYProgramasInactivosSiguenEnElListado() {
-    int u = universidad();
-    var p = programas.crear(new ProgramaRequest("Programa prueba", u));
-    assertThat(programas.cambiarEstado(p.id(), "Inactivo").estado()).isEqualTo(
+    int universidadId = universidad();
+    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
+    assertThat(programas.cambiarEstado(programaCreado.id(), "Inactivo").estado()).isEqualTo(
       "Inactivo"
     );
-    assertThat(universidades.programas(u, Map.of()).contenido()).anyMatch(
-      f -> f.get("id").equals(p.id()) && f.get("estado").equals("Inactivo")
+    assertThat(universidades.programas(universidadId, Map.of()).contenido()).anyMatch(
+      fila -> fila.get("id").equals(programaCreado.id()) && fila.get("estado").equals("Inactivo")
     );
     assertThat(
       programas
-        .actualizar(p.id(), new ProgramaRequest("Editado inactivo", u))
+        .actualizar(programaCreado.id(), new ProgramaRequest("Editado inactivo", universidadId))
         .estado()
     ).isEqualTo("Inactivo");
-    assertThat(programas.cambiarEstado(p.id(), "Activo").estado()).isEqualTo(
+    assertThat(programas.cambiarEstado(programaCreado.id(), "Activo").estado()).isEqualTo(
       "Activo"
     );
     assertThatThrownBy(() ->
-      programas.cambiarEstado(p.id(), "Eliminado")
+      programas.cambiarEstado(programaCreado.id(), "Eliminado")
     ).hasMessageContaining("Activo o Inactivo");
   }
 
   @Test
   void eliminaFisicamenteProgramaSinResidentesYUniversidadSinProgramas() {
-    int u = universidad();
-    var p = programas.crear(new ProgramaRequest("Programa prueba", u));
-    programas.eliminarDefinitivamente(p.id());
+    int universidadId = universidad();
+    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
+    programas.eliminarDefinitivamente(programaCreado.id());
     assertThat(
       jdbc.queryForObject(
         "select count(*) from programa where id_programa=?",
         Integer.class,
-        p.id()
+        programaCreado.id()
       )
     ).isZero();
-    universidades.eliminarDefinitivamente(u);
+    universidades.eliminarDefinitivamente(universidadId);
     assertThat(
       jdbc.queryForObject(
         "select count(*) from universidad where id_universidad=?",
         Integer.class,
-        u
+        universidadId
       )
     ).isZero();
   }
 
   @Test
   void protegeProgramasInactivosAsociadosAUniversidad() {
-    int u = universidad();
-    var p = programas.crear(new ProgramaRequest("Programa prueba", u));
-    programas.cambiarEstado(p.id(), "Inactivo");
+    int universidadId = universidad();
+    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
+    programas.cambiarEstado(programaCreado.id(), "Inactivo");
     assertThatThrownBy(() ->
-      universidades.eliminarDefinitivamente(u)
+      universidades.eliminarDefinitivamente(universidadId)
     ).hasMessageContaining("programas asociados");
     assertThat(
       jdbc.queryForObject(
         "select count(*) from universidad where id_universidad=?",
         Integer.class,
-        u
+        universidadId
       )
     ).isEqualTo(1);
   }
 
   @Test
   void protegeResidentesInactivosYNoFuerzaCascadas() {
-    int u = universidad();
-    var p = programas.crear(new ProgramaRequest("Programa prueba", u));
+    int universidadId = universidad();
+    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
     jdbc.update(
       "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento,estado) values(?,1,'Prueba',?,'Inactivo')",
-      p.id(),
+      programaCreado.id(),
       UUID.randomUUID().toString()
     );
     assertThatThrownBy(() ->
-      programas.eliminarDefinitivamente(p.id())
+      programas.eliminarDefinitivamente(programaCreado.id())
     ).hasMessageContaining("residentes asociados");
     assertThat(
       jdbc.queryForObject(
         "select count(*) from programa where id_programa=?",
         Integer.class,
-        p.id()
+        programaCreado.id()
       )
     ).isEqualTo(1);
   }
 
   @Test
   void noReactivaProgramaSiUniversidadEstaInactiva() {
-    int u = universidad();
-    var p = programas.crear(new ProgramaRequest("Programa prueba", u));
-    programas.cambiarEstado(p.id(), "Inactivo");
-    universidades.cambiarEstado(u, "Inactivo");
+    int universidadId = universidad();
+    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
+    programas.cambiarEstado(programaCreado.id(), "Inactivo");
+    universidades.cambiarEstado(universidadId, "Inactivo");
     assertThatThrownBy(() ->
-      programas.cambiarEstado(p.id(), "Activo")
+      programas.cambiarEstado(programaCreado.id(), "Activo")
     ).hasMessageContaining("universidad está inactiva");
   }
 }

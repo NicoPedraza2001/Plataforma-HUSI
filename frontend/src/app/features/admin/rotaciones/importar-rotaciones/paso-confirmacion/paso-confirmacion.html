@@ -2,9 +2,10 @@
   <h2>Importación completada</h2>
   <p class="mensaje exito" role="status">
     {{ segunCantidad(resultado.validos, 'Se guardó', 'Se guardaron') }}
-    {{ contar(resultado.validos, 'asignación', 'asignaciones') }}
+    {{ cantidadConPalabra(resultado.validos, 'asignación', 'asignaciones') }}
     @if (resultado.espera) {
-      y {{ contar(resultado.espera, 'residente quedó', 'residentes quedaron') }} en lista de espera
+      y {{ cantidadConPalabra(resultado.espera, 'residente quedó', 'residentes quedaron') }} en
+      lista de espera
     }
     . Las filas con errores o duplicadas no se crearon: descarga los registros no creados para
     corregirlos e importarlos de nuevo.
@@ -13,12 +14,14 @@
   <h2>Confirma la carga</h2>
   <p class="mensaje aviso">
     Todavía no se ha guardado nada. Al confirmar se crearán
-    <strong>{{ contar(resultadoValidacion().validos, 'asignación', 'asignaciones') }}</strong>
+    <strong>{{
+      cantidadConPalabra(resultadoValidacion().validos, 'asignación', 'asignaciones')
+    }}</strong>
     @if (resultadoValidacion().espera) {
       y
       <strong
-        >{{ contar(resultadoValidacion().espera, 'residente', 'residentes') }} en lista de
-        espera</strong
+        >{{ cantidadConPalabra(resultadoValidacion().espera, 'residente', 'residentes') }} en lista
+        de espera</strong
       >
       (no alcanzaron cupo)
     }
@@ -67,7 +70,7 @@
         guardando()
           ? 'Guardando…'
           : 'Confirmar y guardar ' +
-            contar(
+            cantidadConPalabra(
               resultadoValidacion().validos + resultadoValidacion().espera,
               'asignación',
               'asignaciones'

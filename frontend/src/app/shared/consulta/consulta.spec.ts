@@ -19,12 +19,12 @@ describe('Consultas remotas', () => {
     let nombres: string[] = [];
     api
       .buscar({ q: 'cardio', pagina: 2, tamano: 10 })
-      .subscribe((p) => (nombres = p.contenido.map((x) => x.nombre)));
+      .subscribe((pagina) => (nombres = pagina.contenido.map((registro) => registro.nombre)));
     const req = TestBed.inject(HttpTestingController).expectOne(
-      (r) =>
-        r.url === '/api/programas/buscar' &&
-        r.params.get('q') === 'cardio' &&
-        r.params.get('pagina') === '2',
+      (peticion) =>
+        peticion.url === '/api/programas/buscar' &&
+        peticion.params.get('q') === 'cardio' &&
+        peticion.params.get('pagina') === '2',
     );
     req.flush({
       contenido: [{ id: 11, nombre: 'Nombre entregado por servidor' }],

@@ -14,7 +14,7 @@ public interface RotacionService {
   /** Solo para la carga inicial desde Excel: admite rotaciones históricas. */
   RotacionResponse crearHistorica(RotacionRequest datos);
   RotacionResponse editar(RotacionId id, RotacionRequest datos);
-  RotacionResponse estado(RotacionId id, boolean activa);
+  RotacionResponse cambiarEstado(RotacionId id, boolean activa);
   void eliminar(RotacionId id);
   RotacionRequest validarFila(ImportacionRotacionesRequest.Fila fila);
 }

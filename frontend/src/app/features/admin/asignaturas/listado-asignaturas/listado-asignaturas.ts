@@ -20,14 +20,14 @@ import { FormularioAsignatura } from '../formulario-asignatura/formulario-asigna
 })
 export class ListadoAsignaturas {
   // Dependencias
-  private readonly api = inject(AsignaturaService);
-  private readonly serviciosApi = inject(ServicioService);
+  private readonly asignaturaService = inject(AsignaturaService);
+  private readonly servicioService = inject(ServicioService);
 
   // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<Asignatura>>((params) =>
-    this.api.listar(params),
+    this.asignaturaService.listar(params),
   );
-  protected readonly termino = signal('');
+  protected readonly terminoBusqueda = signal('');
   protected readonly paginaActual = computed(
     () => this.consulta.datos()?.pagina ?? this.paginaSolicitada(),
   );
@@ -36,18 +36,18 @@ export class ListadoAsignaturas {
   protected readonly asignaturasPagina = computed(() => this.consulta.datos()?.contenido ?? []);
   protected readonly cargando = computed(() => this.consulta.cargando());
   protected readonly error = computed(() => this.consulta.error());
-  protected readonly estado = signal('todos');
+  protected readonly filtroEstado = signal('todos');
   protected readonly opcionesServicio = signal<OpcionCatalogo[]>([]);
   protected readonly serviciosFiltro = signal<OpcionCatalogo[]>([]);
   protected readonly servicioFiltro = signal('');
   protected readonly errorCatalogo = signal('');
-  protected readonly formulario = signal(false);
+  protected readonly formularioAbierto = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
   protected readonly errorFormulario = signal('');
   protected readonly pendienteEliminar = signal<Asignatura | null>(null);
-  protected edicionId: number | null = null;
-  protected datos: AsignaturaRequest = { nombre: '', servicioId: null };
+  protected idEnEdicion: number | null = null;
+  protected datosFormulario: AsignaturaRequest = { nombre: '', servicioId: null };
 
   constructor() {
     this.cargar();
@@ -66,21 +66,25 @@ export class ListadoAsignaturas {
   }
 
   protected cargar(espera = 0) {
-    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 10 };
+    const params: Parametros = {
+      q: this.terminoBusqueda(),
+      pagina: this.paginaSolicitada(),
+      tamano: 10,
+    };
     if (this.servicioFiltro()) params['servicioId'] = this.servicioFiltro();
-    if (this.estado() !== 'todos')
-      params['estado'] = this.estado() === 'activos' ? 'Activo' : 'Inactivo';
+    if (this.filtroEstado() !== 'todos')
+      params['estado'] = this.filtroEstado() === 'activos' ? 'Activo' : 'Inactivo';
     this.consulta.cargar(params, espera);
   }
 
   protected buscar(valor: string) {
-    this.termino.set(valor);
+    this.terminoBusqueda.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar(300);
   }
 
   protected filtrarPorEstado(valor: string) {
-    this.estado.set(valor);
+    this.filtroEstado.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
@@ -91,25 +95,25 @@ export class ListadoAsignaturas {
     this.cargar();
   }
 
-  protected async abrir(fila: Asignatura | null = null) {
+  protected async abrirFormulario(fila: Asignatura | null = null) {
     if (this.guardando()) return;
     this.guardando.set(true);
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      this.edicionId = fila?.id ?? null;
-      this.opcionesServicio.set(await firstValueFrom(this.serviciosApi.catalogo()));
+      this.idEnEdicion = fila?.id ?? null;
+      this.opcionesServicio.set(await firstValueFrom(this.servicioService.catalogo()));
 
       if (fila) {
-        const detalle = await firstValueFrom(this.api.consultar(fila.id));
-        this.datos = { nombre: detalle.nombre, servicioId: detalle.servicioId };
-        if (!this.opcionesServicio().some((o) => o.id === detalle.servicioId))
-          this.opcionesServicio.update((o) => [
-            ...o,
+        const detalle = await firstValueFrom(this.asignaturaService.consultar(fila.id));
+        this.datosFormulario = { nombre: detalle.nombre, servicioId: detalle.servicioId };
+        if (!this.opcionesServicio().some((opcion) => opcion.id === detalle.servicioId))
+          this.opcionesServicio.update((opcionesActuales) => [
+            ...opcionesActuales,
             { id: detalle.servicioId, nombre: detalle.servicio + ' (actual)' },
           ]);
-      } else this.datos = { nombre: '', servicioId: null };
-      this.formulario.set(true);
+      } else this.datosFormulario = { nombre: '', servicioId: null };
+      this.formularioAbierto.set(true);
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
     } finally {
@@ -123,11 +127,11 @@ export class ListadoAsignaturas {
     this.errorFormulario.set('');
     try {
       await firstValueFrom(
-        this.edicionId
-          ? this.api.actualizar(this.edicionId, this.datos)
-          : this.api.crear(this.datos),
+        this.idEnEdicion
+          ? this.asignaturaService.actualizar(this.idEnEdicion, this.datosFormulario)
+          : this.asignaturaService.crear(this.datosFormulario),
       );
-      this.formulario.set(false);
+      this.formularioAbierto.set(false);
       this.aviso.set('Asignatura guardada correctamente.');
       this.cargar();
     } catch (e) {
@@ -143,7 +147,9 @@ export class ListadoAsignaturas {
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      await firstValueFrom(this.api.cambiarEstado(fila.id, fila.activo ? 'Inactivo' : 'Activo'));
+      await firstValueFrom(
+        this.asignaturaService.cambiarEstado(fila.id, fila.activo ? 'Inactivo' : 'Activo'),
+      );
       this.aviso.set('Estado actualizado correctamente.');
       this.cargar();
     } catch (e) {
@@ -164,7 +170,7 @@ export class ListadoAsignaturas {
     this.guardando.set(true);
     this.errorFormulario.set('');
     try {
-      await firstValueFrom(this.api.eliminarDefinitivamente(fila.id));
+      await firstValueFrom(this.asignaturaService.eliminarDefinitivamente(fila.id));
       this.pendienteEliminar.set(null);
       this.aviso.set('Asignatura eliminada definitivamente.');
       this.cargar();
@@ -178,7 +184,7 @@ export class ListadoAsignaturas {
   private async cargarCatalogoFiltro() {
     this.errorCatalogo.set('');
     try {
-      this.serviciosFiltro.set(await firstValueFrom(this.serviciosApi.catalogo(false)));
+      this.serviciosFiltro.set(await firstValueFrom(this.servicioService.catalogo(false)));
     } catch (e) {
       this.errorCatalogo.set(mensajeError(e));
     }

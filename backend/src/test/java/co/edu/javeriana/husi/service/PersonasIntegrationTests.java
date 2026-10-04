@@ -62,57 +62,57 @@ class PersonasIntegrationTests {
 
   @Test
   void residentePersisteEditaFiltraCambiaEstadoYElimina() {
-    String doc = UUID.randomUUID().toString();
-    var d = new ResidenteRequest(
+    String documento = UUID.randomUUID().toString();
+    var solicitud = new ResidenteRequest(
       "Prueba CRUD",
       "CC",
-      doc,
+      documento,
       "Posgrado",
       programa()
     );
-    var e = residentes.crear(d);
+    var registroCreado = residentes.crear(solicitud);
     assertThat(
       jdbc.queryForObject(
         "select numero_documento from residente where id_residente=?",
         String.class,
-        e.id()
+        registroCreado.id()
       )
-    ).isEqualTo(doc);
+    ).isEqualTo(documento);
     var editado = residentes.actualizar(
-      e.id(),
+      registroCreado.id(),
       new ResidenteRequest(
         "Editado CRUD",
         "CE",
-        doc,
+        documento,
         "Pregrado",
         programa()
       )
     );
     assertThat(editado.tipoDocumento()).isEqualTo("CE");
     assertThat(editado.perfilAcademico()).isEqualTo("Pregrado");
-    residentes.cambiarEstado(e.id(), "Inactivo");
+    residentes.cambiarEstado(registroCreado.id(), "Inactivo");
     assertThat(
       consultas
-        .listar("residentes", Map.of("q", doc, "estado", "Inactivo"))
+        .listar("residentes", Map.of("q", documento, "estado", "Inactivo"))
         .totalElementos()
     ).isEqualTo(1);
-    residentes.cambiarEstado(e.id(), "Activo");
-    residentes.eliminarDefinitivamente(e.id());
+    residentes.cambiarEstado(registroCreado.id(), "Activo");
+    residentes.eliminarDefinitivamente(registroCreado.id());
     assertThat(
       jdbc.queryForObject(
         "select count(*) from residente where id_residente=?",
         Integer.class,
-        e.id()
+        registroCreado.id()
       )
     ).isZero();
   }
 
   @Test
   void residenteRechazaDuplicadosYProgramaInvalido() {
-    String doc = UUID.randomUUID().toString();
-    var d = new ResidenteRequest("Prueba", "CC", doc, null, programa());
-    residentes.crear(d);
-    assertThatThrownBy(() -> residentes.crear(d)).isInstanceOf(
+    String documento = UUID.randomUUID().toString();
+    var solicitud = new ResidenteRequest("Prueba", "CC", documento, null, programa());
+    residentes.crear(solicitud);
+    assertThatThrownBy(() -> residentes.crear(solicitud)).isInstanceOf(
       NegocioException.class
     );
     assertThatThrownBy(() ->
@@ -146,47 +146,47 @@ class PersonasIntegrationTests {
   @Test
   void usuarioPersisteHashEditaSinCambiarClaveYElimina() {
     String correo = "crud-" + UUID.randomUUID() + "@example.test";
-    var e = usuarios.crear(usuario(correo, clave));
+    var registroCreado = usuarios.crear(usuario(correo, clave));
     String hash = jdbc.queryForObject(
       "select contrasena from usuario where id_usuario=?",
       String.class,
-      e.id()
+      registroCreado.id()
     );
     assertThat(new BCryptPasswordEncoder().matches(clave, hash)).isTrue();
     usuarios.actualizar(
-      e.id(),
+      registroCreado.id(),
       new UsuarioRequest("Editado", "Apellido", correo, rol(), "")
     );
     assertThat(
       jdbc.queryForObject(
         "select contrasena from usuario where id_usuario=?",
         String.class,
-        e.id()
+        registroCreado.id()
       )
     ).isEqualTo(hash);
-    usuarios.cambiarEstado(e.id(), "Inactivo");
+    usuarios.cambiarEstado(registroCreado.id(), "Inactivo");
     assertThat(
       consultas
         .listar("usuarios", Map.of("q", correo, "estado", "Inactivo"))
         .totalElementos()
     ).isEqualTo(1);
-    usuarios.actualizar(e.id(), usuario(correo, "NuevaClave2026!"));
+    usuarios.actualizar(registroCreado.id(), usuario(correo, "NuevaClave2026!"));
     assertThat(
       new BCryptPasswordEncoder().matches(
         "NuevaClave2026!",
         jdbc.queryForObject(
           "select contrasena from usuario where id_usuario=?",
           String.class,
-          e.id()
+          registroCreado.id()
         )
       )
     ).isTrue();
-    usuarios.eliminarDefinitivamente(e.id());
+    usuarios.eliminarDefinitivamente(registroCreado.id());
     assertThat(
       jdbc.queryForObject(
         "select count(*) from usuario where id_usuario=?",
         Integer.class,
-        e.id()
+        registroCreado.id()
       )
     ).isZero();
   }
@@ -216,14 +216,14 @@ class PersonasIntegrationTests {
 
   @Test
   void usuarioConAuditoriaNoSeBorra() {
-    var e = usuarios.crear(
+    var registroCreado = usuarios.crear(
       usuario("crud-" + UUID.randomUUID() + "@example.test", clave)
     );
     jdbc.update(
       "insert into historial_auditoria(id_usuario,accion_realizada,entidad_modificada) values (?, 'Prueba','Usuario')",
-      e.id()
+      registroCreado.id()
     );
-    assertThatThrownBy(() -> usuarios.eliminarDefinitivamente(e.id()))
+    assertThatThrownBy(() -> usuarios.eliminarDefinitivamente(registroCreado.id()))
       .isInstanceOf(NegocioException.class)
       .hasMessageContaining("auditoría");
   }

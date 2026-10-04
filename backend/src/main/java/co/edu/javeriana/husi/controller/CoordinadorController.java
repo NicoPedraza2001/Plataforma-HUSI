@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CoordinadorController {
 
-  private final CoordinadorService service;
+  private final CoordinadorService coordinadorService;
 
   @GetMapping("/usuarios-disponibles")
   public java.util.List<CatalogoResponse> usuariosDisponibles() {
-    return service.usuariosDisponibles();
+    return coordinadorService.usuariosDisponibles();
   }
 
   @GetMapping("/{id}")
   public CoordinadorResponse consultar(@PathVariable Integer id) {
-    return service.consultar(id);
+    return coordinadorService.consultar(id);
   }
 
   @PostMapping
@@ -30,7 +30,7 @@ public class CoordinadorController {
   public CoordinadorResponse crear(
     @Valid @RequestBody CoordinadorRequest request
   ) {
-    return service.crear(request);
+    return coordinadorService.crear(request);
   }
 
   @PutMapping("/{id}")
@@ -38,20 +38,20 @@ public class CoordinadorController {
     @PathVariable Integer id,
     @Valid @RequestBody CoordinadorRequest request
   ) {
-    return service.actualizar(id, request);
+    return coordinadorService.actualizar(id, request);
   }
 
   @PatchMapping("/{id}/estado")
-  public CoordinadorResponse estado(
+  public CoordinadorResponse cambiarEstado(
     @PathVariable Integer id,
     @Valid @RequestBody EstadoRequest request
   ) {
-    return service.cambiarEstado(id, request.estado());
+    return coordinadorService.cambiarEstado(id, request.estado());
   }
 
   @DeleteMapping("/{id}/definitivo")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void eliminar(@PathVariable Integer id) {
-    service.eliminarDefinitivamente(id);
+    coordinadorService.eliminarDefinitivamente(id);
   }
 }

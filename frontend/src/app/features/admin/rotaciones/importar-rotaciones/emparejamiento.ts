@@ -337,6 +337,6 @@ export function segunCantidad(cantidad: number, singular: string, plural: string
 }
 
 /** Cantidad con su palabra concordada: (1, 'fila', 'filas') → '1 fila'; (3, …) → '3 filas'. */
-export function contar(cantidad: number, singular: string, plural: string): string {
+export function cantidadConPalabra(cantidad: number, singular: string, plural: string): string {
   return `${cantidad} ${segunCantidad(cantidad, singular, plural)}`;
 }

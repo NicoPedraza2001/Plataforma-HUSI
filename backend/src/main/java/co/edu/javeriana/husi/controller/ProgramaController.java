@@ -48,7 +48,7 @@ public class ProgramaController {
   }
 
   @PatchMapping("/{id}/estado")
-  public ProgramaResponse estado(
+  public ProgramaResponse cambiarEstado(
     @PathVariable Integer id,
     @Valid @RequestBody EstadoProgramaRequest request
   ) {

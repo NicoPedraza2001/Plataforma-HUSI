@@ -17,16 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
 class RotacionIntegrationTests {
 
   @Autowired
-  RotacionService servicio;
+  RotacionService rotacionService;
 
   @Autowired
-  ImportacionRotacionesService importacion;
+  ImportacionRotacionesService importacionRotacionesService;
 
   @Autowired
   JdbcTemplate jdbc;
 
+  /** Crea un servicio con cupo 3 y una asignatura suya; devuelve el id de la asignatura. */
   private Integer asignatura() {
-    Integer s = jdbc.queryForObject(
+    Integer servicioId = jdbc.queryForObject(
       "insert into servicio(nombre,cupo_maximo_instalado,cupo_simultaneo) values(?,3,3) returning id_servicio",
       Integer.class,
       "TEST-ROT-S-" + UUID.randomUUID()
@@ -34,413 +35,419 @@ class RotacionIntegrationTests {
     return jdbc.queryForObject(
       "insert into asignatura(id_servicio,nombre_asignatura) values(?,?) returning id_asignatura",
       Integer.class,
-      s,
+      servicioId,
       "TEST-ROT-A-" + UUID.randomUUID()
     );
   }
 
-  private RotacionRequest datos(int id) {
+  private RotacionRequest datos(int asignaturaId) {
     return new RotacionRequest(
-      id,
+      asignaturaId,
       LocalDate.of(2091, 1, 1),
       LocalDate.of(2091, 1, 31)
     );
   }
 
-  private RotacionId clave(RotacionRequest d) {
-    return new RotacionId(d.asignaturaId(), d.inicio(), d.fin());
+  private RotacionId clave(RotacionRequest rotacion) {
+    return new RotacionId(rotacion.asignaturaId(), rotacion.inicio(), rotacion.fin());
   }
 
   private Integer residente() {
-    int u = jdbc.queryForObject(
+    int universidadId = jdbc.queryForObject(
       "insert into universidad(nombre_universidad,pais) values(?,'Colombia') returning id_universidad",
       Integer.class,
       "TEST-ROT-U-" + UUID.randomUUID()
     );
-    int p = jdbc.queryForObject(
+    int programaId = jdbc.queryForObject(
       "insert into programa(id_universidad,nombre_programa) values(?,'TEST ROT') returning id_programa",
       Integer.class,
-      u
+      universidadId
     );
     return jdbc.queryForObject(
       "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values(?,1,'Residente ficticio',?) returning id_residente",
       Integer.class,
-      p,
+      programaId,
       UUID.randomUUID().toString()
     );
   }
 
   @Test
   void crearEditarEstadoYEliminarPersistenSinPerderCupo() {
-    var d = datos(asignatura());
-    var r = servicio.crear(d);
-    assertThat(r.cupoDisponible()).isEqualTo(3);
-    assertThat(servicio.estado(clave(d), false).activa()).isEqualTo(false);
+    var rotacion = datos(asignatura());
+    var creada = rotacionService.crear(rotacion);
+    assertThat(creada.cupoDisponible()).isEqualTo(3);
+    assertThat(rotacionService.cambiarEstado(clave(rotacion), false).activa()).isEqualTo(false);
     assertThat(
       jdbc.queryForObject(
         "select count(*) from rotacion where id_asignatura=?",
         Integer.class,
-        d.asignaturaId()
+        rotacion.asignaturaId()
       )
     ).isEqualTo(1);
-    assertThat(servicio.estado(clave(d), true).activa()).isEqualTo(true);
+    assertThat(rotacionService.cambiarEstado(clave(rotacion), true).activa()).isEqualTo(true);
     var editado = new RotacionRequest(
-      d.asignaturaId(),
-      d.inicio().plusDays(1),
-      d.fin()
+      rotacion.asignaturaId(),
+      rotacion.inicio().plusDays(1),
+      rotacion.fin()
     );
     assertThat(
-      servicio.editar(clave(d), editado).inicio().toString()
+      rotacionService.editar(clave(rotacion), editado).inicio().toString()
     ).isEqualTo("2091-01-02");
-    assertThat(servicio.consultar(clave(editado)).cupoDisponible()).isEqualTo(
+    assertThat(rotacionService.consultar(clave(editado)).cupoDisponible()).isEqualTo(
       3
     );
-    servicio.eliminar(clave(editado));
+    rotacionService.eliminar(clave(editado));
     assertThat(
       jdbc.queryForObject(
         "select count(*) from rotacion where id_asignatura=?",
         Integer.class,
-        d.asignaturaId()
+        rotacion.asignaturaId()
       )
     ).isZero();
   }
 
   @Test
   void protegeRelacionesInclusoCanceladas() {
-    var d = datos(asignatura());
-    servicio.crear(d);
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
     jdbc.update(
       "insert into rotacion_residente(id_residente,id_asignatura,fecha_inicio,fecha_fin,estado) values(?,?,?,?,'Cancelado')",
       residente(),
-      d.asignaturaId(),
-      d.inicio(),
-      d.fin()
+      rotacion.asignaturaId(),
+      rotacion.inicio(),
+      rotacion.fin()
     );
-    assertThatThrownBy(() -> servicio.eliminar(clave(d))).hasMessageContaining(
+    assertThatThrownBy(() -> rotacionService.eliminar(clave(rotacion))).hasMessageContaining(
       "relacionados"
     );
     assertThatThrownBy(() ->
-      servicio.editar(
-        clave(d),
-        new RotacionRequest(d.asignaturaId(), d.inicio().plusDays(1), d.fin())
+      rotacionService.editar(
+        clave(rotacion),
+        new RotacionRequest(rotacion.asignaturaId(), rotacion.inicio().plusDays(1), rotacion.fin())
       )
     ).hasMessageContaining("historial");
-    assertThat(servicio.estado(clave(d), false).relaciones()).isEqualTo(1L);
+    assertThat(rotacionService.cambiarEstado(clave(rotacion), false).relaciones()).isEqualTo(1L);
   }
 
   @Test
   void inactivaBloqueaNuevasAsignacionesEnLaBase() {
-    var d = datos(asignatura());
-    servicio.crear(d);
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
     int residente = residente();
-    servicio.estado(clave(d), false);
+    rotacionService.cambiarEstado(clave(rotacion), false);
     assertThatThrownBy(() ->
       jdbc.update(
         "insert into rotacion_residente(id_residente,id_asignatura,fecha_inicio,fecha_fin) values(?,?,?,?)",
         residente,
-        d.asignaturaId(),
-        d.inicio(),
-        d.fin()
+        rotacion.asignaturaId(),
+        rotacion.inicio(),
+        rotacion.fin()
       )
     ).hasMessageContaining("inactiva");
   }
 
   @Test
   void cancelarAsignacionNoReactivaRotacion() {
-    var d = datos(asignatura());
-    servicio.crear(d);
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
     int residente = residente();
     jdbc.update(
       "insert into rotacion_residente(id_residente,id_asignatura,fecha_inicio,fecha_fin) values(?,?,?,?)",
       residente,
-      d.asignaturaId(),
-      d.inicio(),
-      d.fin()
+      rotacion.asignaturaId(),
+      rotacion.inicio(),
+      rotacion.fin()
     );
-    servicio.estado(clave(d), false);
+    rotacionService.cambiarEstado(clave(rotacion), false);
     jdbc.update(
       "update rotacion_residente set estado='Cancelado' where id_residente=?",
       residente
     );
-    var r = servicio.consultar(clave(d));
-    assertThat(r.activa()).isEqualTo(false);
-    assertThat(r.cupoDisponible()).isEqualTo(3);
+    var consultada = rotacionService.consultar(clave(rotacion));
+    assertThat(consultada.activa()).isEqualTo(false);
+    assertThat(consultada.cupoDisponible()).isEqualTo(3);
   }
 
   @Test
   void busquedaFiltrosYPaginacionConsultanBase() {
-    var d = datos(asignatura());
-    servicio.crear(d);
-    servicio.crear(
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
+    rotacionService.crear(
       new RotacionRequest(
-        d.asignaturaId(),
-        d.inicio().plusYears(1),
-        d.fin().plusYears(1)
+        rotacion.asignaturaId(),
+        rotacion.inicio().plusYears(1),
+        rotacion.fin().plusYears(1)
       )
     );
-    String nombre = servicio.consultar(clave(d)).asignatura();
-    var lista = servicio.listar(
+    String nombre = rotacionService.consultar(clave(rotacion)).asignatura();
+    var lista = rotacionService.listar(
       Map.of("q", nombre, "tamano", "1", "pagina", "2")
     );
     assertThat(lista.totalElementos()).isEqualTo(2);
     assertThat(lista.pagina()).isEqualTo(2);
-    servicio.estado(clave(d), false);
+    rotacionService.cambiarEstado(clave(rotacion), false);
     assertThat(
-      servicio.listar(Map.of("q", nombre, "activa", "false")).totalElementos()
+      rotacionService.listar(Map.of("q", nombre, "activa", "false")).totalElementos()
     ).isEqualTo(1);
     assertThat(
-      servicio
+      rotacionService
         .listar(Map.of("q", "no-existe-" + UUID.randomUUID()))
         .totalElementos()
     ).isZero();
     assertThatThrownBy(() ->
-      servicio.listar(Map.of("pagina", "0"))
+      rotacionService.listar(Map.of("pagina", "0"))
     ).hasMessageContaining("válido");
   }
 
   @Test
   void validaFechasDuplicadosYAsignatura() {
-    var d = datos(asignatura());
-    servicio.crear(d);
-    assertThatThrownBy(() -> servicio.crear(d)).hasMessageContaining(
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
+    assertThatThrownBy(() -> rotacionService.crear(rotacion)).hasMessageContaining(
       "ya existe"
     );
     assertThatThrownBy(() ->
-      servicio.crear(new RotacionRequest(d.asignaturaId(), d.fin(), d.inicio()))
+      rotacionService.crear(new RotacionRequest(rotacion.asignaturaId(), rotacion.fin(), rotacion.inicio()))
     ).hasMessageContaining("anterior");
     assertThatThrownBy(() ->
-      servicio.crear(datos(Integer.MAX_VALUE))
+      rotacionService.crear(datos(Integer.MAX_VALUE))
     ).hasMessageContaining("no existe");
     assertThatThrownBy(() ->
-      servicio.crear(new RotacionRequest(null, null, null))
+      rotacionService.crear(new RotacionRequest(null, null, null))
     ).hasMessageContaining("obligatorias");
   }
 
   @Test
   void importacionValidaSinGuardarOmiteDuplicadosYRegistraSoloValidas() {
-    int id = asignatura();
-    String a = jdbc.queryForObject(
+    int asignaturaId = asignatura();
+    String nombreAsignatura = jdbc.queryForObject(
       "select nombre_asignatura from asignatura where id_asignatura=?",
       String.class,
-      id
+      asignaturaId
     );
-    String s = jdbc.queryForObject(
+    String nombreServicio = jdbc.queryForObject(
       "select s.nombre from servicio s join asignatura a using(id_servicio) where a.id_asignatura=?",
       String.class,
-      id
+      asignaturaId
     );
-    var req = new ImportacionRotacionesRequest(
+    var solicitud = new ImportacionRotacionesRequest(
       List.of(
         new ImportacionRotacionesRequest.Fila(
           2,
-          a,
-          s,
+          nombreAsignatura,
+          nombreServicio,
           "2092-01-01",
           "2092-01-31"
         ),
         new ImportacionRotacionesRequest.Fila(
           3,
-          a,
-          s,
+          nombreAsignatura,
+          nombreServicio,
           "2092-01-01",
           "2092-01-31"
         ),
-        new ImportacionRotacionesRequest.Fila(4, a, s, "mal", "2092-01-31")
+        new ImportacionRotacionesRequest.Fila(
+          4,
+          nombreAsignatura,
+          nombreServicio,
+          "mal",
+          "2092-01-31"
+        )
       )
     );
-    var validar = importacion.procesar(req, false);
-    assertThat(validar.validos()).isEqualTo(1L);
-    assertThat(validar.omitidos()).isEqualTo(1L);
-    assertThat(validar.errores()).isEqualTo(1L);
+    var validacion = importacionRotacionesService.procesar(solicitud, false);
+    assertThat(validacion.validos()).isEqualTo(1L);
+    assertThat(validacion.omitidos()).isEqualTo(1L);
+    assertThat(validacion.errores()).isEqualTo(1L);
     assertThat(
       jdbc.queryForObject(
         "select count(*) from rotacion where id_asignatura=?",
         Integer.class,
-        id
+        asignaturaId
       )
     ).isZero();
-    assertThat(importacion.procesar(req, true).creados()).isEqualTo(1L);
-    assertThat(importacion.procesar(req, true).creados()).isEqualTo(0L);
+    assertThat(importacionRotacionesService.procesar(solicitud, true).creados()).isEqualTo(1L);
+    assertThat(importacionRotacionesService.procesar(solicitud, true).creados()).isEqualTo(0L);
   }
 
   @Autowired
-  RotacionResidenteService asignaciones;
+  RotacionResidenteService rotacionResidenteService;
 
   @Test
   void asignaEsperaCancelaYReasignaSinAlterarHistorial() {
-    var d = datos(asignatura());
-    servicio.crear(d);
-    var id = clave(d);
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
+    var id = clave(rotacion);
     int uno = residente(),
       dos = residente(),
       tres = residente(),
       cuatro = residente();
-    asignaciones.asignar(id, uno);
-    asignaciones.asignar(id, dos);
-    asignaciones.asignar(id, tres);
-    asignaciones.asignar(id, cuatro);
-    assertThat(servicio.consultar(id).cupoDisponible()).isZero();
-    assertThat(asignaciones.listar(id, 1, true).contenido())
-      .filteredOn(x -> x.residenteId().equals(cuatro))
+    rotacionResidenteService.asignar(id, uno);
+    rotacionResidenteService.asignar(id, dos);
+    rotacionResidenteService.asignar(id, tres);
+    rotacionResidenteService.asignar(id, cuatro);
+    assertThat(rotacionService.consultar(id).cupoDisponible()).isZero();
+    assertThat(rotacionResidenteService.listar(id, 1, true).contenido())
+      .filteredOn(fila -> fila.residenteId().equals(cuatro))
       .extracting(
         co.edu.javeriana.husi.dto.response.ResidenteRotacionResponse::estado
       )
       .containsExactly("Esperando cupo");
     // El cupo liberado pasa solo al primero en espera.
-    asignaciones.estado(id, uno, "Cancelado");
-    assertThat(servicio.consultar(id).cupoDisponible()).isZero();
-    assertThat(asignaciones.listar(id, 1, false).contenido())
-      .filteredOn(x -> x.residenteId().equals(cuatro))
+    rotacionResidenteService.cambiarEstado(id, uno, "Cancelado");
+    assertThat(rotacionService.consultar(id).cupoDisponible()).isZero();
+    assertThat(rotacionResidenteService.listar(id, 1, false).contenido())
+      .filteredOn(fila -> fila.residenteId().equals(cuatro))
       .extracting(
         co.edu.javeriana.husi.dto.response.ResidenteRotacionResponse::estado
       )
       .containsExactly("Asignado");
-    assertThat(asignaciones.candidatos(id, ""))
+    assertThat(rotacionResidenteService.candidatos(id, ""))
       .extracting(co.edu.javeriana.husi.dto.response.CatalogoResponse::id)
       .doesNotContain(uno, dos, tres, cuatro);
     assertThatThrownBy(() ->
-      asignaciones.estado(id, uno, "Asignado")
+      rotacionResidenteService.cambiarEstado(id, uno, "Asignado")
     ).hasMessageContaining("cupos");
   }
 
   @Test
   void asignacionRechazaDuplicado() {
-    var d = datos(asignatura());
-    servicio.crear(d);
-    int r = residente();
-    asignaciones.asignar(clave(d), r);
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
+    int residenteId = residente();
+    rotacionResidenteService.asignar(clave(rotacion), residenteId);
     assertThatThrownBy(() ->
-      asignaciones.asignar(clave(d), r)
+      rotacionResidenteService.asignar(clave(rotacion), residenteId)
     ).hasMessageContaining("ya está");
   }
 
   @Test
   void inactivaPermiteCancelarPeroNoAsignar() {
-    var d = datos(asignatura());
-    servicio.crear(d);
-    int r = residente();
-    asignaciones.asignar(clave(d), r);
-    servicio.estado(clave(d), false);
-    asignaciones.estado(clave(d), r, "Cancelado");
-    assertThat(servicio.consultar(clave(d)).cupoDisponible()).isEqualTo(3);
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
+    int residenteId = residente();
+    rotacionResidenteService.asignar(clave(rotacion), residenteId);
+    rotacionService.cambiarEstado(clave(rotacion), false);
+    rotacionResidenteService.cambiarEstado(clave(rotacion), residenteId, "Cancelado");
+    assertThat(rotacionService.consultar(clave(rotacion)).cupoDisponible()).isEqualTo(3);
     assertThatThrownBy(() ->
-      asignaciones.asignar(clave(d), residente())
+      rotacionResidenteService.asignar(clave(rotacion), residente())
     ).hasMessageContaining("activos");
   }
 
   @Test
   void liberarCupoUsaLaCapacidadVigenteDelServicio() {
-    var d = datos(asignatura());
-    servicio.crear(d);
-    int r = residente();
-    asignaciones.asignar(clave(d), r);
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
+    int residenteId = residente();
+    rotacionResidenteService.asignar(clave(rotacion), residenteId);
     jdbc.update(
       "update servicio set cupo_simultaneo=1 where id_servicio=(select id_servicio from asignatura where id_asignatura=?)",
-      d.asignaturaId()
+      rotacion.asignaturaId()
     );
-    asignaciones.estado(clave(d), r, "Cancelado");
-    assertThat(servicio.consultar(clave(d)).cupoDisponible()).isEqualTo(1);
+    rotacionResidenteService.cambiarEstado(clave(rotacion), residenteId, "Cancelado");
+    assertThat(rotacionService.consultar(clave(rotacion)).cupoDisponible()).isEqualTo(1);
   }
 
-  private String estadoDe(RotacionRequest d, int residente) {
+  private String estadoDe(RotacionRequest rotacion, int residenteId) {
     return jdbc.queryForObject(
       "select estado from rotacion_residente where id_residente=? and id_asignatura=? and fecha_inicio=? and fecha_fin=?",
       String.class,
-      residente,
-      d.asignaturaId(),
-      d.inicio(),
-      d.fin()
+      residenteId,
+      rotacion.asignaturaId(),
+      rotacion.inicio(),
+      rotacion.fin()
     );
   }
 
   /** Rotación con cupo 3 llena y dos residentes en espera, en ese orden de llegada. */
-  private List<Integer> rotacionLlenaConEspera(RotacionRequest d) {
-    servicio.crear(d);
-    var r = new ArrayList<Integer>();
+  private List<Integer> rotacionLlenaConEspera(RotacionRequest rotacion) {
+    rotacionService.crear(rotacion);
+    var residentes = new ArrayList<Integer>();
     for (int i = 0; i < 5; i++) {
-      r.add(residente());
-      asignaciones.asignar(clave(d), r.get(i));
+      residentes.add(residente());
+      rotacionResidenteService.asignar(clave(rotacion), residentes.get(i));
     }
-    assertThat(estadoDe(d, r.get(3))).isEqualTo("Esperando cupo");
-    assertThat(estadoDe(d, r.get(4))).isEqualTo("Esperando cupo");
-    return r;
+    assertThat(estadoDe(rotacion, residentes.get(3))).isEqualTo("Esperando cupo");
+    assertThat(estadoDe(rotacion, residentes.get(4))).isEqualTo("Esperando cupo");
+    return residentes;
   }
 
   @Test
   void cancelarAsignadoPromueveAlPrimeroEnEspera() {
-    var d = datos(asignatura());
-    var r = rotacionLlenaConEspera(d);
-    asignaciones.estado(clave(d), r.get(0), "Cancelado");
-    assertThat(estadoDe(d, r.get(3))).isEqualTo("Asignado");
-    assertThat(estadoDe(d, r.get(4))).isEqualTo("Esperando cupo");
-    assertThat(servicio.consultar(clave(d)).cupoDisponible()).isZero();
+    var rotacion = datos(asignatura());
+    var residentes = rotacionLlenaConEspera(rotacion);
+    rotacionResidenteService.cambiarEstado(clave(rotacion), residentes.get(0), "Cancelado");
+    assertThat(estadoDe(rotacion, residentes.get(3))).isEqualTo("Asignado");
+    assertThat(estadoDe(rotacion, residentes.get(4))).isEqualTo("Esperando cupo");
+    assertThat(rotacionService.consultar(clave(rotacion)).cupoDisponible()).isZero();
   }
 
   @Test
   void ampliarCupoDelServicioPromueveLaEspera() {
-    var d = datos(asignatura());
-    var r = rotacionLlenaConEspera(d);
+    var rotacion = datos(asignatura());
+    var residentes = rotacionLlenaConEspera(rotacion);
     jdbc.update(
       "update servicio set cupo_maximo_instalado=10,cupo_simultaneo=4 where id_servicio=(select id_servicio from asignatura where id_asignatura=?)",
-      d.asignaturaId()
+      rotacion.asignaturaId()
     );
-    assertThat(estadoDe(d, r.get(3))).isEqualTo("Asignado");
-    assertThat(estadoDe(d, r.get(4))).isEqualTo("Esperando cupo");
-    assertThat(servicio.consultar(clave(d)).cupoDisponible()).isZero();
+    assertThat(estadoDe(rotacion, residentes.get(3))).isEqualTo("Asignado");
+    assertThat(estadoDe(rotacion, residentes.get(4))).isEqualTo("Esperando cupo");
+    assertThat(rotacionService.consultar(clave(rotacion)).cupoDisponible()).isZero();
   }
 
   @Test
   void rotacionInactivaNoPromueveHastaReactivarse() {
-    var d = datos(asignatura());
-    var r = rotacionLlenaConEspera(d);
-    servicio.estado(clave(d), false);
-    asignaciones.estado(clave(d), r.get(0), "Cancelado");
-    assertThat(estadoDe(d, r.get(3))).isEqualTo("Esperando cupo");
-    servicio.estado(clave(d), true);
-    assertThat(estadoDe(d, r.get(3))).isEqualTo("Asignado");
-    assertThat(estadoDe(d, r.get(4))).isEqualTo("Esperando cupo");
+    var rotacion = datos(asignatura());
+    var residentes = rotacionLlenaConEspera(rotacion);
+    rotacionService.cambiarEstado(clave(rotacion), false);
+    rotacionResidenteService.cambiarEstado(clave(rotacion), residentes.get(0), "Cancelado");
+    assertThat(estadoDe(rotacion, residentes.get(3))).isEqualTo("Esperando cupo");
+    rotacionService.cambiarEstado(clave(rotacion), true);
+    assertThat(estadoDe(rotacion, residentes.get(3))).isEqualTo("Asignado");
+    assertThat(estadoDe(rotacion, residentes.get(4))).isEqualTo("Esperando cupo");
   }
 
   @Test
   void trasladaEsperaANuevaRotacionDelMismoServicio() {
     var origen = datos(asignatura());
-    var r = rotacionLlenaConEspera(origen);
-    Integer otra = jdbc.queryForObject(
+    var residentes = rotacionLlenaConEspera(origen);
+    Integer otraAsignaturaId = jdbc.queryForObject(
       "insert into asignatura(id_servicio,nombre_asignatura) values((select id_servicio from asignatura where id_asignatura=?),?) returning id_asignatura",
       Integer.class,
       origen.asignaturaId(),
       "TEST-ROT-A-" + UUID.randomUUID()
     );
     var destino = new RotacionRequest(
-      otra,
+      otraAsignaturaId,
       LocalDate.of(2091, 3, 1),
       LocalDate.of(2091, 3, 31)
     );
-    servicio.crear(destino);
-    var espera = asignaciones.espera(clave(destino));
+    rotacionService.crear(destino);
+    var espera = rotacionResidenteService.listarEsperaDelServicio(clave(destino));
     assertThat(espera)
-      .extracting(e -> e.residenteId())
-      .containsExactly(r.get(3), r.get(4));
-    assertThat(espera).noneMatch(e -> e.cruce());
-    var o = new TrasladoEsperaRequest.Origen(
-      r.get(3),
+      .extracting(enEspera -> enEspera.residenteId())
+      .containsExactly(residentes.get(3), residentes.get(4));
+    assertThat(espera).noneMatch(enEspera -> enEspera.cruce());
+    var residenteEnEspera = new TrasladoEsperaRequest.Origen(
+      residentes.get(3),
       origen.asignaturaId(),
       origen.inicio(),
       origen.fin()
     );
-    asignaciones.trasladarEspera(
+    rotacionResidenteService.trasladarEspera(
       clave(destino),
-      new TrasladoEsperaRequest(List.of(o))
+      new TrasladoEsperaRequest(List.of(residenteEnEspera))
     );
-    assertThat(estadoDe(destino, r.get(3))).isEqualTo("Asignado");
-    assertThat(servicio.consultar(clave(destino)).cupoDisponible()).isEqualTo(2);
-    assertThat(asignaciones.espera(clave(destino)))
-      .extracting(e -> e.residenteId())
-      .containsExactly(r.get(4));
+    assertThat(estadoDe(destino, residentes.get(3))).isEqualTo("Asignado");
+    assertThat(rotacionService.consultar(clave(destino)).cupoDisponible()).isEqualTo(2);
+    assertThat(rotacionResidenteService.listarEsperaDelServicio(clave(destino)))
+      .extracting(enEspera -> enEspera.residenteId())
+      .containsExactly(residentes.get(4));
     assertThatThrownBy(() ->
-      asignaciones.trasladarEspera(
+      rotacionResidenteService.trasladarEspera(
         clave(destino),
-        new TrasladoEsperaRequest(List.of(o))
+        new TrasladoEsperaRequest(List.of(residenteEnEspera))
       )
     ).hasMessageContaining("ya está relacionado");
   }
@@ -448,49 +455,49 @@ class RotacionIntegrationTests {
   @Test
   void trasladoNoSuperaLosCuposDelDestino() {
     var origen = datos(asignatura());
-    var r = rotacionLlenaConEspera(origen);
+    var residentes = rotacionLlenaConEspera(origen);
     var destino = new RotacionRequest(
       origen.asignaturaId(),
       LocalDate.of(2091, 5, 1),
       LocalDate.of(2091, 5, 31)
     );
-    servicio.crear(destino);
-    asignaciones.asignar(clave(destino), residente());
-    asignaciones.asignar(clave(destino), residente());
+    rotacionService.crear(destino);
+    rotacionResidenteService.asignar(clave(destino), residente());
+    rotacionResidenteService.asignar(clave(destino), residente());
     var pedido = new TrasladoEsperaRequest(
       List.of(
-        new TrasladoEsperaRequest.Origen(r.get(3), origen.asignaturaId(), origen.inicio(), origen.fin()),
-        new TrasladoEsperaRequest.Origen(r.get(4), origen.asignaturaId(), origen.inicio(), origen.fin())
+        new TrasladoEsperaRequest.Origen(residentes.get(3), origen.asignaturaId(), origen.inicio(), origen.fin()),
+        new TrasladoEsperaRequest.Origen(residentes.get(4), origen.asignaturaId(), origen.inicio(), origen.fin())
       )
     );
-    assertThatThrownBy(() -> asignaciones.trasladarEspera(clave(destino), pedido))
+    assertThatThrownBy(() -> rotacionResidenteService.trasladarEspera(clave(destino), pedido))
       .hasMessageContaining("selecciona como máximo 1");
-    assertThat(estadoDe(origen, r.get(3))).isEqualTo("Esperando cupo");
+    assertThat(estadoDe(origen, residentes.get(3))).isEqualTo("Esperando cupo");
   }
 
   /** Inserta directamente (como la carga inicial) una rotación con fechas libres. */
   private RotacionRequest rotacionDirecta(LocalDate inicio, LocalDate fin) {
-    var d = new RotacionRequest(asignatura(), inicio, fin);
+    var rotacion = new RotacionRequest(asignatura(), inicio, fin);
     jdbc.update(
       "insert into rotacion(id_asignatura,fecha_inicio,fecha_fin) values (?,?,?)",
-      d.asignaturaId(),
+      rotacion.asignaturaId(),
       inicio,
       fin
     );
-    return d;
+    return rotacion;
   }
 
   @Test
   void noSeCreanNiMuevenRotacionesQueEmpiezanAntesDeHoy() {
     var hoy = co.edu.javeriana.husi.util.Calendario.hoy();
     var pasada = new RotacionRequest(asignatura(), hoy.minusDays(1), hoy.plusDays(10));
-    assertThatThrownBy(() -> servicio.crear(pasada)).hasMessageContaining(
+    assertThatThrownBy(() -> rotacionService.crear(pasada)).hasMessageContaining(
       "no puede ser anterior a hoy"
     );
     var deHoy = new RotacionRequest(asignatura(), hoy, hoy.plusDays(10));
-    assertThat(servicio.crear(deHoy).finalizada()).isFalse();
+    assertThat(rotacionService.crear(deHoy).finalizada()).isFalse();
     var movida = new RotacionRequest(deHoy.asignaturaId(), hoy.minusDays(3), hoy.plusDays(10));
-    assertThatThrownBy(() -> servicio.editar(clave(deHoy), movida)).hasMessageContaining(
+    assertThatThrownBy(() -> rotacionService.editar(clave(deHoy), movida)).hasMessageContaining(
       "no puede ser anterior a hoy"
     );
   }
@@ -498,99 +505,99 @@ class RotacionIntegrationTests {
   @Test
   void rotacionFinalizadaEsDeSoloLectura() {
     var hoy = co.edu.javeriana.husi.util.Calendario.hoy();
-    var d = rotacionDirecta(hoy.minusDays(40), hoy.minusDays(1));
-    var id = clave(d);
-    assertThat(servicio.consultar(id).finalizada()).isTrue();
-    var otras = new RotacionRequest(d.asignaturaId(), hoy.plusDays(1), hoy.plusDays(5));
-    assertThatThrownBy(() -> servicio.editar(id, otras)).hasMessageContaining("finalizó");
-    assertThatThrownBy(() -> servicio.estado(id, false)).hasMessageContaining("finalizó");
-    assertThatThrownBy(() -> servicio.eliminar(id)).hasMessageContaining("finalizó");
-    assertThatThrownBy(() -> asignaciones.asignar(id, residente())).hasMessageContaining(
+    var rotacion = rotacionDirecta(hoy.minusDays(40), hoy.minusDays(1));
+    var id = clave(rotacion);
+    assertThat(rotacionService.consultar(id).finalizada()).isTrue();
+    var otras = new RotacionRequest(rotacion.asignaturaId(), hoy.plusDays(1), hoy.plusDays(5));
+    assertThatThrownBy(() -> rotacionService.editar(id, otras)).hasMessageContaining("finalizó");
+    assertThatThrownBy(() -> rotacionService.cambiarEstado(id, false)).hasMessageContaining("finalizó");
+    assertThatThrownBy(() -> rotacionService.eliminar(id)).hasMessageContaining("finalizó");
+    assertThatThrownBy(() -> rotacionResidenteService.asignar(id, residente())).hasMessageContaining(
       "finalizó"
     );
     int historico = residente();
-    asignaciones.asignarHistorica(id, historico);
-    assertThatThrownBy(() -> asignaciones.estado(id, historico, "Cancelado")).hasMessageContaining(
+    rotacionResidenteService.asignarHistorica(id, historico);
+    assertThatThrownBy(() -> rotacionResidenteService.cambiarEstado(id, historico, "Cancelado")).hasMessageContaining(
       "finalizó"
     );
-    var origen = new TrasladoEsperaRequest.Origen(historico, d.asignaturaId(), d.inicio(), d.fin());
+    var origen = new TrasladoEsperaRequest.Origen(historico, rotacion.asignaturaId(), rotacion.inicio(), rotacion.fin());
     assertThatThrownBy(() ->
-      asignaciones.trasladarEspera(id, new TrasladoEsperaRequest(List.of(origen)))
+      rotacionResidenteService.trasladarEspera(id, new TrasladoEsperaRequest(List.of(origen)))
     ).hasMessageContaining("finalizó");
   }
 
   @Test
   void rotacionEnCursoAdmiteResidentesHastaSuFechaFinal() {
     var hoy = co.edu.javeriana.husi.util.Calendario.hoy();
-    var d = rotacionDirecta(hoy.minusDays(5), hoy);
-    int r = residente();
-    asignaciones.asignar(clave(d), r);
-    asignaciones.estado(clave(d), r, "Cancelado");
-    assertThat(servicio.consultar(clave(d)).finalizada()).isFalse();
+    var rotacion = rotacionDirecta(hoy.minusDays(5), hoy);
+    int residenteId = residente();
+    rotacionResidenteService.asignar(clave(rotacion), residenteId);
+    rotacionResidenteService.cambiarEstado(clave(rotacion), residenteId, "Cancelado");
+    assertThat(rotacionService.consultar(clave(rotacion)).finalizada()).isFalse();
   }
 
   @Test
   void cambiarCupoDelServicioNoTocaRotacionesFinalizadas() {
     var hoy = co.edu.javeriana.husi.util.Calendario.hoy();
     var pasada = rotacionDirecta(hoy.minusDays(40), hoy.minusDays(1));
-    for (int i = 0; i < 3; i++) asignaciones.asignarHistorica(clave(pasada), residente());
+    for (int i = 0; i < 3; i++) rotacionResidenteService.asignarHistorica(clave(pasada), residente());
     var vigente = new RotacionRequest(pasada.asignaturaId(), hoy.plusDays(1), hoy.plusDays(9));
-    servicio.crear(vigente);
+    rotacionService.crear(vigente);
     // Con 3 asignados en la finalizada, igual se puede bajar a 1: solo cuentan las vigentes.
     jdbc.update(
       "update servicio set cupo_simultaneo=1 where id_servicio=(select id_servicio from asignatura where id_asignatura=?)",
       pasada.asignaturaId()
     );
-    assertThat(servicio.consultar(clave(pasada)).cupoDisponible()).isZero();
-    assertThat(servicio.consultar(clave(vigente)).cupoDisponible()).isEqualTo(1);
+    assertThat(rotacionService.consultar(clave(pasada)).cupoDisponible()).isZero();
+    assertThat(rotacionService.consultar(clave(vigente)).cupoDisponible()).isEqualTo(1);
   }
 
   @Test
   void listaLaEsperaAparteYPorOrdenDeLlegada() {
-    var d = datos(asignatura());
-    var r = rotacionLlenaConEspera(d);
-    assertThat(asignaciones.listar(clave(d), 1, true).contenido())
-      .extracting(x -> x.residenteId())
-      .containsExactly(r.get(3), r.get(4));
-    var resto = asignaciones.listar(clave(d), 1, false);
+    var rotacion = datos(asignatura());
+    var residentes = rotacionLlenaConEspera(rotacion);
+    assertThat(rotacionResidenteService.listar(clave(rotacion), 1, true).contenido())
+      .extracting(fila -> fila.residenteId())
+      .containsExactly(residentes.get(3), residentes.get(4));
+    var resto = rotacionResidenteService.listar(clave(rotacion), 1, false);
     assertThat(resto.totalElementos()).isEqualTo(3);
-    assertThat(resto.contenido()).allMatch(x -> x.estado().equals("Asignado"));
+    assertThat(resto.contenido()).allMatch(fila -> fila.estado().equals("Asignado"));
   }
 
   @Test
   void quitarCupoMandaAlFinalDeLaEsperaYElCupoLoTomaElPrimero() {
-    var d = datos(asignatura());
-    var r = rotacionLlenaConEspera(d);
-    asignaciones.estado(clave(d), r.get(0), "Esperando cupo");
-    assertThat(estadoDe(d, r.get(3))).isEqualTo("Asignado");
-    assertThat(estadoDe(d, r.get(0))).isEqualTo("Esperando cupo");
-    assertThat(asignaciones.listar(clave(d), 1, true).contenido())
-      .extracting(x -> x.residenteId())
-      .containsExactly(r.get(4), r.get(0));
-    assertThat(servicio.consultar(clave(d)).cupoDisponible()).isZero();
+    var rotacion = datos(asignatura());
+    var residentes = rotacionLlenaConEspera(rotacion);
+    rotacionResidenteService.cambiarEstado(clave(rotacion), residentes.get(0), "Esperando cupo");
+    assertThat(estadoDe(rotacion, residentes.get(3))).isEqualTo("Asignado");
+    assertThat(estadoDe(rotacion, residentes.get(0))).isEqualTo("Esperando cupo");
+    assertThat(rotacionResidenteService.listar(clave(rotacion), 1, true).contenido())
+      .extracting(fila -> fila.residenteId())
+      .containsExactly(residentes.get(4), residentes.get(0));
+    assertThat(rotacionService.consultar(clave(rotacion)).cupoDisponible()).isZero();
   }
 
   @Test
   void quitarCupoSinNadieEnEsperaDejaElCupoLibre() {
-    var d = datos(asignatura());
-    servicio.crear(d);
-    int r = residente();
-    asignaciones.asignar(clave(d), r);
-    asignaciones.estado(clave(d), r, "Esperando cupo");
-    assertThat(estadoDe(d, r)).isEqualTo("Esperando cupo");
-    assertThat(servicio.consultar(clave(d)).cupoDisponible()).isEqualTo(3);
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
+    int residenteId = residente();
+    rotacionResidenteService.asignar(clave(rotacion), residenteId);
+    rotacionResidenteService.cambiarEstado(clave(rotacion), residenteId, "Esperando cupo");
+    assertThat(estadoDe(rotacion, residenteId)).isEqualTo("Esperando cupo");
+    assertThat(rotacionService.consultar(clave(rotacion)).cupoDisponible()).isEqualTo(3);
   }
 
   @Test
   void soloSeEliminaUnaRelacionSinCupo() {
-    var d = datos(asignatura());
-    var r = rotacionLlenaConEspera(d);
-    assertThatThrownBy(() -> asignaciones.eliminar(clave(d), r.get(0)))
+    var rotacion = datos(asignatura());
+    var residentes = rotacionLlenaConEspera(rotacion);
+    assertThatThrownBy(() -> rotacionResidenteService.eliminar(clave(rotacion), residentes.get(0)))
       .hasMessageContaining("Quítale el cupo");
-    asignaciones.eliminar(clave(d), r.get(3));
-    assertThat(asignaciones.listar(clave(d), 1, true).contenido())
-      .extracting(x -> x.residenteId())
-      .containsExactly(r.get(4));
-    assertThat(servicio.consultar(clave(d)).relaciones()).isEqualTo(4);
+    rotacionResidenteService.eliminar(clave(rotacion), residentes.get(3));
+    assertThat(rotacionResidenteService.listar(clave(rotacion), 1, true).contenido())
+      .extracting(fila -> fila.residenteId())
+      .containsExactly(residentes.get(4));
+    assertThat(rotacionService.consultar(clave(rotacion)).relaciones()).isEqualTo(4);
   }
 }

@@ -13,13 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PerfilAcademicoServiceImpl implements PerfilAcademicoService {
 
-  private final PerfilAcademicoRepository perfiles;
+  private final PerfilAcademicoRepository perfilAcademicoRepository;
 
   public List<CatalogoResponse> listar() {
-    return perfiles
+    return perfilAcademicoRepository
       .findAllByOrderByNombre()
       .stream()
-      .map(p -> new CatalogoResponse(p.getId(), p.getNombre()))
+      .map(perfil -> new CatalogoResponse(perfil.getId(), perfil.getNombre()))
       .toList();
   }
 }

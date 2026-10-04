@@ -19,26 +19,37 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RotacionResidenteServiceImpl implements RotacionResidenteService {
 
-  private final RotacionRepository rotaciones;
-  private final RotacionResidenteRepository asignaciones;
-  private final ResidenteRepository residentes;
-  private final RotacionConsultaRepository consultas;
+  private static final Set<String> ESTADOS_ASIGNACION = Set.of(
+    "Asignado",
+    "Cancelado",
+    "Esperando cupo"
+  );
 
-  private NegocioException error(HttpStatus status, String mensaje) {
-    return new NegocioException(status, mensaje);
+  private final RotacionRepository rotacionRepository;
+  private final RotacionResidenteRepository rotacionResidenteRepository;
+  private final ResidenteRepository residenteRepository;
+  private final RotacionConsultaRepository rotacionConsultaRepository;
+
+  private NegocioException error(HttpStatus estado, String mensaje) {
+    return new NegocioException(estado, mensaje);
   }
 
-  private Rotacion obtener(RotacionId id, boolean lock) {
+  private Rotacion buscarRotacion(RotacionId id, boolean bloquear) {
     return (
-      lock ? rotaciones.bloquear(id) : rotaciones.findById(id)
+      bloquear
+        ? rotacionRepository.bloquearPorId(id)
+        : rotacionRepository.findById(id)
     ).orElseThrow(() ->
       error(HttpStatus.NOT_FOUND, "No se encontró la rotación.")
     );
   }
 
-  private void validarActivo(Rotacion r) {
+  private void validarRotacionActiva(Rotacion rotacion) {
     if (
-      !r.isActiva() || !consultas.asignaturaActiva(r.getId().getAsignaturaId())
+      !rotacion.isActiva() ||
+      !rotacionConsultaRepository.asignaturaActiva(
+        rotacion.getId().getAsignaturaId()
+      )
     ) throw error(
       HttpStatus.CONFLICT,
       "La rotación, su asignatura y su servicio deben estar activos."
@@ -46,7 +57,7 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
   }
 
   /** Una rotación cuya fecha final ya pasó es de solo lectura. */
-  private void noFinalizada(RotacionId id) {
+  private void validarNoFinalizada(RotacionId id) {
     if (Calendario.finalizada(id.getFin())) throw error(
       HttpStatus.CONFLICT,
       "La rotación finalizó el " +
@@ -55,128 +66,141 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
     );
   }
 
-  private void residenteActivo(Integer id) {
-    var r = residentes
-      .bloquearPorId(id)
+  private void validarResidenteActivo(Integer residenteId) {
+    var residente = residenteRepository
+      .bloquearPorId(residenteId)
       .orElseThrow(() ->
         error(HttpStatus.BAD_REQUEST, "No se encontró el residente.")
       );
-    if (!"Activo".equals(r.getEstado())) throw error(
+    if (!"Activo".equals(residente.getEstado())) throw error(
       HttpStatus.CONFLICT,
       "El residente debe estar activo."
+    );
+  }
+
+  private void validarAsignacionExiste(RotacionId id, Integer residenteId) {
+    if (!rotacionResidenteRepository.existe(id, residenteId)) throw error(
+      HttpStatus.NOT_FOUND,
+      "No se encontró la asignación."
+    );
+  }
+
+  private boolean estaAsignado(RotacionId id, Integer residenteId) {
+    return "Asignado".equals(
+      rotacionResidenteRepository.consultarEstado(id, residenteId)
     );
   }
 
   public PaginaResponse<ResidenteRotacionResponse> listar(
     RotacionId id,
     int pagina,
-    boolean espera
+    boolean soloEnEspera
   ) {
-    obtener(id, false);
+    buscarRotacion(id, false);
     if (pagina < 1 || pagina > 1000000) throw error(
       HttpStatus.BAD_REQUEST,
       "Página inválida."
     );
-    return asignaciones.listar(id, pagina, espera);
+    return rotacionResidenteRepository.listar(id, pagina, soloEnEspera);
   }
 
-  public List<CatalogoResponse> candidatos(RotacionId id, String q) {
-    obtener(id, false);
-    if (q.length() > 200) throw error(
+  public List<CatalogoResponse> candidatos(RotacionId id, String busqueda) {
+    buscarRotacion(id, false);
+    if (busqueda.length() > 200) throw error(
       HttpStatus.BAD_REQUEST,
       "La búsqueda admite 200 caracteres."
     );
-    return asignaciones.candidatos(id, q.strip());
+    return rotacionResidenteRepository.candidatos(id, busqueda.strip());
   }
 
   @Transactional
-  public void asignar(RotacionId id, Integer residente) {
-    noFinalizada(id);
-    asignarHistorica(id, residente);
+  public void asignar(RotacionId id, Integer residenteId) {
+    validarNoFinalizada(id);
+    asignarHistorica(id, residenteId);
   }
 
   @Transactional
-  public void asignarHistorica(RotacionId id, Integer residente) {
-    var r = obtener(id, true);
-    validarActivo(r);
-    residenteActivo(residente);
-    if (asignaciones.existe(id, residente)) throw error(
+  public void asignarHistorica(RotacionId id, Integer residenteId) {
+    var rotacion = buscarRotacion(id, true);
+    validarRotacionActiva(rotacion);
+    validarResidenteActivo(residenteId);
+    if (rotacionResidenteRepository.existe(id, residenteId)) throw error(
       HttpStatus.CONFLICT,
       "El residente ya está relacionado; revisa también las asignaciones canceladas."
     );
-    asignaciones.insertar(id, residente);
+    rotacionResidenteRepository.insertar(id, residenteId);
   }
 
   @Transactional
-  public void estado(RotacionId id, Integer residente, String estado) {
-    var r = obtener(id, true);
-    noFinalizada(id);
-    if (
-      !Set.of("Asignado", "Cancelado", "Esperando cupo").contains(estado)
-    ) throw error(HttpStatus.BAD_REQUEST, "Estado de asignación inválido.");
-    if (!asignaciones.existe(id, residente)) throw error(
-      HttpStatus.NOT_FOUND,
-      "No se encontró la asignación."
+  public void cambiarEstado(
+    RotacionId id,
+    Integer residenteId,
+    String nuevoEstado
+  ) {
+    var rotacion = buscarRotacion(id, true);
+    validarNoFinalizada(id);
+    if (!ESTADOS_ASIGNACION.contains(nuevoEstado)) throw error(
+      HttpStatus.BAD_REQUEST,
+      "Estado de asignación inválido."
     );
-    if ("Esperando cupo".equals(estado)) {
+    validarAsignacionExiste(id, residenteId);
+    if ("Esperando cupo".equals(nuevoEstado)) {
       // Quitar el cupo: pasa al final de la espera y su cupo lo toma el siguiente.
-      if (!"Asignado".equals(asignaciones.estado(id, residente))) throw error(
+      if (!estaAsignado(id, residenteId)) throw error(
         HttpStatus.CONFLICT,
         "Solo se puede quitar el cupo a un residente asignado."
       );
-      validarActivo(r);
+      validarRotacionActiva(rotacion);
     }
-    if ("Asignado".equals(estado)) {
-      validarActivo(r);
-      residenteActivo(residente);
+    if ("Asignado".equals(nuevoEstado)) {
+      validarRotacionActiva(rotacion);
+      validarResidenteActivo(residenteId);
       if (
-        !"Asignado".equals(asignaciones.estado(id, residente)) &&
-        asignaciones.cupos(id) == 0
+        !estaAsignado(id, residenteId) &&
+        rotacionResidenteRepository.cupoDisponible(id) == 0
       ) throw error(
         HttpStatus.CONFLICT,
         "No hay cupos disponibles. El residente permanece en su estado actual."
       );
     }
-    asignaciones.cambiarEstado(id, residente, estado);
+    rotacionResidenteRepository.cambiarEstado(id, residenteId, nuevoEstado);
   }
 
   @Transactional
-  public void eliminar(RotacionId id, Integer residente) {
-    obtener(id, true);
-    noFinalizada(id);
-    if (!asignaciones.existe(id, residente)) throw error(
-      HttpStatus.NOT_FOUND,
-      "No se encontró la asignación."
-    );
-    if ("Asignado".equals(asignaciones.estado(id, residente))) throw error(
+  public void eliminar(RotacionId id, Integer residenteId) {
+    buscarRotacion(id, true);
+    validarNoFinalizada(id);
+    validarAsignacionExiste(id, residenteId);
+    if (estaAsignado(id, residenteId)) throw error(
       HttpStatus.CONFLICT,
       "El residente tiene cupo asignado. Quítale el cupo antes de eliminarlo."
     );
-    asignaciones.eliminar(id, residente);
+    rotacionResidenteRepository.eliminar(id, residenteId);
   }
 
-  public List<EsperaServicioResponse> espera(RotacionId id) {
-    obtener(id, false);
-    return asignaciones.espera(id);
+  public List<EsperaServicioResponse> listarEsperaDelServicio(RotacionId id) {
+    buscarRotacion(id, false);
+    return rotacionResidenteRepository.listarEsperaDelServicio(id);
   }
 
   @Transactional
-  public void trasladarEspera(RotacionId id, TrasladoEsperaRequest d) {
-    var r = obtener(id, true);
-    noFinalizada(id);
-    validarActivo(r);
-    var residentesUnicos = d
+  public void trasladarEspera(RotacionId id, TrasladoEsperaRequest traslado) {
+    var rotacionDestino = buscarRotacion(id, true);
+    validarNoFinalizada(id);
+    validarRotacionActiva(rotacionDestino);
+    int cantidadSolicitada = traslado.residentes().size();
+    long residentesDistintos = traslado
       .residentes()
       .stream()
       .map(TrasladoEsperaRequest.Origen::residenteId)
       .distinct()
       .count();
-    if (residentesUnicos < d.residentes().size()) throw error(
+    if (residentesDistintos < cantidadSolicitada) throw error(
       HttpStatus.BAD_REQUEST,
       "Un residente solo puede trasladarse una vez a la misma rotación."
     );
-    int cupos = asignaciones.cupos(id);
-    if (d.residentes().size() > cupos) throw error(
+    int cupos = rotacionResidenteRepository.cupoDisponible(id);
+    if (cantidadSolicitada > cupos) throw error(
       HttpStatus.CONFLICT,
       cupos == 0
         ? "La rotación no tiene cupos disponibles."
@@ -186,20 +210,23 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
           cupos +
           (cupos == 1 ? " residente." : " residentes.")
     );
-    for (var o : d.residentes()) {
-      residenteActivo(o.residenteId());
-      if (asignaciones.existe(id, o.residenteId())) throw error(
+    for (var origen : traslado.residentes()) {
+      validarResidenteActivo(origen.residenteId());
+      if (rotacionResidenteRepository.existe(id, origen.residenteId())) throw error(
         HttpStatus.CONFLICT,
         "Uno de los residentes ya está relacionado con esta rotación."
       );
-      if (
-        asignaciones.trasladar(
-          new RotacionId(o.asignaturaId(), o.inicio(), o.fin()),
-          id,
-          o.residenteId()
-        ) ==
-        0
-      ) throw error(
+      var rotacionOrigen = new RotacionId(
+        origen.asignaturaId(),
+        origen.inicio(),
+        origen.fin()
+      );
+      int filasActualizadas = rotacionResidenteRepository.trasladar(
+        rotacionOrigen,
+        id,
+        origen.residenteId()
+      );
+      if (filasActualizadas == 0) throw error(
         HttpStatus.CONFLICT,
         "Uno de los residentes ya no está en espera en esa rotación o pertenece a otro servicio. Actualiza la lista e inténtalo de nuevo."
       );

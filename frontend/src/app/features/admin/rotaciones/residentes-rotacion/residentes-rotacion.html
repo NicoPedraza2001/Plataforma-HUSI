@@ -27,7 +27,7 @@
             name="busqueda"
             type="search"
             maxlength="200"
-            [(ngModel)]="termino"
+            [(ngModel)]="terminoBusqueda"
             (ngModelChange)="buscar()"
             [disabled]="guardando()"
           />
@@ -39,12 +39,12 @@
           ><select
             id="residente"
             name="residente"
-            [(ngModel)]="seleccionado"
+            [(ngModel)]="residenteSeleccionadoId"
             [disabled]="guardando() || candidatos.cargando()"
           >
             <option [ngValue]="0">Selecciona un residente</option>
-            @for (r of candidatos.datos() ?? []; track r.id) {
-              <option [ngValue]="r.id">{{ r.nombre }}</option>
+            @for (residente of candidatos.datos() ?? []; track residente.id) {
+              <option [ngValue]="residente.id">{{ residente.nombre }}</option>
             }
           </select>
           @if (candidatos.cargando()) {
@@ -60,12 +60,15 @@
           <button
             class="btn btn--navy"
             type="submit"
-            [disabled]="!seleccionado || guardando() || candidatos.cargando()"
+            [disabled]="!residenteSeleccionadoId || guardando() || candidatos.cargando()"
           >
             Agregar residente
           </button>
         </form>
-        <app-espera-servicio [rotacion]="rotacion()" (trasladados)="trasladados($event)" />
+        <app-espera-servicio
+          [rotacion]="rotacion()"
+          (trasladados)="mostrarTrasladoRealizado($event)"
+        />
       } @else {
         <p class="mensaje">
           La rotación está inactiva. Puedes consultar o cancelar asignaciones existentes.
@@ -96,38 +99,42 @@
               </tr>
             </thead>
             <tbody>
-              @for (r of consulta.datos()?.contenido ?? []; track r.residenteId) {
+              @for (residente of consulta.datos()?.contenido ?? []; track residente.residenteId) {
                 <tr>
                   <td>
-                    {{ r.nombre }}<small>{{ r.documento }}</small>
+                    {{ residente.nombre }}<small>{{ residente.documento }}</small>
                   </td>
-                  <td>{{ r.programa }}</td>
-                  <td>{{ r.estado }}</td>
+                  <td>{{ residente.programa }}</td>
+                  <td>{{ residente.estado }}</td>
                   <td>
-                    @if (r.estado !== 'Asignado' && rotacion().activa && !rotacion().finalizada) {
+                    @if (
+                      residente.estado !== 'Asignado' && rotacion().activa && !rotacion().finalizada
+                    ) {
                       <button
                         class="btn btn--navy"
                         [disabled]="guardando()"
-                        (click)="estado(r, 'Asignado')"
+                        (click)="cambiarEstado(residente, 'Asignado')"
                       >
                         Asignar cupo
                       </button>
                     }
-                    @if (r.estado === 'Asignado' && rotacion().activa && !rotacion().finalizada) {
+                    @if (
+                      residente.estado === 'Asignado' && rotacion().activa && !rotacion().finalizada
+                    ) {
                       <button
                         class="btn btn--outline"
                         [disabled]="guardando()"
-                        [title]="'Pasa a ' + r.nombre + ' al final de la lista de espera'"
-                        (click)="estado(r, 'Esperando cupo')"
+                        [title]="'Pasa a ' + residente.nombre + ' al final de la lista de espera'"
+                        (click)="cambiarEstado(residente, 'Esperando cupo')"
                       >
                         Quitar cupo
                       </button>
                     }
-                    @if (r.estado === 'Cancelado' && !rotacion().finalizada) {
+                    @if (residente.estado === 'Cancelado' && !rotacion().finalizada) {
                       <button
                         class="btn btn--danger-outline"
                         [disabled]="guardando()"
-                        (click)="solicitarEliminar(r)"
+                        (click)="solicitarEliminar(residente)"
                       >
                         Eliminar
                       </button>
@@ -171,19 +178,23 @@
               </tr>
             </thead>
             <tbody>
-              @for (r of enEspera.datos()?.contenido ?? []; track r.residenteId; let i = $index) {
+              @for (
+                residente of enEspera.datos()?.contenido ?? [];
+                track residente.residenteId;
+                let indice = $index
+              ) {
                 <tr>
-                  <td>{{ posicion(i) }}</td>
+                  <td>{{ posicionEnEspera(indice) }}</td>
                   <td>
-                    {{ r.nombre }}<small>{{ r.documento }}</small>
+                    {{ residente.nombre }}<small>{{ residente.documento }}</small>
                   </td>
-                  <td>{{ r.programa }}</td>
+                  <td>{{ residente.programa }}</td>
                   <td>
                     @if (rotacion().activa && !rotacion().finalizada) {
                       <button
                         class="btn btn--navy"
                         [disabled]="guardando()"
-                        (click)="estado(r, 'Asignado')"
+                        (click)="cambiarEstado(residente, 'Asignado')"
                       >
                         Asignar cupo
                       </button>
@@ -192,7 +203,7 @@
                       <button
                         class="btn btn--danger-outline"
                         [disabled]="guardando()"
-                        (click)="solicitarEliminar(r)"
+                        (click)="solicitarEliminar(residente)"
                       >
                         Eliminar
                       </button>

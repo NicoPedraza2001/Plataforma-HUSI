@@ -67,7 +67,7 @@ class ProgramaIntegrationTests {
     programas.desactivar(creado.id());
     assertThat(repository.findById(creado.id())).isPresent();
     assertThat(programas.consultar(creado.id()).estado()).isEqualTo("Inactivo");
-    assertThat(programas.listar()).noneMatch(p -> p.id().equals(creado.id()));
+    assertThat(programas.listar()).noneMatch(programa -> programa.id().equals(creado.id()));
     assertThat(
       jdbc.queryForObject(
         "SELECT count(*) FROM residente WHERE id_programa=?",
@@ -79,12 +79,12 @@ class ProgramaIntegrationTests {
 
   @Test
   void rechazaDuplicadosInclusoInactivosYUniversidadesInvalidas() {
-    var p = programas.crear(new ProgramaRequest("Neurología", universidadId));
-    programas.desactivar(p.id());
+    var programaCreado = programas.crear(new ProgramaRequest("Neurología", universidadId));
+    programas.desactivar(programaCreado.id());
     assertThatThrownBy(() ->
       programas.crear(new ProgramaRequest(" NEUROLOGÍA ", universidadId))
-    ).isInstanceOfSatisfying(NegocioException.class, e ->
-      assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT)
+    ).isInstanceOfSatisfying(NegocioException.class, error ->
+      assertThat(error.getStatus()).isEqualTo(HttpStatus.CONFLICT)
     );
     assertThatThrownBy(() ->
       programas.crear(new ProgramaRequest("Otro", Integer.MAX_VALUE))
@@ -123,7 +123,7 @@ class ProgramaIntegrationTests {
     assertThat(resultado.omitidos()).isEqualTo(1);
     assertThat(resultado.errores()).isEqualTo(2);
     assertThat(resultado.filas())
-      .extracting(f -> f.fila())
+      .extracting(fila -> fila.fila())
       .containsExactly(2, 3, 4, 5, 6);
     assertThat(repository.count()).isEqualTo(antes + 2);
     assertThat(importacion.procesar(lote, true).creados()).isZero();

@@ -69,7 +69,9 @@ export class ResultadoCarga {
    * quedaron en lista de espera sí se crearon.
    */
   protected readonly noCreados = computed(() => {
-    const detallePorFila = new Map(this.resultado().filas.map((d) => [d.fila, d]));
+    const detallePorFila = new Map(
+      this.resultado().filas.map((detalle) => [detalle.fila, detalle]),
+    );
     const rechazadas = this.filas()
       .filter((fila) => !['CREADO', 'ESPERA'].includes(detallePorFila.get(fila.fila)?.estado ?? ''))
       .map((fila) => {

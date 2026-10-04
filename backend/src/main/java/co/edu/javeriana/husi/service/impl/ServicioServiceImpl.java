@@ -1,12 +1,15 @@
 package co.edu.javeriana.husi.service.impl;
 
 import co.edu.javeriana.husi.dto.request.ServicioRequest;
+import co.edu.javeriana.husi.dto.response.CatalogoResponse;
 import co.edu.javeriana.husi.dto.response.ServicioResponse;
 import co.edu.javeriana.husi.exception.NegocioException;
 import co.edu.javeriana.husi.mapper.ServicioMapper;
 import co.edu.javeriana.husi.model.entity.Servicio;
 import co.edu.javeriana.husi.repository.ServicioRepository;
 import co.edu.javeriana.husi.service.ServicioService;
+import co.edu.javeriana.husi.util.Calendario;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,12 +20,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ServicioServiceImpl implements ServicioService {
 
-  private final ServicioRepository servicios;
-  private final ServicioMapper mapper;
+  private final ServicioRepository servicioRepository;
+  private final ServicioMapper servicioMapper;
 
-  private Servicio obtener(Integer id, boolean bloquear) {
-    return (bloquear ? servicios.bloquearPorId(id) : servicios.findById(id))
-      .filter(s -> !"Eliminado".equals(s.getEstado()))
+  private Servicio buscarServicio(Integer id, boolean bloquear) {
+    return (
+      bloquear
+        ? servicioRepository.bloquearPorId(id)
+        : servicioRepository.findById(id)
+    )
+      .filter(servicio -> !"Eliminado".equals(servicio.getEstado()))
       .orElseThrow(() ->
         new NegocioException(
           HttpStatus.NOT_FOUND,
@@ -31,93 +38,88 @@ public class ServicioServiceImpl implements ServicioService {
       );
   }
 
-  private void aplicar(Servicio s, ServicioRequest d) {
+  /** Valida la solicitud y copia sus datos sobre el servicio (nuevo o existente). */
+  private void validarYAsignarDatos(Servicio servicio, ServicioRequest request) {
     if (
-      d.nombre() == null ||
-      d.nombre().isBlank() ||
-      d.nombre().strip().length() > 150
+      request.nombre() == null ||
+      request.nombre().isBlank() ||
+      request.nombre().strip().length() > 150
     ) throw new NegocioException(
       HttpStatus.BAD_REQUEST,
       "El nombre es obligatorio y admite hasta 150 caracteres."
     );
     if (
-      d.cupoSimultaneo() == null ||
-      d.cupoMaximoInstalado() == null ||
-      d.cupoSimultaneo() < 0 ||
-      d.cupoMaximoInstalado() < 0 ||
-      d.cupoSimultaneo() > d.cupoMaximoInstalado()
+      request.cupoSimultaneo() == null ||
+      request.cupoMaximoInstalado() == null ||
+      request.cupoSimultaneo() < 0 ||
+      request.cupoMaximoInstalado() < 0 ||
+      request.cupoSimultaneo() > request.cupoMaximoInstalado()
     ) throw new NegocioException(
       HttpStatus.BAD_REQUEST,
       "Los cupos deben ser enteros no negativos y el simultáneo no puede superar el máximo instalado."
     );
     if (
-      servicios.existsByNombreIgnoreCaseAndIdNot(
-        d.nombre().strip(),
-        s.getId() == null ? 0 : s.getId()
+      servicioRepository.existsByNombreIgnoreCaseAndIdNot(
+        request.nombre().strip(),
+        servicio.getId() == null ? 0 : servicio.getId()
       )
     ) throw new NegocioException(
       HttpStatus.CONFLICT,
       "Ya existe un servicio con ese nombre. Revisa también los inactivos."
     );
-    s.setNombre(d.nombre().strip());
-    s.setDescripcion(
-      d.descripcion() == null || d.descripcion().isBlank()
+    servicio.setNombre(request.nombre().strip());
+    servicio.setDescripcion(
+      request.descripcion() == null || request.descripcion().isBlank()
         ? null
-        : d.descripcion().strip()
+        : request.descripcion().strip()
     );
-    s.setCupoSimultaneo(d.cupoSimultaneo());
-    s.setCupoMaximoInstalado(d.cupoMaximoInstalado());
+    servicio.setCupoSimultaneo(request.cupoSimultaneo());
+    servicio.setCupoMaximoInstalado(request.cupoMaximoInstalado());
     // Al guardar, trg_servicio_recalcular_cupo recalcula el cupo de sus rotaciones vigentes.
   }
 
-  public java.util.List<co.edu.javeriana.husi.dto.response.CatalogoResponse> catalogo(
-    boolean soloActivos
-  ) {
-    return servicios
+  public List<CatalogoResponse> catalogo(boolean soloActivos) {
+    return servicioRepository
       .catalogo(soloActivos)
       .stream()
-      .map(s ->
-        new co.edu.javeriana.husi.dto.response.CatalogoResponse(
-          s.getId(),
-          s.getNombre()
-        )
-      )
+      .map(servicio -> new CatalogoResponse(servicio.getId(), servicio.getNombre()))
       .toList();
   }
 
   public ServicioResponse consultar(Integer id) {
-    return mapper.response(obtener(id, false));
+    return servicioMapper.toResponse(buscarServicio(id, false));
   }
 
   @Transactional
-  public ServicioResponse crear(ServicioRequest d) {
-    var s = new Servicio();
-    aplicar(s, d);
-    return mapper.response(servicios.saveAndFlush(s));
+  public ServicioResponse crear(ServicioRequest request) {
+    var servicio = new Servicio();
+    validarYAsignarDatos(servicio, request);
+    return servicioMapper.toResponse(servicioRepository.saveAndFlush(servicio));
   }
 
   @Transactional
-  public ServicioResponse actualizar(Integer id, ServicioRequest d) {
-    var s = obtener(id, true);
-    // Antes de aplicar: la consulta nativa haría flush y el trigger fallaría primero.
-    long minimo = servicios.maximoAsignadosPorRotacion(
+  public ServicioResponse actualizar(Integer id, ServicioRequest request) {
+    var servicio = buscarServicio(id, true);
+    // Antes de asignar los datos: la consulta nativa haría flush y el trigger fallaría primero.
+    long cupoMinimoPermitido = servicioRepository.maximoAsignadosPorRotacion(
       id,
-      co.edu.javeriana.husi.util.Calendario.hoy()
+      Calendario.hoy()
     );
     if (
-      d.cupoSimultaneo() != null && d.cupoSimultaneo() < minimo
+      request.cupoSimultaneo() != null &&
+      request.cupoSimultaneo() < cupoMinimoPermitido
     ) throw new NegocioException(
       HttpStatus.CONFLICT,
       "No puedes bajar el cupo simultáneo a " +
-        d.cupoSimultaneo() +
+        request.cupoSimultaneo() +
         ": una rotación vigente de este servicio ya tiene " +
-        minimo +
+        cupoMinimoPermitido +
         " residentes asignados. El mínimo permitido es " +
-        minimo +
+        cupoMinimoPermitido +
         "; cancela asignaciones si necesitas reducirlo más."
     );
-    aplicar(s, d);
-    return mapper.response(servicios.saveAndFlush(s));
+    validarYAsignarDatos(servicio, request);
+    return servicioMapper.toResponse(servicioRepository.saveAndFlush(servicio));
   }
 
   @Transactional
@@ -125,19 +127,19 @@ public class ServicioServiceImpl implements ServicioService {
     if (
       !"Activo".equals(estado) && !"Inactivo".equals(estado)
     ) throw new NegocioException(HttpStatus.BAD_REQUEST, "Estado inválido.");
-    var s = obtener(id, true);
-    s.setEstado(estado);
-    return mapper.response(servicios.saveAndFlush(s));
+    var servicio = buscarServicio(id, true);
+    servicio.setEstado(estado);
+    return servicioMapper.toResponse(servicioRepository.saveAndFlush(servicio));
   }
 
   @Transactional
   public void eliminarDefinitivamente(Integer id) {
-    var s = obtener(id, true);
-    if (servicios.contarReferencias(id) > 0) throw new NegocioException(
+    var servicio = buscarServicio(id, true);
+    if (servicioRepository.contarReferencias(id) > 0) throw new NegocioException(
       HttpStatus.CONFLICT,
       "El servicio tiene asignaturas o coordinadores asociados, incluso inactivos. Puedes desactivarlo para conservar sus relaciones."
     );
-    servicios.delete(s);
-    servicios.flush();
+    servicioRepository.delete(servicio);
+    servicioRepository.flush();
   }
 }

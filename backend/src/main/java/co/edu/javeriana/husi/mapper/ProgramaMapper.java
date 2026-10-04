@@ -7,13 +7,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProgramaMapper {
 
-  public ProgramaResponse response(Programa p) {
+  public ProgramaResponse toResponse(Programa programa) {
     return new ProgramaResponse(
-      p.getId(),
-      p.getNombre(),
-      p.getUniversidad().getId(),
-      p.getUniversidad().getNombre(),
-      p.getEstado()
+      programa.getId(),
+      programa.getNombre(),
+      programa.getUniversidad().getId(),
+      programa.getUniversidad().getNombre(),
+      programa.getEstado()
     );
   }
 }

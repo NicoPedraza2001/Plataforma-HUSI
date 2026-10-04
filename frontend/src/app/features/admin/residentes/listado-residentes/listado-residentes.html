@@ -11,7 +11,7 @@
   </div>
 
   <div class="page-head__acciones">
-    <button type="button" class="btn btn--add" [disabled]="guardando()" (click)="abrir()">
+    <button type="button" class="btn btn--add" [disabled]="guardando()" (click)="abrirFormulario()">
       <span class="btn__plus" aria-hidden="true">+</span>
       Agregar Residente
     </button>
@@ -47,7 +47,7 @@
         class="search__input"
         type="search"
         placeholder="Buscar residente o documento..."
-        [value]="termino()"
+        [value]="terminoBusqueda()"
         (input)="buscar($any($event.target).value)"
       />
     </label>
@@ -129,9 +129,9 @@
 
       <tbody>
         @if (!cargando() && !error()) {
-          @for (residente of residentesPagina(); track residente.id; let i = $index) {
+          @for (residente of residentesPagina(); track residente.id; let indice = $index) {
             <tr>
-              <td class="col-no">{{ desde() + i + 1 }}</td>
+              <td class="col-no">{{ indicePrimeraFila() + indice + 1 }}</td>
               <td class="col-residente">{{ residente.nombre }}</td>
               <td>{{ residente.documento }}</td>
               <td>{{ residente.universidad }}</td>
@@ -153,7 +153,11 @@
                   >
                     {{ residente.estado.toLowerCase() === 'activo' ? 'Activo' : 'Inactivo' }}
                   </button>
-                  <button class="btn btn--navy" [disabled]="guardando()" (click)="abrir(residente)">
+                  <button
+                    class="btn btn--navy"
+                    [disabled]="guardando()"
+                    (click)="abrirFormulario(residente)"
+                  >
                     Editar
                   </button>
                   <button
@@ -189,12 +193,12 @@
 @if (aviso()) {
   <p class="mensaje exito" role="status">{{ aviso() }}</p>
 }
-@if (errorFormulario() && !formulario() && !pendienteEliminar()) {
+@if (errorFormulario() && !formularioAbierto() && !pendienteEliminar()) {
   <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>
 }
 
-@if (formulario()) {
-  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+@if (formularioAbierto()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formularioAbierto.set(false)">
     <section
       class="panel-modal"
       appFocoModal
@@ -203,18 +207,18 @@
       aria-labelledby="titulo-residente"
     >
       <header>
-        <h2 id="titulo-residente">{{ edicionId ? 'Editar residente' : 'Agregar residente' }}</h2>
+        <h2 id="titulo-residente">{{ idEnEdicion ? 'Editar residente' : 'Agregar residente' }}</h2>
       </header>
       <app-formulario-residente
-        [(datos)]="datos"
+        [(datos)]="datosFormulario"
         [opciones]="opciones()"
         [tiposDocumento]="tiposDocumento()"
         [perfiles]="perfiles()"
-        [edicion]="!!edicionId"
+        [edicion]="!!idEnEdicion"
         [guardando]="guardando()"
         [errorFormulario]="errorFormulario()"
         (guardar)="guardar()"
-        (cancelar)="formulario.set(false)"
+        (cancelar)="formularioAbierto.set(false)"
       />
     </section>
   </div>

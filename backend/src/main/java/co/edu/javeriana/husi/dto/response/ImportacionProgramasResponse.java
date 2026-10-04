@@ -33,7 +33,7 @@ public record ImportacionProgramasResponse(
   private static long contar(List<Fila> filas, String estado) {
     return filas
       .stream()
-      .filter(f -> estado.equals(f.estado()))
+      .filter(fila -> estado.equals(fila.estado()))
       .count();
   }
 }

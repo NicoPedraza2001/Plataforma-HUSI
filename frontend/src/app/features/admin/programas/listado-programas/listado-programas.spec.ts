@@ -54,7 +54,7 @@ describe('Programas conectado', () => {
     const botones = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
     ) as HTMLButtonElement[];
-    botones.find((b) => b.textContent?.trim() === 'Eliminar definitivamente')!.click();
+    botones.find((boton) => boton.textContent?.trim() === 'Eliminar definitivamente')!.click();
     await fixture.whenStable();
     expect(api.eliminarDefinitivamente).toHaveBeenCalledWith(1);
   });

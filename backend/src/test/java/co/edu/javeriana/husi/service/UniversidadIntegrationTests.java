@@ -34,27 +34,27 @@ class UniversidadIntegrationTests {
   @Test
   void crearEditarConsultarPersisteCamposYConservaEstado() {
     String nombre = "UNI-" + UUID.randomUUID();
-    var u = universidades.crear(
+    var universidadCreada = universidades.crear(
       new UniversidadRequest(" " + nombre + " ", " Colombia ", " Docencia ")
     );
-    assertThat(u.nombre()).isEqualTo(nombre);
-    assertThat(u.pais()).isEqualTo("Colombia");
-    assertThat(u.perfil()).isEqualTo("Docencia");
+    assertThat(universidadCreada.nombre()).isEqualTo(nombre);
+    assertThat(universidadCreada.pais()).isEqualTo("Colombia");
+    assertThat(universidadCreada.perfil()).isEqualTo("Docencia");
     assertThat(
       jdbc.queryForObject(
         "select nombre_universidad from universidad where id_universidad=?",
         String.class,
-        u.id()
+        universidadCreada.id()
       )
     ).isEqualTo(nombre);
-    universidades.cambiarEstado(u.id(), "Inactivo");
+    universidades.cambiarEstado(universidadCreada.id(), "Inactivo");
     var editada = universidades.actualizar(
-      u.id(),
+      universidadCreada.id(),
       new UniversidadRequest(nombre + " editada", "Ecuador", " ")
     );
     assertThat(editada.estado()).isEqualTo("Inactivo");
     assertThat(editada.perfil()).isNull();
-    assertThat(universidades.consultar(u.id()).pais()).isEqualTo("Ecuador");
+    assertThat(universidades.consultar(universidadCreada.id()).pais()).isEqualTo("Ecuador");
     assertThat(
       consultas
         .listar("universidades", Map.of("q", nombre, "estado", "Inactivo"))
@@ -65,8 +65,8 @@ class UniversidadIntegrationTests {
   @Test
   void rechazaCamposInvalidosDuplicadosYEstadosDesconocidos() {
     String nombre = "UNI-" + UUID.randomUUID();
-    var u = universidades.crear(datos(nombre));
-    universidades.cambiarEstado(u.id(), "Inactivo");
+    var universidadCreada = universidades.crear(datos(nombre));
+    universidades.cambiarEstado(universidadCreada.id(), "Inactivo");
     assertThatThrownBy(() ->
       universidades.crear(datos(" " + nombre.toLowerCase() + " "))
     )
@@ -84,7 +84,7 @@ class UniversidadIntegrationTests {
       )
     ).hasMessageContaining("50");
     assertThatThrownBy(() ->
-      universidades.cambiarEstado(u.id(), "Eliminado")
+      universidades.cambiarEstado(universidadCreada.id(), "Eliminado")
     ).hasMessageContaining("Activo o Inactivo");
     assertThatThrownBy(() ->
       universidades.consultar(Integer.MAX_VALUE)
@@ -93,60 +93,60 @@ class UniversidadIntegrationTests {
 
   @Test
   void desactivarNoBorraNiCambiaLosProgramasYResidentes() {
-    var u = universidades.crear(datos("UNI-" + UUID.randomUUID()));
-    var p = programas.crear(
-      new ProgramaRequest("Programa conservación", u.id())
+    var universidadCreada = universidades.crear(datos("UNI-" + UUID.randomUUID()));
+    var programaCreado = programas.crear(
+      new ProgramaRequest("Programa conservación", universidadCreada.id())
     );
     jdbc.update(
       "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values(?,1,?,?)",
-      p.id(),
+      programaCreado.id(),
       "Prueba universidad",
       UUID.randomUUID().toString()
     );
-    universidades.cambiarEstado(u.id(), "Inactivo");
-    assertThat(universidades.catalogo()).noneMatch(c -> c.id().equals(u.id()));
-    assertThat(programas.consultar(p.id()).estado()).isEqualTo("Activo");
+    universidades.cambiarEstado(universidadCreada.id(), "Inactivo");
+    assertThat(universidades.catalogo()).noneMatch(opcion -> opcion.id().equals(universidadCreada.id()));
+    assertThat(programas.consultar(programaCreado.id()).estado()).isEqualTo("Activo");
     assertThat(
-      universidades.programas(u.id(), Map.of()).totalElementos()
+      universidades.programas(universidadCreada.id(), Map.of()).totalElementos()
     ).isEqualTo(1);
     assertThat(
       jdbc.queryForObject(
         "select count(*) from residente where id_programa=?",
         Integer.class,
-        p.id()
+        programaCreado.id()
       )
     ).isEqualTo(1);
     assertThatThrownBy(() ->
-      programas.crear(new ProgramaRequest("Otro", u.id()))
+      programas.crear(new ProgramaRequest("Otro", universidadCreada.id()))
     ).hasMessageContaining("inactiva");
-    universidades.cambiarEstado(u.id(), "Activo");
+    universidades.cambiarEstado(universidadCreada.id(), "Activo");
     assertThat(
-      programas.crear(new ProgramaRequest("Otro", u.id())).universidadId()
-    ).isEqualTo(u.id());
+      programas.crear(new ProgramaRequest("Otro", universidadCreada.id())).universidadId()
+    ).isEqualTo(universidadCreada.id());
   }
 
   @Test
   void filtraProgramasPorIdInclusoDespuesDeRenombrarUniversidad() {
-    var a = universidades.crear(datos("UNI-A-" + UUID.randomUUID()));
-    var b = universidades.crear(datos("UNI-B-" + UUID.randomUUID()));
-    var pa = programas.crear(new ProgramaRequest("Programa A", a.id()));
-    programas.crear(new ProgramaRequest("Programa B", a.id()));
-    programas.crear(new ProgramaRequest("Programa externo", b.id()));
-    universidades.actualizar(a.id(), datos(a.nombre() + " editada"));
+    var universidadA = universidades.crear(datos("UNI-A-" + UUID.randomUUID()));
+    var universidadB = universidades.crear(datos("UNI-B-" + UUID.randomUUID()));
+    var pa = programas.crear(new ProgramaRequest("Programa A", universidadA.id()));
+    programas.crear(new ProgramaRequest("Programa B", universidadA.id()));
+    programas.crear(new ProgramaRequest("Programa externo", universidadB.id()));
+    universidades.actualizar(universidadA.id(), datos(universidadA.nombre() + " editada"));
     var pagina = universidades.programas(
-      a.id(),
-      Map.of("tamano", "1", "pagina", "2", "universidadId", b.id().toString())
+      universidadA.id(),
+      Map.of("tamano", "1", "pagina", "2", "universidadId", universidadB.id().toString())
     );
     assertThat(pagina.totalElementos()).isEqualTo(2);
     assertThat(pagina.pagina()).isEqualTo(2);
     assertThat(pagina.contenido()).allSatisfy(row ->
-      assertThat(row.get("universidadId")).isEqualTo(a.id())
+      assertThat(row.get("universidadId")).isEqualTo(universidadA.id())
     );
     assertThat(
-      universidades.programas(a.id(), Map.of("q", "externo")).totalElementos()
+      universidades.programas(universidadA.id(), Map.of("q", "externo")).totalElementos()
     ).isZero();
     assertThat(programas.consultar(pa.id()).universidad()).isEqualTo(
-      a.nombre() + " editada"
+      universidadA.nombre() + " editada"
     );
     assertThatThrownBy(() ->
       universidades.programas(Integer.MAX_VALUE, Map.of())

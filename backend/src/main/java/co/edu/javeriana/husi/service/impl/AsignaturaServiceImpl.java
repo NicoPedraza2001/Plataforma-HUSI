@@ -17,87 +17,99 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AsignaturaServiceImpl implements AsignaturaService {
 
-  private final AsignaturaRepository registros;
-  private final ServicioRepository servicios;
-  private final AsignaturaMapper mapper;
+  private final AsignaturaRepository asignaturaRepository;
+  private final ServicioRepository servicioRepository;
+  private final AsignaturaMapper asignaturaMapper;
 
   private NegocioException error(HttpStatus estado, String mensaje) {
     return new NegocioException(estado, mensaje);
   }
 
-  private Asignatura obtener(Integer id, boolean bloquear) {
-    return (bloquear ? registros.bloquearPorId(id) : registros.findById(id))
-      .filter(e -> !"Eliminado".equals(e.getEstado()))
+  private Asignatura buscarAsignatura(Integer id, boolean bloquear) {
+    return (
+      bloquear
+        ? asignaturaRepository.bloquearPorId(id)
+        : asignaturaRepository.findById(id)
+    )
+      .filter(asignatura -> !"Eliminado".equals(asignatura.getEstado()))
       .orElseThrow(() ->
         error(HttpStatus.NOT_FOUND, "No se encontró el registro.")
       );
   }
 
-  private void aplicar(Asignatura e, AsignaturaRequest d) {
-    if (d.servicioId() == null || d.servicioId() < 1) throw error(
+  /** Valida la solicitud y copia nombre y servicio sobre la asignatura (nueva o existente). */
+  private void validarYAsignarDatos(
+    Asignatura asignatura,
+    AsignaturaRequest request
+  ) {
+    if (request.servicioId() == null || request.servicioId() < 1) throw error(
       HttpStatus.BAD_REQUEST,
       "Selecciona un servicio."
     );
-    var servicio = servicios
-      .bloquearPorId(d.servicioId())
+    var servicio = servicioRepository
+      .bloquearPorId(request.servicioId())
       .orElseThrow(() ->
         error(HttpStatus.BAD_REQUEST, "El servicio no existe.")
       );
-    boolean mismo =
-      e.getServicio() != null &&
-      e.getServicio().getId().equals(servicio.getId());
+    // Un servicio inactivo solo se acepta si la asignatura ya pertenecía a él.
+    boolean conservaServicio =
+      asignatura.getServicio() != null &&
+      asignatura.getServicio().getId().equals(servicio.getId());
     if (
       "Eliminado".equals(servicio.getEstado()) ||
-      (!mismo && !"Activo".equals(servicio.getEstado()))
+      (!conservaServicio && !"Activo".equals(servicio.getEstado()))
     ) throw error(HttpStatus.CONFLICT, "Selecciona un servicio activo.");
 
     if (
-      d.nombre() == null ||
-      d.nombre().isBlank() ||
-      d.nombre().strip().length() > 200
+      request.nombre() == null ||
+      request.nombre().isBlank() ||
+      request.nombre().strip().length() > 200
     ) throw error(
       HttpStatus.BAD_REQUEST,
       "El nombre es obligatorio y admite hasta 200 caracteres."
     );
     if (
-      registros.existsByServicioIdAndNombreIgnoreCaseAndIdNot(
-        d.servicioId(),
-        d.nombre().strip(),
-        e.getId() == null ? 0 : e.getId()
+      asignaturaRepository.existsByServicioIdAndNombreIgnoreCaseAndIdNot(
+        request.servicioId(),
+        request.nombre().strip(),
+        asignatura.getId() == null ? 0 : asignatura.getId()
       )
     ) throw error(
       HttpStatus.CONFLICT,
       "Ya existe esa asignatura en el servicio. Revisa también los inactivos."
     );
     if (
-      e.getId() != null &&
-      !e.getServicio().getId().equals(d.servicioId()) &&
-      registros.contarReferencias(e.getId()) > 0
+      asignatura.getId() != null &&
+      !asignatura.getServicio().getId().equals(request.servicioId()) &&
+      asignaturaRepository.contarReferencias(asignatura.getId()) > 0
     ) throw error(
       HttpStatus.CONFLICT,
       "La asignatura tiene rotaciones: no se puede cambiar su servicio para conservar el historial."
     );
-    e.setNombre(d.nombre().strip());
-
-    e.setServicio(servicio);
+    asignatura.setNombre(request.nombre().strip());
+    asignatura.setServicio(servicio);
   }
 
   public AsignaturaResponse consultar(Integer id) {
-    return mapper.response(obtener(id, false));
+    return asignaturaMapper.toResponse(buscarAsignatura(id, false));
   }
 
   @Transactional
-  public AsignaturaResponse crear(AsignaturaRequest d) {
-    var e = new Asignatura();
-    aplicar(e, d);
-    return mapper.response(registros.saveAndFlush(e));
+  public AsignaturaResponse crear(AsignaturaRequest request) {
+    var asignatura = new Asignatura();
+    validarYAsignarDatos(asignatura, request);
+    return asignaturaMapper.toResponse(
+      asignaturaRepository.saveAndFlush(asignatura)
+    );
   }
 
   @Transactional
-  public AsignaturaResponse actualizar(Integer id, AsignaturaRequest d) {
-    var e = obtener(id, true);
-    aplicar(e, d);
-    return mapper.response(registros.saveAndFlush(e));
+  public AsignaturaResponse actualizar(Integer id, AsignaturaRequest request) {
+    var asignatura = buscarAsignatura(id, true);
+    validarYAsignarDatos(asignatura, request);
+    return asignaturaMapper.toResponse(
+      asignaturaRepository.saveAndFlush(asignatura)
+    );
   }
 
   @Transactional
@@ -106,19 +118,21 @@ public class AsignaturaServiceImpl implements AsignaturaService {
       HttpStatus.BAD_REQUEST,
       "Estado inválido."
     );
-    var e = obtener(id, true);
-    e.setEstado(estado);
-    return mapper.response(registros.saveAndFlush(e));
+    var asignatura = buscarAsignatura(id, true);
+    asignatura.setEstado(estado);
+    return asignaturaMapper.toResponse(
+      asignaturaRepository.saveAndFlush(asignatura)
+    );
   }
 
   @Transactional
   public void eliminarDefinitivamente(Integer id) {
-    var e = obtener(id, true);
-    if (registros.contarReferencias(id) > 0) throw error(
+    var asignatura = buscarAsignatura(id, true);
+    if (asignaturaRepository.contarReferencias(id) > 0) throw error(
       HttpStatus.CONFLICT,
       "La asignatura tiene rotaciones asociadas. Puedes desactivarla para conservar el historial."
     );
-    registros.delete(e);
-    registros.flush();
+    asignaturaRepository.delete(asignatura);
+    asignaturaRepository.flush();
   }
 }

@@ -21,155 +21,171 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CargaInicialServiceImpl implements CargaInicialService {
 
-  private final CargaInicialRepository consultas;
-  private final UniversidadService universidades;
-  private final ProgramaService programas;
-  private final ResidenteService residentes;
-  private final ServicioService servicios;
-  private final AsignaturaService asignaturas;
-  private final RotacionService rotaciones;
-  private final RotacionResidenteService relaciones;
+  private final CargaInicialRepository cargaInicialRepository;
+  private final UniversidadService universidadService;
+  private final ProgramaService programaService;
+  private final ResidenteService residenteService;
+  private final ServicioService servicioService;
+  private final AsignaturaService asignaturaService;
+  private final RotacionService rotacionService;
+  private final RotacionResidenteService rotacionResidenteService;
 
   @Transactional(readOnly = true)
-  public CargaInicialResponse validar(CargaInicialRequest d) {
-    return ejecutar(d, false);
+  public CargaInicialResponse validar(CargaInicialRequest solicitud) {
+    return simularOGuardar(solicitud, false);
   }
 
   @Transactional
-  public CargaInicialResponse confirmar(CargaInicialRequest d) {
-    return ejecutar(d, true);
+  public CargaInicialResponse confirmar(CargaInicialRequest solicitud) {
+    return simularOGuardar(solicitud, true);
   }
 
-  private CargaInicialResponse ejecutar(
-    CargaInicialRequest d,
+  private CargaInicialResponse simularOGuardar(
+    CargaInicialRequest solicitud,
     boolean guardar
   ) {
     if (
-      d == null ||
-      d.filas() == null ||
-      d.filas().isEmpty() ||
-      d.filas().size() > 5000
+      solicitud == null ||
+      solicitud.filas() == null ||
+      solicitud.filas().isEmpty() ||
+      solicitud.filas().size() > 5000
     ) throw error("Selecciona entre 1 y 5000 filas.");
-    var datos = consultas.obtener(guardar);
-    String huella = huella(datos, d);
-    if (guardar && !huella.equals(d.validacion())) throw new NegocioException(
+    var tablasActuales = cargaInicialRepository.leerTablas(guardar);
+    String huella = calcularHuella(tablasActuales, solicitud);
+    if (
+      guardar && !huella.equals(solicitud.validacion())
+    ) throw new NegocioException(
       HttpStatus.CONFLICT,
       "Los datos o los cupos cambiaron desde la revisión. Vuelve a validar antes de confirmar; no se guardó nada."
     );
     CargaInicialPlan plan;
     try {
-      plan = new CargaInicialPlan(datos, d);
+      plan = new CargaInicialPlan(tablasActuales, solicitud);
     } catch (IllegalArgumentException e) {
       throw error(e.getMessage());
     }
     if (guardar) {
-      if (plan.altas.isEmpty()) throw error(
+      if (plan.registrosNuevos.isEmpty()) throw error(
         "No hay filas válidas para importar."
       );
-      Map<Integer, Integer> ids = new HashMap<>();
-      for (var alta : plan.altas) guardar(alta, ids);
+      Map<Integer, Integer> idRealPorTemporal = new HashMap<>();
+      for (var registro : plan.registrosNuevos) guardarRegistro(
+        registro,
+        idRealPorTemporal
+      );
     }
-    return plan.respuesta(huella, guardar);
+    return plan.construirRespuesta(huella, guardar);
   }
 
-  private int id(
-    Map<String, Object> fila,
-    String campo,
-    Map<Integer, Integer> ids
+  /** Lee un id del registro; si es temporal (negativo) devuelve el id real ya creado. */
+  private int idReal(
+    Map<String, Object> valores,
+    String columna,
+    Map<Integer, Integer> idRealPorTemporal
   ) {
-    int valor = numero(fila.get(campo));
-    return ids.getOrDefault(valor, valor);
+    int id = entero(valores.get(columna));
+    return idRealPorTemporal.getOrDefault(id, id);
   }
 
-  private void guardar(Alta alta, Map<Integer, Integer> ids) {
-    var f = alta.datos();
-    Integer creado = null;
-    switch (alta.tabla()) {
-      case "universidad" -> creado = universidades
+  private void guardarRegistro(
+    RegistroNuevo registro,
+    Map<Integer, Integer> idRealPorTemporal
+  ) {
+    var valores = registro.valores();
+    Integer idCreado = null;
+    switch (registro.tabla()) {
+      case "universidad" -> idCreado = universidadService
         .crear(
           new UniversidadRequest(
-            texto(f.get("nombre_universidad")),
-            texto(f.get("pais")),
+            texto(valores.get("nombre_universidad")),
+            texto(valores.get("pais")),
             null
           )
         )
         .id();
-      case "programa" -> creado = programas
+      case "programa" -> idCreado = programaService
         .crear(
           new ProgramaRequest(
-            texto(f.get("nombre_programa")),
-            id(f, "id_universidad", ids)
+            texto(valores.get("nombre_programa")),
+            idReal(valores, "id_universidad", idRealPorTemporal)
           )
         )
         .id();
-      case "residente" -> creado = residentes
+      case "residente" -> idCreado = residenteService
         .crear(
           new ResidenteRequest(
-            texto(f.get("nombre_completo")),
-            texto(f.get("tipo_documento")),
-            texto(f.get("numero_documento")),
-            texto(f.get("perfil_academico")),
-            id(f, "id_programa", ids)
+            texto(valores.get("nombre_completo")),
+            texto(valores.get("tipo_documento")),
+            texto(valores.get("numero_documento")),
+            texto(valores.get("perfil_academico")),
+            idReal(valores, "id_programa", idRealPorTemporal)
           )
         )
         .id();
-      case "servicio" -> creado = servicios
+      case "servicio" -> idCreado = servicioService
         .crear(
           new ServicioRequest(
-            texto(f.get("nombre")),
+            texto(valores.get("nombre")),
             null,
-            numero(f.get("cupo_simultaneo")),
-            numero(f.get("cupo_maximo_instalado"))
+            entero(valores.get("cupo_simultaneo")),
+            entero(valores.get("cupo_maximo_instalado"))
           )
         )
         .id();
-      case "asignatura" -> creado = asignaturas
+      case "asignatura" -> idCreado = asignaturaService
         .crear(
           new AsignaturaRequest(
-            texto(f.get("nombre_asignatura")),
-            id(f, "id_servicio", ids)
+            texto(valores.get("nombre_asignatura")),
+            idReal(valores, "id_servicio", idRealPorTemporal)
           )
         )
         .id();
-      case "rotacion" -> rotaciones.crearHistorica(
+      case "rotacion" -> rotacionService.crearHistorica(
         new RotacionRequest(
-          id(f, "id_asignatura", ids),
-          fecha(f, "fecha_inicio"),
-          fecha(f, "fecha_fin")
+          idReal(valores, "id_asignatura", idRealPorTemporal),
+          leerFecha(valores, "fecha_inicio"),
+          leerFecha(valores, "fecha_fin")
         )
       );
-      case "rotacion_residente" -> relaciones.asignarHistorica(
+      case "rotacion_residente" -> rotacionResidenteService.asignarHistorica(
         new RotacionId(
-          id(f, "id_asignatura", ids),
-          fecha(f, "fecha_inicio"),
-          fecha(f, "fecha_fin")
+          idReal(valores, "id_asignatura", idRealPorTemporal),
+          leerFecha(valores, "fecha_inicio"),
+          leerFecha(valores, "fecha_fin")
         ),
-        id(f, "id_residente", ids)
+        idReal(valores, "id_residente", idRealPorTemporal)
       );
       default -> throw new IllegalStateException("Tabla no admitida");
     }
-    if (creado != null) ids.put(numero(f.get("id_" + alta.tabla())), creado);
+    if (idCreado != null) idRealPorTemporal.put(
+      entero(valores.get("id_" + registro.tabla())),
+      idCreado
+    );
   }
 
-  private LocalDate fecha(Map<String, Object> f, String campo) {
-    return LocalDate.parse(texto(f.get(campo)));
+  private LocalDate leerFecha(Map<String, Object> valores, String columna) {
+    return LocalDate.parse(texto(valores.get(columna)));
   }
 
-  private String huella(
-    Map<String, List<Map<String, Object>>> datos,
-    CargaInicialRequest d
+  /**
+   * SHA-256 de las tablas y de la solicitud. Confirmar exige la misma huella que devolvió la
+   * validación, para no guardar si los datos cambiaron entre ambos pasos.
+   */
+  private String calcularHuella(
+    Map<String, List<Map<String, Object>>> tablas,
+    CargaInicialRequest solicitud
   ) {
     try {
       // TreeMap hace estable el orden de columnas en PostgreSQL y H2.
-      StringBuilder base = new StringBuilder();
-      datos.forEach((tabla, filas) -> {
-        base.append(tabla);
-        filas.forEach(f -> base.append(new TreeMap<>(f)));
+      StringBuilder contenido = new StringBuilder();
+      tablas.forEach((tabla, filas) -> {
+        contenido.append(tabla);
+        filas.forEach(fila -> contenido.append(new TreeMap<>(fila)));
       });
-      base.append(d.crearFaltantes()).append(d.filas());
+      contenido.append(solicitud.crearFaltantes()).append(solicitud.filas());
       return HexFormat.of().formatHex(
         MessageDigest.getInstance("SHA-256").digest(
-          base.toString().getBytes(StandardCharsets.UTF_8)
+          contenido.toString().getBytes(StandardCharsets.UTF_8)
         )
       );
     } catch (java.security.NoSuchAlgorithmException e) {

@@ -11,10 +11,13 @@
   @for (
     etiqueta of ['Archivo', 'Columnas', 'Validación', 'Resultado'];
     track etiqueta;
-    let i = $index
+    let indice = $index
   ) {
-    <li [class.actual]="paso() === i + 1" [attr.aria-current]="paso() === i + 1 ? 'step' : null">
-      <span>{{ i + 1 }}</span
+    <li
+      [class.actual]="paso() === indice + 1"
+      [attr.aria-current]="paso() === indice + 1 ? 'step' : null"
+    >
+      <span>{{ indice + 1 }}</span
       >{{ etiqueta }}
     </li>
   }
@@ -29,7 +32,7 @@
       Importa varios programas a la vez. Primero revisarás las columnas y los datos; nada se guarda
       hasta que confirmes.
     </p>
-    <div class="zona-archivo" (dragover)="$event.preventDefault()" (drop)="soltar($event)">
+    <div class="zona-archivo" (dragover)="$event.preventDefault()" (drop)="soltarArchivo($event)">
       <span class="icono-excel" aria-hidden="true">X</span>
       <h3>Arrastra tu archivo Excel aquí</h3>
       <p>o selecciona un archivo de tu equipo</p>
@@ -39,7 +42,7 @@
           type="file"
           accept=".xlsx"
           [disabled]="ocupado()"
-          (change)="seleccionar($event)"
+          (change)="seleccionarArchivo($event)"
       /></label>
       <small>Solo .xlsx · Hasta 5 MB · Máximo 1000 programas</small>
     </div>
@@ -78,7 +81,7 @@
     }
     <div class="ayuda-plantilla">
       <p>¿No tienes un archivo? Descarga una plantilla con los encabezados esperados.</p>
-      <button class="btn btn--outline" [disabled]="ocupado()" (click)="plantilla()">
+      <button class="btn btn--outline" [disabled]="ocupado()" (click)="descargarPlantilla()">
         ↓ Descargar plantilla
       </button>
     </div>
@@ -103,12 +106,12 @@
     <div class="configuracion">
       <label
         >Hoja del libro<select
-          [ngModel]="hojaIndice()"
+          [ngModel]="indiceHoja()"
           (ngModelChange)="cambiarHoja($event)"
           [disabled]="ocupado()"
         >
-          @for (h of hojas(); track h.nombre; let i = $index) {
-            <option [ngValue]="i">{{ h.nombre }}</option>
+          @for (hojaDelLibro of hojas(); track hojaDelLibro.nombre; let indice = $index) {
+            <option [ngValue]="indice">{{ hojaDelLibro.nombre }}</option>
           }
         </select></label
       >
@@ -117,7 +120,7 @@
           type="number"
           min="1"
           [max]="maxFilas()"
-          [ngModel]="encabezado()"
+          [ngModel]="filaEncabezado()"
           (ngModelChange)="cambiarEncabezado($event)"
           [disabled]="ocupado()"
       /></label>
@@ -135,8 +138,8 @@
           [disabled]="ocupado()"
         >
           <option [ngValue]="-1">Selecciona una columna</option>
-          @for (c of columnas(); track c.indice) {
-            <option [ngValue]="c.indice">{{ c.etiqueta }}</option>
+          @for (columna of columnas(); track columna.indice) {
+            <option [ngValue]="columna.indice">{{ columna.etiqueta }}</option>
           }
         </select></label
       >
@@ -154,8 +157,8 @@
           [disabled]="ocupado()"
         >
           <option [ngValue]="-1">Selecciona una columna</option>
-          @for (c of columnas(); track c.indice) {
-            <option [ngValue]="c.indice">{{ c.etiqueta }}</option>
+          @for (columna of columnas(); track columna.indice) {
+            <option [ngValue]="columna.indice">{{ columna.etiqueta }}</option>
           }
         </select></label
       >
@@ -167,8 +170,8 @@
     <details>
       <summary>Ver nombres de universidades aceptadas</summary>
       <ul>
-        @for (u of universidades(); track u.id) {
-          <li>{{ u.nombre }}</li>
+        @for (universidad of universidades(); track universidad.id) {
+          <li>{{ universidad.nombre }}</li>
         }
       </ul>
     </details>
@@ -184,11 +187,11 @@
           </tr>
         </thead>
         <tbody>
-          @for (f of filas().slice(0, 5); track f.fila) {
+          @for (fila of filas().slice(0, 5); track fila.fila) {
             <tr>
-              <td>{{ f.fila }}</td>
-              <td>{{ f.nombre || 'Falta el nombre' }}</td>
-              <td>{{ f.universidad || 'Falta la universidad' }}</td>
+              <td>{{ fila.fila }}</td>
+              <td>{{ fila.nombre || 'Falta el nombre' }}</td>
+              <td>{{ fila.universidad || 'Falta la universidad' }}</td>
             </tr>
           } @empty {
             <tr>
@@ -209,7 +212,7 @@
       </button>
     </footer>
   }
-  @if ((paso() === 3 || paso() === 4) && resultado(); as r) {
+  @if ((paso() === 3 || paso() === 4) && resultado(); as resultadoActual) {
     <h2>{{ paso() === 3 ? 'Resultado de validación' : 'Importación finalizada' }}</h2>
     <p class="intro" role="status">
       {{
@@ -220,27 +223,27 @@
     </p>
     <div class="resumen">
       <div class="exito">
-        <strong>{{ paso() === 3 ? r.validos : r.creados }}</strong
+        <strong>{{ paso() === 3 ? resultadoActual.validos : resultadoActual.creados }}</strong
         ><span>{{ paso() === 3 ? 'Válidos para crear' : 'Programas creados' }}</span>
       </div>
       <div class="advertencia">
-        <strong>{{ r.omitidos }}</strong
+        <strong>{{ resultadoActual.omitidos }}</strong
         ><span>Duplicados omitidos</span>
       </div>
       <div class="error">
-        <strong>{{ r.errores }}</strong
+        <strong>{{ resultadoActual.errores }}</strong
         ><span>Filas con errores</span>
       </div>
     </div>
     <p class="intro">
-      Total procesado: {{ r.total }} filas.
+      Total procesado: {{ resultadoActual.total }} filas.
       {{
         paso() === 3
           ? 'Todavía no se ha guardado ningún programa.'
           : 'Los registros guardados ya están disponibles en Programas.'
       }}
     </p>
-    @if (paso() === 3 && !r.validos) {
+    @if (paso() === 3 && !resultadoActual.validos) {
       <p class="mensaje advertencia">
         No hay programas nuevos válidos para guardar. Corrige el archivo o revisa las columnas
         seleccionadas.
@@ -249,7 +252,7 @@
     <div class="detalle-head">
       <h3>Detalle por fila</h3>
       <label
-        >Ver<select [ngModel]="filtro()" (ngModelChange)="filtrar($event)">
+        >Ver<select [ngModel]="filtro()" (ngModelChange)="filtrarDetalle($event)">
           <option value="TODOS">Todos</option>
           <option value="ERROR">Errores</option>
           <option value="OMITIDO">Omitidos</option>
@@ -271,20 +274,20 @@
           </tr>
         </thead>
         <tbody>
-          @for (f of detalle(); track f.fila) {
+          @for (fila of detallePagina(); track fila.fila) {
             <tr>
-              <td>{{ f.fila }}</td>
-              <td>{{ f.nombre || '—' }}</td>
-              <td>{{ f.universidad || '—' }}</td>
+              <td>{{ fila.fila }}</td>
+              <td>{{ fila.nombre || '—' }}</td>
+              <td>{{ fila.universidad || '—' }}</td>
               <td>
                 <span
-                  [class.error]="f.estado === 'ERROR'"
-                  [class.advertencia]="f.estado === 'OMITIDO'"
-                  [class.exito]="f.estado === 'VALIDO' || f.estado === 'CREADO'"
-                  >{{ f.estado }}</span
+                  [class.error]="fila.estado === 'ERROR'"
+                  [class.advertencia]="fila.estado === 'OMITIDO'"
+                  [class.exito]="fila.estado === 'VALIDO' || fila.estado === 'CREADO'"
+                  >{{ fila.estado }}</span
                 >
               </td>
-              <td>{{ f.mensaje }}</td>
+              <td>{{ fila.mensaje }}</td>
             </tr>
           } @empty {
             <tr>
@@ -313,7 +316,7 @@
     <footer>
       <button
         class="btn btn--outline"
-        [disabled]="ocupado() || !(r.errores + r.omitidos)"
+        [disabled]="ocupado() || !(resultadoActual.errores + resultadoActual.omitidos)"
         (click)="descargarErrores()"
       >
         ↓ Descargar errores y omitidos
@@ -326,8 +329,16 @@
         >
           Corregir columnas
         </button>
-        <button class="btn btn--navy" [disabled]="ocupado() || !r.validos" (click)="importar()">
-          {{ ocupado() ? 'Guardando…' : 'Confirmar: importar ' + r.validos + ' programas' }}
+        <button
+          class="btn btn--navy"
+          [disabled]="ocupado() || !resultadoActual.validos"
+          (click)="importar()"
+        >
+          {{
+            ocupado()
+              ? 'Guardando…'
+              : 'Confirmar: importar ' + resultadoActual.validos + ' programas'
+          }}
         </button>
       } @else {
         <button class="btn btn--navy" (click)="cerrar.emit()">Ver programas</button>

@@ -11,7 +11,7 @@
       type="button"
       class="btn btn--add"
       [disabled]="cargando() || !!error() || contextoInactivo()"
-      (click)="abrir()"
+      (click)="abrirFormulario()"
     >
       + Agregar programa
     </button>
@@ -46,7 +46,7 @@
       class="search__input"
       type="search"
       placeholder="Buscar programa o universidad…"
-      [value]="termino()"
+      [value]="terminoBusqueda()"
       (input)="buscar($any($event.target).value)"
   /></label>
   <p class="ayuda">Programas · {{ totalElementos() }} resultados</p>
@@ -66,9 +66,9 @@
             <td colspan="4" class="tabla__vacia">Cargando programas…</td>
           </tr>
         } @else {
-          @for (programa of programasPagina(); track programa.id; let i = $index) {
+          @for (programa of programasPagina(); track programa.id; let indice = $index) {
             <tr>
-              <td>{{ desde() + i + 1 }}</td>
+              <td>{{ indicePrimeraFila() + indice + 1 }}</td>
               <td>{{ programa.nombre }}</td>
               <td>{{ programa.universidad }}</td>
               <td>
@@ -93,7 +93,7 @@
                     class="btn btn--navy"
                     type="button"
                     [disabled]="guardando() || contextoInactivo()"
-                    (click)="abrir(programa)"
+                    (click)="abrirFormulario(programa)"
                     [attr.aria-label]="'Editar ' + programa.nombre"
                   >
                     Editar
@@ -117,7 +117,7 @@
                 {{
                   error()
                     ? 'No se pudo obtener el listado.'
-                    : universidadRuta() !== null && !termino()
+                    : universidadRuta() !== null && !terminoBusqueda()
                       ? 'Esta universidad no tiene programas registrados.'
                       : 'No hay programas que coincidan con la búsqueda.'
                 }}
@@ -134,8 +134,8 @@
     (cambio)="irAPagina($event)"
   />
 </section>
-@if (formulario()) {
-  <div class="fondo-modal" (keydown.escape)="!guardando() && formulario.set(false)">
+@if (formularioAbierto()) {
+  <div class="fondo-modal" (keydown.escape)="!guardando() && formularioAbierto.set(false)">
     <section
       class="panel-modal"
       appFocoModal
@@ -155,7 +155,7 @@
         [errorFormulario]="errorFormulario()"
         [guardando]="guardando()"
         (guardar)="guardar()"
-        (cancelar)="formulario.set(false)"
+        (cancelar)="formularioAbierto.set(false)"
       />
     </section>
   </div>

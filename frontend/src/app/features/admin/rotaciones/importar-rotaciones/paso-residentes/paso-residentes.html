@@ -41,7 +41,7 @@
   @if (revisionesNuevas().length) {
     <p class="mensaje aviso crear-en-lote">
       <span>{{
-        contar(
+        cantidadConPalabra(
           revisionesNuevas().length,
           'residente nuevo tiene todos sus datos completos y válidos.',
           'residentes nuevos tienen todos sus datos completos y válidos.'
@@ -55,7 +55,7 @@
         {{
           guardando()
             ? 'Creando…'
-            : 'Crear ' + contar(revisionesNuevas().length, 'residente', 'residentes')
+            : 'Crear ' + cantidadConPalabra(revisionesNuevas().length, 'residente', 'residentes')
         }}
       </button>
     </p>
@@ -208,7 +208,8 @@
 <footer class="acciones-paso">
   @if (totalPendientes()) {
     <span class="pendientes"
-      >Resuelve {{ contar(totalPendientes(), 'pendiente', 'pendientes') }} para continuar.</span
+      >Resuelve {{ cantidadConPalabra(totalPendientes(), 'pendiente', 'pendientes') }} para
+      continuar.</span
     >
   }
   <button class="btn btn--outline" [disabled]="guardando()" (click)="anterior.emit()">Atrás</button>

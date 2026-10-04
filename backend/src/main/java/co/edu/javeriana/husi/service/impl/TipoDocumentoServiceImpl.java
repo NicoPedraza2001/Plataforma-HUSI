@@ -13,13 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class TipoDocumentoServiceImpl implements TipoDocumentoService {
 
-  private final TipoDocumentoRepository tipos;
+  private final TipoDocumentoRepository tipoDocumentoRepository;
 
   public List<TipoDocumentoResponse> listar() {
-    return tipos
+    return tipoDocumentoRepository
       .findAllByOrderByCodigo()
       .stream()
-      .map(t -> new TipoDocumentoResponse(t.getId(), t.getCodigo(), t.getNombre()))
+      .map(tipo ->
+        new TipoDocumentoResponse(tipo.getId(), tipo.getCodigo(), tipo.getNombre())
+      )
       .toList();
   }
 }

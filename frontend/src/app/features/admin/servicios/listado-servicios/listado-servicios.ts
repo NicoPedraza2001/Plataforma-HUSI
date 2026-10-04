@@ -18,28 +18,30 @@ import { FormularioServicio } from '../formulario-servicio/formulario-servicio';
 })
 export class ListadoServicios {
   // Dependencias
-  private readonly api = inject(ServicioService);
+  private readonly servicioService = inject(ServicioService);
 
   // Estado de la pantalla y datos del formulario
-  protected readonly consulta = new Consulta<Pagina<Servicio>>((params) => this.api.listar(params));
-  protected readonly termino = signal('');
+  protected readonly consulta = new Consulta<Pagina<Servicio>>((params) =>
+    this.servicioService.listar(params),
+  );
+  protected readonly terminoBusqueda = signal('');
   protected readonly paginaActual = computed(
     () => this.consulta.datos()?.pagina ?? this.paginaSolicitada(),
   );
   private readonly paginaSolicitada = signal(1);
   protected readonly totalPaginas = computed(() => this.consulta.datos()?.totalPaginas ?? 1);
-  protected readonly desde = computed(() => (this.paginaActual() - 1) * 10);
+  protected readonly indicePrimeraFila = computed(() => (this.paginaActual() - 1) * 10);
   protected readonly serviciosPagina = computed(() => this.consulta.datos()?.contenido ?? []);
   protected readonly cargando = computed(() => this.consulta.cargando());
   protected readonly error = computed(() => this.consulta.error());
-  protected readonly estado = signal('todos');
-  protected readonly formulario = signal(false);
+  protected readonly filtroEstado = signal('todos');
+  protected readonly formularioAbierto = signal(false);
   protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
   protected readonly errorFormulario = signal('');
   protected readonly pendienteEliminar = signal<Servicio | null>(null);
-  protected edicionId: number | null = null;
-  protected datos: ServicioRequest = {
+  protected idEnEdicion: number | null = null;
+  protected datosFormulario: ServicioRequest = {
     nombre: '',
     descripcion: '',
     cupoSimultaneo: null,
@@ -55,20 +57,24 @@ export class ListadoServicios {
   }
 
   protected cargar(espera = 0) {
-    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 10 };
-    if (this.estado() !== 'todos')
-      params['estado'] = this.estado() === 'activos' ? 'Activo' : 'Inactivo';
+    const params: Parametros = {
+      q: this.terminoBusqueda(),
+      pagina: this.paginaSolicitada(),
+      tamano: 10,
+    };
+    if (this.filtroEstado() !== 'todos')
+      params['estado'] = this.filtroEstado() === 'activos' ? 'Activo' : 'Inactivo';
     this.consulta.cargar(params, espera);
   }
 
   protected buscar(valor: string) {
-    this.termino.set(valor);
+    this.terminoBusqueda.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar(300);
   }
 
   protected filtrarPorEstado(valor: string) {
-    this.estado.set(valor);
+    this.filtroEstado.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
   }
@@ -79,29 +85,29 @@ export class ListadoServicios {
     this.cargar();
   }
 
-  protected async abrir(fila: Servicio | null = null) {
+  protected async abrirFormulario(fila: Servicio | null = null) {
     if (this.guardando()) return;
     this.guardando.set(true);
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      this.edicionId = fila?.id ?? null;
+      this.idEnEdicion = fila?.id ?? null;
       if (fila) {
-        const detalle = await firstValueFrom(this.api.consultar(fila.id));
-        this.datos = {
+        const detalle = await firstValueFrom(this.servicioService.consultar(fila.id));
+        this.datosFormulario = {
           nombre: detalle.nombre,
           descripcion: detalle.descripcion ?? '',
           cupoSimultaneo: detalle.cupoSimultaneo,
           cupoMaximoInstalado: detalle.cupoMaximoInstalado,
         };
       } else
-        this.datos = {
+        this.datosFormulario = {
           nombre: '',
           descripcion: '',
           cupoSimultaneo: null,
           cupoMaximoInstalado: null,
         };
-      this.formulario.set(true);
+      this.formularioAbierto.set(true);
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
     } finally {
@@ -115,11 +121,11 @@ export class ListadoServicios {
     this.errorFormulario.set('');
     try {
       await firstValueFrom(
-        this.edicionId
-          ? this.api.actualizar(this.edicionId, this.datos)
-          : this.api.crear(this.datos),
+        this.idEnEdicion
+          ? this.servicioService.actualizar(this.idEnEdicion, this.datosFormulario)
+          : this.servicioService.crear(this.datosFormulario),
       );
-      this.formulario.set(false);
+      this.formularioAbierto.set(false);
       this.aviso.set('Servicio guardado correctamente.');
       this.cargar();
     } catch (e) {
@@ -135,7 +141,9 @@ export class ListadoServicios {
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      await firstValueFrom(this.api.cambiarEstado(fila.id, fila.activo ? 'Inactivo' : 'Activo'));
+      await firstValueFrom(
+        this.servicioService.cambiarEstado(fila.id, fila.activo ? 'Inactivo' : 'Activo'),
+      );
       this.aviso.set('Estado actualizado correctamente.');
       this.cargar();
     } catch (e) {
@@ -156,7 +164,7 @@ export class ListadoServicios {
     this.guardando.set(true);
     this.errorFormulario.set('');
     try {
-      await firstValueFrom(this.api.eliminarDefinitivamente(fila.id));
+      await firstValueFrom(this.servicioService.eliminarDefinitivamente(fila.id));
       this.pendienteEliminar.set(null);
       this.aviso.set('Servicio eliminado definitivamente.');
       this.cargar();

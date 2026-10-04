@@ -30,34 +30,34 @@ describe('EsperaServicio', () => {
   async function crear(filas = [espera(1), espera(2, true), espera(3), espera(4)]) {
     const api = {
       consultar: vi.fn(() => of(destino)),
-      espera: vi.fn(() => of(filas)),
+      listarEsperaDelServicio: vi.fn(() => of(filas)),
       trasladarEspera: vi.fn(() => of(undefined)),
     };
     TestBed.configureTestingModule({ providers: [{ provide: RotacionService, useValue: api }] });
-    const f = TestBed.createComponent(EsperaServicio);
-    f.componentRef.setInput('rotacion', destino);
-    f.detectChanges();
-    await new Promise((r) => setTimeout(r));
-    f.detectChanges();
-    return { f, api };
+    const fixture = TestBed.createComponent(EsperaServicio);
+    fixture.componentRef.setInput('rotacion', destino);
+    fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver));
+    fixture.detectChanges();
+    return { fixture, api };
   }
 
   it('should create', async () => {
-    const { f } = await crear([]);
-    expect(f.componentInstance).toBeTruthy();
-    expect(f.nativeElement.querySelector('section')).toBeNull();
+    const { fixture } = await crear([]);
+    expect(fixture.componentInstance).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('section')).toBeNull();
   });
 
   it('preselecciona por llegada hasta el cupo, sin quienes tienen cruce, y traslada', async () => {
-    const { f, api } = await crear();
-    const marcados = [...f.nativeElement.querySelectorAll('input:checked')].map(
-      (i: HTMLInputElement) => i.id,
+    const { fixture, api } = await crear();
+    const marcados = [...fixture.nativeElement.querySelectorAll('input:checked')].map(
+      (casilla: HTMLInputElement) => casilla.id,
     );
     expect(marcados).toEqual(['espera-0', 'espera-2']);
-    expect(f.nativeElement.textContent).toContain('Tiene otra rotación asignada');
+    expect(fixture.nativeElement.textContent).toContain('Tiene otra rotación asignada');
     const emitidos: number[] = [];
-    f.componentInstance.trasladados.subscribe((n) => emitidos.push(n));
-    await (f.componentInstance as any).trasladar();
+    fixture.componentInstance.trasladados.subscribe((cantidad) => emitidos.push(cantidad));
+    await (fixture.componentInstance as any).trasladar();
     expect(api.trasladarEspera).toHaveBeenCalledWith(destino, [
       { residenteId: 1, asignaturaId: 2, inicio: '2091-01-01', fin: '2091-01-31' },
       { residenteId: 3, asignaturaId: 2, inicio: '2091-01-01', fin: '2091-01-31' },
@@ -66,13 +66,13 @@ describe('EsperaServicio', () => {
   });
 
   it('no permite seleccionar más residentes que cupos', async () => {
-    const { f, api } = await crear();
-    (f.nativeElement.querySelector('#espera-3') as HTMLInputElement).click();
-    f.detectChanges();
-    expect(f.nativeElement.textContent).toContain('solo hay 2 cupos disponibles');
-    const boton = f.nativeElement.querySelector('button') as HTMLButtonElement;
+    const { fixture, api } = await crear();
+    (fixture.nativeElement.querySelector('#espera-3') as HTMLInputElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('solo hay 2 cupos disponibles');
+    const boton = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
     expect(boton.disabled).toBe(true);
-    await (f.componentInstance as any).trasladar();
+    await (fixture.componentInstance as any).trasladar();
     expect(api.trasladarEspera).not.toHaveBeenCalled();
   });
 });

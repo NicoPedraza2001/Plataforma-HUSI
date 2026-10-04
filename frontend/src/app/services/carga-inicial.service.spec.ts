@@ -9,10 +9,14 @@ describe('CargaInicialService', () => {
     });
     TestBed.inject(CargaInicialService).confirmar([], true, 'revision').subscribe();
     const http = TestBed.inject(HttpTestingController),
-      req = http.expectOne('/api/rotaciones/carga-inicial/confirmar');
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ filas: [], crearFaltantes: true, validacion: 'revision' });
-    req.flush({});
+      solicitud = http.expectOne('/api/rotaciones/carga-inicial/confirmar');
+    expect(solicitud.request.method).toBe('POST');
+    expect(solicitud.request.body).toEqual({
+      filas: [],
+      crearFaltantes: true,
+      validacion: 'revision',
+    });
+    solicitud.flush({});
     http.verify();
   });
 });

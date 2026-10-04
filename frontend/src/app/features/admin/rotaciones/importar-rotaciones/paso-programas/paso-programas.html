@@ -41,7 +41,7 @@
     <p class="mensaje aviso crear-en-lote">
       <span
         >{{
-          contar(
+          cantidadConPalabra(
             gruposParaCrearEnLote().length,
             'programa nuevo no se parece',
             'programas nuevos no se parecen'
@@ -53,7 +53,7 @@
         {{
           guardando()
             ? 'Creando…'
-            : 'Crear ' + contar(gruposParaCrearEnLote().length, 'programa', 'programas')
+            : 'Crear ' + cantidadConPalabra(gruposParaCrearEnLote().length, 'programa', 'programas')
         }}
       </button>
     </p>
@@ -74,7 +74,8 @@
 <footer class="acciones-paso">
   @if (totalPendientes()) {
     <span class="pendientes"
-      >Resuelve {{ contar(totalPendientes(), 'pendiente', 'pendientes') }} para continuar.</span
+      >Resuelve {{ cantidadConPalabra(totalPendientes(), 'pendiente', 'pendientes') }} para
+      continuar.</span
     >
   }
   <button class="btn btn--outline" [disabled]="guardando()" (click)="anterior.emit()">Atrás</button>

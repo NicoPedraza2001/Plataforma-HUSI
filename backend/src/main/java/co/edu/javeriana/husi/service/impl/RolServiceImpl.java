@@ -13,9 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RolServiceImpl implements RolService {
 
-  private final RolRepository roles;
+  private final RolRepository rolRepository;
 
   public List<CatalogoResponse> listar() {
-    return roles.listar();
+    return rolRepository.listar();
   }
 }

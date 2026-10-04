@@ -12,19 +12,19 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CargaInicialController {
 
-  private final CargaInicialService servicio;
+  private final CargaInicialService cargaInicialService;
 
   @PostMapping("/validar")
   public CargaInicialResponse validar(
-    @Valid @RequestBody CargaInicialRequest d
+    @Valid @RequestBody CargaInicialRequest request
   ) {
-    return servicio.validar(d);
+    return cargaInicialService.validar(request);
   }
 
   @PostMapping("/confirmar")
   public CargaInicialResponse confirmar(
-    @Valid @RequestBody CargaInicialRequest d
+    @Valid @RequestBody CargaInicialRequest request
   ) {
-    return servicio.confirmar(d);
+    return cargaInicialService.confirmar(request);
   }
 }

@@ -20,18 +20,18 @@ import { GraficoTendencia } from '../componentes/grafico-tendencia/grafico-tende
 })
 export class PanelDashboard {
   // Dependencias
-  private readonly api = inject(DashboardService);
-  private readonly rotacionesApi = inject(RotacionService);
-  private readonly catalogosApi = inject(CatalogoService);
+  private readonly dashboardService = inject(DashboardService);
+  private readonly rotacionService = inject(RotacionService);
+  private readonly catalogoService = inject(CatalogoService);
 
   // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<DashboardDatos>((params) =>
-    this.api.consultar(params),
+    this.dashboardService.consultar(params),
   );
   protected readonly rotaciones = new Consulta<Pagina<Rotacion>>((params) =>
-    this.rotacionesApi.listar(params),
+    this.rotacionService.listar(params),
   );
-  protected readonly catalogos = new Consulta<Catalogos>(() => this.catalogosApi.listar());
+  protected readonly catalogos = new Consulta<Catalogos>(() => this.catalogoService.listar());
   protected readonly periodoElegido = signal('Todos');
   protected readonly universidadElegida = signal('Todas');
   protected readonly servicioElegido = signal('Todos');
@@ -116,11 +116,11 @@ export class PanelDashboard {
   }
 
   private parametros(): Parametros {
-    const p: Parametros = {};
+    const parametros: Parametros = {};
     const corte = this.corte();
-    if (corte.periodo !== 'Todos') p['periodo'] = corte.periodo;
-    if (corte.universidad !== 'Todas') p['universidad'] = corte.universidad;
-    if (corte.servicio !== 'Todos') p['servicio'] = corte.servicio;
-    return p;
+    if (corte.periodo !== 'Todos') parametros['periodo'] = corte.periodo;
+    if (corte.universidad !== 'Todas') parametros['universidad'] = corte.universidad;
+    if (corte.servicio !== 'Todos') parametros['servicio'] = corte.servicio;
+    return parametros;
   }
 }

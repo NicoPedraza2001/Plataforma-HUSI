@@ -23,15 +23,15 @@ class CargaInicialIntegrationTests {
   @Autowired
   JdbcTemplate jdbc;
 
-  private Fila fila(int n, String doc, String servicio, String cupos) {
+  private Fila fila(int numeroFila, String documento, String servicio, String cupos) {
     return new Fila(
-      n,
+      numeroFila,
       "Universidad importación",
       "Colombia",
       "Programa importación",
-      "Residente " + doc,
+      "Residente " + documento,
       "CC",
-      doc,
+      documento,
       "",
       servicio,
       cupos,
@@ -89,21 +89,21 @@ class CargaInicialIntegrationTests {
 
   @Test
   void respetaPrioridadYDejaEnEsperaLasFilasSinCupo() {
-    var d = request(
+    var solicitud = request(
       List.of(
         fila(3, "IMP-B", "Servicio prioridad", "1"),
         fila(2, "IMP-A", "Servicio prioridad", "1"),
         fila(4, "IMP-B", "Servicio prioridad", "1")
       )
     );
-    var r = carga.validar(d);
-    assertThat(r.validos()).isEqualTo(1);
-    assertThat(r.espera()).isEqualTo(1);
-    assertThat(r.omitidos()).isEqualTo(1);
-    assertThat(r.filas().getFirst().fila()).isEqualTo(3);
-    assertThat(r.filas().get(1).mensaje()).contains("lista de espera (posición 1)");
+    var resultado = carga.validar(solicitud);
+    assertThat(resultado.validos()).isEqualTo(1);
+    assertThat(resultado.espera()).isEqualTo(1);
+    assertThat(resultado.omitidos()).isEqualTo(1);
+    assertThat(resultado.filas().getFirst().fila()).isEqualTo(3);
+    assertThat(resultado.filas().get(1).mensaje()).contains("lista de espera (posición 1)");
     var guardado = carga.confirmar(
-      new CargaInicialRequest(d.filas(), true, r.validacion())
+      new CargaInicialRequest(solicitud.filas(), true, resultado.validacion())
     );
     assertThat(guardado.espera()).isEqualTo(1);
     assertThat(
@@ -143,38 +143,38 @@ class CargaInicialIntegrationTests {
 
   @Test
   void detectaIdentidadesContradictorias() {
-    var a = fila(2, "IMP-Y", "Servicio contradicción", "3");
-    var b = new Fila(
+    var filaOriginal = fila(2, "IMP-Y", "Servicio contradicción", "3");
+    var filaContradictoria = new Fila(
       3,
-      a.universidad(),
-      a.pais(),
-      a.programa(),
+      filaOriginal.universidad(),
+      filaOriginal.pais(),
+      filaOriginal.programa(),
       "Otro nombre",
-      a.tipoDocumento(),
-      a.documento(),
+      filaOriginal.tipoDocumento(),
+      filaOriginal.documento(),
       "",
-      a.servicio(),
+      filaOriginal.servicio(),
       "3",
       "3",
-      a.asignatura(),
-      a.inicio(),
-      a.fin()
+      filaOriginal.asignatura(),
+      filaOriginal.inicio(),
+      filaOriginal.fin()
     );
-    var r = carga.validar(request(List.of(a, b)));
-    assertThat(r.validos()).isEqualTo(1);
-    assertThat(r.errores()).isEqualTo(1);
-    assertThat(r.filas().get(1).mensaje()).contains("no coincide");
+    var resultado = carga.validar(request(List.of(filaOriginal, filaContradictoria)));
+    assertThat(resultado.validos()).isEqualTo(1);
+    assertThat(resultado.errores()).isEqualTo(1);
+    assertThat(resultado.filas().get(1).mensaje()).contains("no coincide");
   }
 
   @Test
   void exigeRevalidarCuandoCambiaLaBase() {
-    var d = request(List.of(fila(2, "IMP-Z", "Servicio obsoleto", "1")));
-    var p = carga.validar(d);
+    var solicitud = request(List.of(fila(2, "IMP-Z", "Servicio obsoleto", "1")));
+    var validacionPrevia = carga.validar(solicitud);
     jdbc.update(
       "insert into universidad(nombre_universidad,pais) values('Cambio concurrente','CO')"
     );
     assertThatThrownBy(() ->
-      carga.confirmar(new CargaInicialRequest(d.filas(), true, p.validacion()))
+      carga.confirmar(new CargaInicialRequest(solicitud.filas(), true, validacionPrevia.validacion()))
     ).hasMessageContaining("Vuelve a validar");
     assertThat(
       jdbc.queryForObject(

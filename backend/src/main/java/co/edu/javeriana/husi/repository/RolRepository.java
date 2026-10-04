@@ -35,7 +35,8 @@ public class RolRepository {
   public List<CatalogoResponse> listar() {
     return jdbc.query(
       "select id_rol,nombre_rol from rol order by nombre_rol",
-      (rs, n) -> new CatalogoResponse(rs.getInt(1), rs.getString(2))
+      (resultado, numeroFila) ->
+        new CatalogoResponse(resultado.getInt(1), resultado.getString(2))
     );
   }
 }

@@ -13,8 +13,10 @@
         {{ actual.asignatura }} — {{ actual.servicio }}
       </option>
     } @else {
-      @for (a of asignaturas(); track a.id) {
-        <option [ngValue]="a.id">{{ a.nombre }} — {{ a.servicio }}</option>
+      @for (asignatura of asignaturas(); track asignatura.id) {
+        <option [ngValue]="asignatura.id">
+          {{ asignatura.nombre }} — {{ asignatura.servicio }}
+        </option>
       }
     }
   </select>

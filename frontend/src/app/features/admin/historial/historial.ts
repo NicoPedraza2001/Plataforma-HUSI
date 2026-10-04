@@ -16,21 +16,21 @@ import { Paginacion } from '../../../shared/paginacion/paginacion';
 })
 export class Historial {
   // Dependencias
-  private readonly api = inject(HistorialService);
-  private readonly catalogosApi = inject(CatalogoService);
+  private readonly historialService = inject(HistorialService);
+  private readonly catalogoService = inject(CatalogoService);
 
   // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<RegistroHistorial>>((params) =>
-    this.api.listar(params),
+    this.historialService.listar(params),
   );
-  protected readonly catalogos = new Consulta<Catalogos>(() => this.catalogosApi.listar());
-  protected readonly termino = signal('');
+  protected readonly catalogos = new Consulta<Catalogos>(() => this.catalogoService.listar());
+  protected readonly terminoBusqueda = signal('');
   protected readonly paginaActual = computed(
     () => this.consulta.datos()?.pagina ?? this.paginaSolicitada(),
   );
   private readonly paginaSolicitada = signal(1);
   protected readonly totalPaginas = computed(() => this.consulta.datos()?.totalPaginas ?? 1);
-  protected readonly desde = computed(() => (this.paginaActual() - 1) * 8);
+  protected readonly indicePrimeraFila = computed(() => (this.paginaActual() - 1) * 8);
   protected readonly registrosPagina = computed(() => this.consulta.datos()?.contenido ?? []);
   protected readonly cargando = computed(
     () => this.consulta.cargando() || this.catalogos.cargando(),
@@ -68,7 +68,11 @@ export class Historial {
   }
 
   protected cargar(espera = 0) {
-    const params: Parametros = { q: this.termino(), pagina: this.paginaSolicitada(), tamano: 8 };
+    const params: Parametros = {
+      q: this.terminoBusqueda(),
+      pagina: this.paginaSolicitada(),
+      tamano: 8,
+    };
     if (this.moduloSeleccionado() !== 'Todos') params['modulo'] = this.moduloSeleccionado();
     if (this.accionSeleccionada() !== 'Todas') params['accion'] = this.accionSeleccionada();
     if (this.fechaInicial() !== '') params['desde'] = this.fechaInicial();
@@ -77,7 +81,7 @@ export class Historial {
   }
 
   protected buscar(valor: string) {
-    this.termino.set(valor);
+    this.terminoBusqueda.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar(300);
   }
