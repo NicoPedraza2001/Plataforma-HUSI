@@ -32,6 +32,14 @@ public class RolRepository {
     );
   }
 
+  public String consultarNombre(Integer id) {
+    return jdbc
+      .query("select nombre_rol from rol where id_rol=?", (resultado, numeroFila) -> resultado.getString(1), id)
+      .stream()
+      .findFirst()
+      .orElse("—");
+  }
+
   public List<CatalogoResponse> listar() {
     return jdbc.query(
       "select id_rol,nombre_rol from rol order by nombre_rol",

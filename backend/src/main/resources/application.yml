@@ -57,6 +57,10 @@ springdoc:
 # Propiedades propias de la plataforma
 # ============================================================
 husi:
+  auditoria:
+    # Mientras no exista inicio de sesion, los cambios del historial se firman
+    # con este usuario (ver security/UsuarioEnSesion.java).
+    correo-usuario-sin-sesion: admin@husi.com
   cors:
     # Origen del frontend Angular en desarrollo. Lo consume la futura
     # clase config/CorsConfig.java

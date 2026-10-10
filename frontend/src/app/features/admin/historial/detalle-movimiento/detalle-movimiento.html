@@ -1,0 +1,125 @@
+<div class="fondo-modal" (keydown.escape)="cerrar.emit()" (click)="cerrar.emit()">
+  <section
+    class="panel-modal panel-detalle"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-detalle-movimiento"
+    appFocoModal
+    (click)="$event.stopPropagation()"
+  >
+    <header class="detalle__encabezado">
+      <div>
+        <h2 id="titulo-detalle-movimiento">Detalle del movimiento</h2>
+        @if (movimiento(); as movimiento) {
+          <p>{{ movimiento.registro ?? 'Registro sin nombre' }}</p>
+        }
+      </div>
+      <button type="button" class="detalle__cerrar" aria-label="Cerrar" (click)="cerrar.emit()">
+        ×
+      </button>
+    </header>
+
+    <div class="detalle__cuerpo">
+      @if (cargando()) {
+        <p class="detalle__estado" role="status">Cargando detalle…</p>
+      } @else if (error()) {
+        <div class="mensaje error" role="alert">
+          {{ error() }}
+          <button type="button" class="btn btn--navy" (click)="cargar(idMovimiento())">
+            Reintentar
+          </button>
+        </div>
+      } @else if (movimiento(); as movimiento) {
+        <!-- ===================== QUIÉN, CUÁNDO, QUÉ ===================== -->
+        <dl class="resumen">
+          <div class="resumen__item">
+            <dt>Realizado por</dt>
+            <dd>
+              {{ movimiento.usuario }}
+              <span class="resumen__secundario">{{ movimiento.correoUsuario }}</span>
+            </dd>
+          </div>
+          <div class="resumen__item">
+            <dt>Fecha y hora</dt>
+            <dd>{{ movimiento.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+          </div>
+          <div class="resumen__item">
+            <dt>Módulo</dt>
+            <dd>{{ movimiento.modulo }}</dd>
+          </div>
+          <div class="resumen__item">
+            <dt>Acción</dt>
+            <dd>
+              <span [class]="claseBadgeAccion(movimiento.accion)">{{ movimiento.accion }}</span>
+            </dd>
+          </div>
+        </dl>
+
+        @if (movimiento.detalle) {
+          <p class="detalle__descripcion">{{ movimiento.detalle }}</p>
+        }
+
+        <!-- ===================== DATOS ANTES / DESPUÉS ===================== -->
+        <div class="datos__encabezado">
+          <h3>{{ tituloDatos() }}</h3>
+          @if (esComparacion()) {
+            <label class="datos__filtro">
+              <input
+                type="checkbox"
+                [checked]="soloModificados()"
+                (change)="alternarSoloModificados()"
+              />
+              Ver solo lo modificado ({{ cantidadModificados() }})
+            </label>
+          }
+        </div>
+
+        @if (movimiento.esImportacion) {
+          <p class="datos__nota">
+            Una importación se registra como un solo movimiento: aquí se resume cuántos registros
+            creó o modificó, no cada uno de ellos.
+          </p>
+        }
+
+        <div class="table-wrap">
+          <table class="tabla-datos">
+            <thead>
+              <tr>
+                <th scope="col">{{ movimiento.esImportacion ? 'Concepto' : 'Campo' }}</th>
+                @if (esComparacion()) {
+                  <th scope="col">Valor anterior</th>
+                  <th scope="col">Valor nuevo</th>
+                } @else {
+                  <th scope="col">{{ movimiento.esImportacion ? 'Cantidad / valor' : 'Valor' }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (campo of camposVisibles(); track campo.campo) {
+                <tr [class.fila--modificada]="campo.fueModificado">
+                  <th scope="row">{{ campo.campo }}</th>
+                  @if (esComparacion()) {
+                    <td class="valor--anterior">{{ campo.valorAnterior }}</td>
+                    <td class="valor--nuevo">{{ campo.valorNuevo }}</td>
+                  } @else {
+                    <td>{{ movimiento.datosNuevos ? campo.valorNuevo : campo.valorAnterior }}</td>
+                  }
+                </tr>
+              } @empty {
+                <tr>
+                  <td class="tabla__vacia" [attr.colspan]="esComparacion() ? 3 : 2">
+                    No hay datos guardados para este movimiento.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <footer>
+        <button type="button" class="btn btn--outline" (click)="cerrar.emit()">Cerrar</button>
+      </footer>
+    </div>
+  </section>
+</div>

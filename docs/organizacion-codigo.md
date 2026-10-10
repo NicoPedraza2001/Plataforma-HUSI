@@ -51,6 +51,15 @@ Todo lo que falta se crea en su paso con revisión del administrador; por eso la
 - Piezas compartidas entre pasos: `emparejamiento.ts` (comparación igual a la del backend, sugerencias por similitud, reescritura de filas, creación en lote y concordancia singular/plural), `filtro-de-tabla.ts`, `tabla-emparejamiento/`, `confirmar-exclusion/`, `resultado-carga/` (los errores llevan al paso donde se corrigen) y `pasos.css`.
 - Los formularios de creación reutilizan los de cada módulo (`formulario-universidad`, `formulario-programa`, `formulario-servicio`, `formulario-asignatura`, `formulario-residente`).
 
+## Historial de auditoría
+
+Cada cambio que hace un administrador queda en `historial_auditoria` con quién lo hizo, cuándo, el módulo, la acción (`CREÓ`, `ACTUALIZÓ`, `ACTIVÓ`, `INACTIVÓ`, `ELIMINÓ`, `ASIGNÓ`, `CAMBIÓ ESTADO`, `TRASLADÓ`, `IMPORTÓ`), el registro afectado y una fotografía JSON del registro antes (`datos_anteriores`) y después (`datos_nuevos`). La pantalla `/admin/historial` lista los movimientos y «Ver detalle» abre `detalle-movimiento/` con la comparación campo por campo.
+
+- Cada servicio toma la fotografía con `FotografiaAuditoriaMapper` **antes** de modificar la entidad y llama a `HistorialAuditoriaService.registrar(...)` después de guardar, dentro de la misma transacción: si el cambio se revierte, su registro también. Guardar un formulario sin cambios no deja movimiento. La contraseña de un usuario nunca se guarda; solo consta «Se cambió».
+- **Importaciones**: una importación ocupa una sola fila (`lote_importacion`) con el resumen («Residentes creados: 120», «Filas omitidas: 3»…), no una por registro. La importación de programas y la confirmación de la carga inicial lo hacen con `ejecutarComoImportacion`. El asistente de Excel crea registros con las rutas individuales, así que `LoteImportacion` + `loteImportacionInterceptor` envían `X-Lote-Importacion` (y el nombre del archivo) mientras está abierto, y `LoteImportacionFiltro` los agrupa en la misma fila. Si el asistente se abandona antes de confirmar, la fila queda con estado «En curso».
+- **Usuario responsable**: mientras no exista inicio de sesión, firma `husi.auditoria.correo-usuario-sin-sesion` (`admin@husi.com`). Al integrar Spring Security solo cambia `security/UsuarioEnSesion`.
+- Bases PostgreSQL creadas antes de este cambio deben ejecutar `database/migrations/20261010_historial_auditoria_detalle.sql`; sin esas columnas Hibernate (`ddl-auto: validate`) no arranca.
+
 ## Dónde agregar cambios
 
 Una pantalla nueva pertenece a su módulo en `features`; un formulario específico permanece en ese módulo. Extraer a `shared` solamente lo que se comparte. Agregar llamadas de red al servicio del dominio y contratos a `models`. En backend, conservar controller → service → repository y evitar duplicar consultas o reglas en los controladores.

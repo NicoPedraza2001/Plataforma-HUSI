@@ -3,9 +3,14 @@ package co.edu.javeriana.husi.service.impl;
 import co.edu.javeriana.husi.dto.request.UsuarioRequest;
 import co.edu.javeriana.husi.dto.response.UsuarioResponse;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
+import co.edu.javeriana.husi.mapper.FotografiaRegistro;
 import co.edu.javeriana.husi.mapper.UsuarioMapper;
 import co.edu.javeriana.husi.model.entity.Usuario;
+import co.edu.javeriana.husi.model.enums.AccionAuditoria;
+import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.*;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.UsuarioService;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -24,6 +29,8 @@ public class UsuarioServiceImpl implements UsuarioService {
   private final UsuarioRepository usuarioRepository;
   private final RolRepository rolRepository;
   private final UsuarioMapper usuarioMapper;
+  private final HistorialAuditoriaService historialAuditoria;
+  private final FotografiaAuditoriaMapper fotografias;
   private final BCryptPasswordEncoder codificadorContrasena =
     new BCryptPasswordEncoder();
 
@@ -91,14 +98,34 @@ public class UsuarioServiceImpl implements UsuarioService {
   public UsuarioResponse crear(UsuarioRequest request) {
     var usuario = new Usuario();
     validarYAsignarDatos(usuario, request);
-    return usuarioMapper.toResponse(usuarioRepository.saveAndFlush(usuario));
+    var usuarioCreado = usuarioRepository.saveAndFlush(usuario);
+    historialAuditoria.registrar(
+      AccionAuditoria.CREO,
+      ModuloAuditoria.USUARIOS,
+      null,
+      fotografias.deUsuario(usuarioCreado)
+    );
+    return usuarioMapper.toResponse(usuarioCreado);
   }
 
   @Transactional
   public UsuarioResponse actualizar(Integer id, UsuarioRequest request) {
     var usuario = buscarUsuarioBloqueado(id);
+    FotografiaRegistro antes = fotografias.deUsuario(usuario);
     validarYAsignarDatos(usuario, request);
-    return usuarioMapper.toResponse(usuarioRepository.saveAndFlush(usuario));
+    var usuarioActualizado = usuarioRepository.saveAndFlush(usuario);
+    FotografiaRegistro despues = fotografias.deUsuario(usuarioActualizado);
+    // La contraseña nunca se guarda en el historial; solo se deja constancia del cambio.
+    boolean cambioContrasena =
+      request.contrasena() != null && !request.contrasena().isEmpty();
+    if (cambioContrasena) despues.datos().put("Contraseña", "Se cambió");
+    historialAuditoria.registrar(
+      AccionAuditoria.ACTUALIZO,
+      ModuloAuditoria.USUARIOS,
+      antes,
+      despues
+    );
+    return usuarioMapper.toResponse(usuarioActualizado);
   }
 
   @Transactional
@@ -107,8 +134,16 @@ public class UsuarioServiceImpl implements UsuarioService {
       !"Activo".equals(estado) && !"Inactivo".equals(estado)
     ) throw new NegocioException(HttpStatus.BAD_REQUEST, "Estado inválido.");
     var usuario = buscarUsuarioBloqueado(id);
+    FotografiaRegistro antes = fotografias.deUsuario(usuario);
     usuario.setEstado(estado);
-    return usuarioMapper.toResponse(usuarioRepository.saveAndFlush(usuario));
+    var usuarioActualizado = usuarioRepository.saveAndFlush(usuario);
+    historialAuditoria.registrar(
+      AccionAuditoria.segunEstado(estado),
+      ModuloAuditoria.USUARIOS,
+      antes,
+      fotografias.deUsuario(usuarioActualizado)
+    );
+    return usuarioMapper.toResponse(usuarioActualizado);
   }
 
   @Transactional
@@ -118,7 +153,14 @@ public class UsuarioServiceImpl implements UsuarioService {
       HttpStatus.CONFLICT,
       "El usuario tiene registros de coordinación o auditoría asociados. Puedes desactivarlo para conservar su historial."
     );
+    FotografiaRegistro antes = fotografias.deUsuario(usuario);
     usuarioRepository.delete(usuario);
     usuarioRepository.flush();
+    historialAuditoria.registrar(
+      AccionAuditoria.ELIMINO,
+      ModuloAuditoria.USUARIOS,
+      antes,
+      null
+    );
   }
 }

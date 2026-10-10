@@ -115,6 +115,7 @@
           <th scope="col">Acción</th>
           <th scope="col">Registro</th>
           <th class="col-detalle" scope="col">Detalle</th>
+          <th scope="col"><span class="sr-only">Acciones</span></th>
         </tr>
       </thead>
 
@@ -126,14 +127,28 @@
               <td class="col-usuario">{{ registro.usuario }}</td>
               <td>{{ registro.modulo }}</td>
               <td>
-                <span [class]="claseBadge(registro.accion)">{{ registro.accion }}</span>
+                <span [class]="claseBadgeAccion(registro.accion)">{{ registro.accion }}</span>
               </td>
-              <td>{{ registro.registro }}</td>
-              <td class="col-detalle">{{ registro.detalle }}</td>
+              <td class="col-registro">{{ registro.registro }}</td>
+              <td class="col-detalle">
+                <span class="detalle-recortado" [title]="registro.detalle">{{
+                  registro.detalle
+                }}</span>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn--navy"
+                  [attr.aria-label]="'Ver detalle del movimiento de ' + registro.registro"
+                  (click)="abrirDetalle(registro.id)"
+                >
+                  Ver detalle
+                </button>
+              </td>
             </tr>
           } @empty {
             <tr>
-              <td class="tabla__vacia" colspan="6">No hay movimientos registrados</td>
+              <td class="tabla__vacia" colspan="7">No hay movimientos registrados</td>
             </tr>
           }
         }
@@ -148,3 +163,7 @@
     (cambio)="irAPagina($event)"
   />
 </section>
+
+@if (idMovimientoAbierto(); as idMovimiento) {
+  <app-detalle-movimiento [idMovimiento]="idMovimiento" (cerrar)="cerrarDetalle()" />
+}

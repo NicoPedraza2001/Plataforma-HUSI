@@ -239,6 +239,16 @@ CREATE TABLE historial_auditoria (
 
     detalle             TEXT,
 
+    -- Nombre legible del registro afectado (p. ej. la universidad o el residente).
+    registro            VARCHAR(250),
+    -- Fotografias JSON {campo: valor} antes y despues del cambio; permiten ver
+    -- exactamente que cambio sin depender de que el registro aun exista.
+    datos_anteriores    TEXT,
+    datos_nuevos        TEXT,
+    -- Identifica una importacion completa: todos sus cambios se resumen en una
+    -- sola fila en vez de una por registro importado.
+    lote_importacion    VARCHAR(36) UNIQUE,
+
     CONSTRAINT fk_historial_usuario
         FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
 );

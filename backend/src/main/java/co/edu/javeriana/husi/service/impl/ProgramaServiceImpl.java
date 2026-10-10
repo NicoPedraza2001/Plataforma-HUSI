@@ -3,9 +3,14 @@ package co.edu.javeriana.husi.service.impl;
 import co.edu.javeriana.husi.dto.request.ProgramaRequest;
 import co.edu.javeriana.husi.dto.response.*;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
+import co.edu.javeriana.husi.mapper.FotografiaRegistro;
 import co.edu.javeriana.husi.mapper.ProgramaMapper;
 import co.edu.javeriana.husi.model.entity.*;
+import co.edu.javeriana.husi.model.enums.AccionAuditoria;
+import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.*;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.ProgramaService;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,8 @@ public class ProgramaServiceImpl implements ProgramaService {
   private final ProgramaRepository programaRepository;
   private final UniversidadRepository universidadRepository;
   private final ProgramaMapper programaMapper;
+  private final HistorialAuditoriaService historialAuditoria;
+  private final FotografiaAuditoriaMapper fotografias;
 
   public List<ProgramaResponse> listar() {
     return programaRepository
@@ -130,7 +137,14 @@ public class ProgramaServiceImpl implements ProgramaService {
     Programa programa = new Programa();
     programa.setNombre(nombre);
     programa.setUniversidad(universidad);
-    return programaMapper.toResponse(programaRepository.saveAndFlush(programa));
+    Programa programaCreado = programaRepository.saveAndFlush(programa);
+    historialAuditoria.registrar(
+      AccionAuditoria.CREO,
+      ModuloAuditoria.PROGRAMAS,
+      null,
+      fotografias.dePrograma(programaCreado)
+    );
+    return programaMapper.toResponse(programaCreado);
   }
 
   @Transactional
@@ -146,16 +160,31 @@ public class ProgramaServiceImpl implements ProgramaService {
       universidad
     );
     validarSinDuplicado(universidad.getId(), nombre, id);
+    FotografiaRegistro antes = fotografias.dePrograma(programa);
     programa.setNombre(nombre);
     programa.setUniversidad(universidad);
-    return programaMapper.toResponse(programaRepository.saveAndFlush(programa));
+    Programa programaActualizado = programaRepository.saveAndFlush(programa);
+    historialAuditoria.registrar(
+      AccionAuditoria.ACTUALIZO,
+      ModuloAuditoria.PROGRAMAS,
+      antes,
+      fotografias.dePrograma(programaActualizado)
+    );
+    return programaMapper.toResponse(programaActualizado);
   }
 
   @Transactional
   public void desactivar(Integer id) {
     Programa programa = buscarProgramaBloqueado(id);
+    FotografiaRegistro antes = fotografias.dePrograma(programa);
     programa.setEstado("Inactivo");
     programaRepository.saveAndFlush(programa);
+    historialAuditoria.registrar(
+      AccionAuditoria.INACTIVO,
+      ModuloAuditoria.PROGRAMAS,
+      antes,
+      fotografias.dePrograma(programa)
+    );
   }
 
   @Transactional
@@ -174,8 +203,16 @@ public class ProgramaServiceImpl implements ProgramaService {
     if ("Activo".equals(estado)) buscarUniversidadActiva(
       programa.getUniversidad().getId()
     );
+    FotografiaRegistro antes = fotografias.dePrograma(programa);
     programa.setEstado(estado);
-    return programaMapper.toResponse(programaRepository.saveAndFlush(programa));
+    Programa programaActualizado = programaRepository.saveAndFlush(programa);
+    historialAuditoria.registrar(
+      AccionAuditoria.segunEstado(estado),
+      ModuloAuditoria.PROGRAMAS,
+      antes,
+      fotografias.dePrograma(programaActualizado)
+    );
+    return programaMapper.toResponse(programaActualizado);
   }
 
   @Transactional
@@ -188,8 +225,10 @@ public class ProgramaServiceImpl implements ProgramaService {
         residentesAsociados +
         " residentes asociados, incluidos los inactivos. Puedes desactivarlo para conservar su historial."
     );
+    FotografiaRegistro antes = fotografias.dePrograma(programa);
     programaRepository.delete(programa);
     programaRepository.flush();
+    historialAuditoria.registrar(AccionAuditoria.ELIMINO, ModuloAuditoria.PROGRAMAS, antes, null);
   }
 
   public ProgramaRequest validarImportacion(

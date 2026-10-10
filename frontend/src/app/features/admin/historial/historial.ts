@@ -7,10 +7,14 @@ import { CatalogoService } from '../../../services/catalogo.service';
 import { HistorialService } from '../../../services/historial.service';
 import { Consulta } from '../../../shared/consulta/consulta';
 import { Paginacion } from '../../../shared/paginacion/paginacion';
+import { claseBadgeAccion } from './comparar-datos';
+import { DetalleMovimiento } from './detalle-movimiento/detalle-movimiento';
+
+const MOVIMIENTOS_POR_PAGINA = 8;
 
 @Component({
   selector: 'app-historial',
-  imports: [Paginacion, DatePipe],
+  imports: [Paginacion, DatePipe, DetalleMovimiento],
   templateUrl: './historial.html',
   styleUrl: './historial.css',
 })
@@ -30,7 +34,9 @@ export class Historial {
   );
   private readonly paginaSolicitada = signal(1);
   protected readonly totalPaginas = computed(() => this.consulta.datos()?.totalPaginas ?? 1);
-  protected readonly indicePrimeraFila = computed(() => (this.paginaActual() - 1) * 8);
+  protected readonly indicePrimeraFila = computed(
+    () => (this.paginaActual() - 1) * MOVIMIENTOS_POR_PAGINA,
+  );
   protected readonly registrosPagina = computed(() => this.consulta.datos()?.contenido ?? []);
   protected readonly cargando = computed(
     () => this.consulta.cargando() || this.catalogos.cargando(),
@@ -48,18 +54,14 @@ export class Historial {
     'Todas',
     ...(this.catalogos.datos()?.acciones ?? []),
   ]);
+  /** Movimiento cuyo detalle está abierto en la ventana emergente. */
+  protected readonly idMovimientoAbierto = signal<number | null>(null);
+
+  protected readonly claseBadgeAccion = claseBadgeAccion;
 
   constructor() {
     this.cargar();
     this.catalogos.cargar();
-  }
-
-  protected claseBadge(accion: string) {
-    return ['CREÓ', 'ACTIVÓ'].includes(accion)
-      ? 'badge badge--activo'
-      : accion === 'INACTIVÓ'
-        ? 'badge badge--inactivo'
-        : 'badge badge--info';
   }
 
   protected reintentar() {
@@ -71,7 +73,7 @@ export class Historial {
     const params: Parametros = {
       q: this.terminoBusqueda(),
       pagina: this.paginaSolicitada(),
-      tamano: 8,
+      tamano: MOVIMIENTOS_POR_PAGINA,
     };
     if (this.moduloSeleccionado() !== 'Todos') params['modulo'] = this.moduloSeleccionado();
     if (this.accionSeleccionada() !== 'Todas') params['accion'] = this.accionSeleccionada();
@@ -108,6 +110,14 @@ export class Historial {
     this.fechaFinal.set(valor);
     this.paginaSolicitada.set(1);
     this.cargar();
+  }
+
+  protected abrirDetalle(idMovimiento: number) {
+    this.idMovimientoAbierto.set(idMovimiento);
+  }
+
+  protected cerrarDetalle() {
+    this.idMovimientoAbierto.set(null);
   }
 
   protected irAPagina(pagina: number) {

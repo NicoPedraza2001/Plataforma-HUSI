@@ -26,6 +26,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
 
   boolean existsByCorreoIgnoreCaseAndIdNot(String valor, Integer id);
 
+  Optional<Usuario> findByCorreoIgnoreCase(String correo);
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select e from Usuario e where e.id=:id")
   Optional<Usuario> bloquearPorId(Integer id);

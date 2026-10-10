@@ -1,1 +1,0 @@
-Configuracion de Spring Security: SecurityConfig, UserDetailsService, PasswordEncoder. Se llena en el CU de login.

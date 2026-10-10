@@ -1,0 +1,183 @@
+/* El fondo y el panel salen de shared/formularios/modal.css (estilos globales). */
+.panel-detalle {
+  width: min(780px, 100%);
+}
+
+/* ===================== ENCABEZADO ===================== */
+.detalle__encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.detalle__cerrar {
+  border: 0;
+  background: transparent;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--husi-muted);
+  cursor: pointer;
+}
+
+.detalle__cerrar:hover {
+  color: var(--husi-navy);
+}
+
+.detalle__cuerpo {
+  padding: 24px 32px 28px;
+}
+
+.detalle__estado {
+  color: var(--husi-muted);
+}
+
+/* ===================== QUIÉN, CUÁNDO, QUÉ ===================== */
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  background: var(--husi-surface);
+}
+
+.resumen__item dt {
+  font-family: var(--font-serif);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--husi-navy);
+}
+
+.resumen__item dd {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  color: var(--husi-text);
+  overflow-wrap: anywhere;
+}
+
+.resumen__secundario {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  color: var(--husi-muted);
+}
+
+.detalle__descripcion {
+  margin-top: 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--husi-text);
+}
+
+/* ===================== DATOS ANTES / DESPUÉS ===================== */
+.datos__encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.datos__encabezado h3 {
+  font-size: 1.05rem;
+}
+
+.datos__filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--husi-muted);
+  cursor: pointer;
+}
+
+.datos__filtro input {
+  accent-color: var(--husi-teal-dark);
+}
+
+.datos__nota {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--husi-muted);
+}
+
+.table-wrap {
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
+.tabla-datos {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.86rem;
+}
+
+.tabla-datos thead th {
+  padding: 10px 14px;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--husi-navy);
+  text-align: left;
+  background: #e8f0f9;
+}
+
+.tabla-datos thead th:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.tabla-datos thead th:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.tabla-datos tbody th,
+.tabla-datos tbody td {
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--husi-border);
+  overflow-wrap: anywhere;
+}
+
+.tabla-datos tbody th {
+  width: 32%;
+  font-weight: 600;
+  color: var(--husi-navy);
+}
+
+.fila--modificada th,
+.fila--modificada td {
+  background: color-mix(in srgb, var(--husi-teal) 12%, transparent);
+}
+
+.fila--modificada .valor--anterior {
+  color: var(--husi-red-dark);
+  text-decoration: line-through;
+}
+
+.fila--modificada .valor--nuevo {
+  color: var(--husi-green-dark);
+  font-weight: 600;
+}
+
+.tabla__vacia {
+  padding-block: 28px !important;
+  color: var(--husi-muted);
+  text-align: center !important;
+}
+
+/* Colores del botón en shared/formularios/modal.css; aquí solo el tamaño. */
+.btn--outline {
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 720px) {
+  .detalle__cuerpo {
+    padding: 20px 18px 24px;
+  }
+}

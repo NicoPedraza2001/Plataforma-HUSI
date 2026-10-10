@@ -3,9 +3,14 @@ package co.edu.javeriana.husi.service.impl;
 import co.edu.javeriana.husi.dto.request.CoordinadorRequest;
 import co.edu.javeriana.husi.dto.response.*;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
+import co.edu.javeriana.husi.mapper.FotografiaRegistro;
 import co.edu.javeriana.husi.mapper.CoordinadorMapper;
 import co.edu.javeriana.husi.model.entity.Coordinador;
+import co.edu.javeriana.husi.model.enums.AccionAuditoria;
+import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.*;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.CoordinadorService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,8 @@ public class CoordinadorServiceImpl implements CoordinadorService {
   private final CoordinadorRepository coordinadorRepository;
   private final ServicioRepository servicioRepository;
   private final CoordinadorMapper coordinadorMapper;
+  private final HistorialAuditoriaService historialAuditoria;
+  private final FotografiaAuditoriaMapper fotografias;
   private final UsuarioRepository usuarioRepository;
 
   private NegocioException error(HttpStatus estado, String mensaje) {
@@ -103,18 +110,29 @@ public class CoordinadorServiceImpl implements CoordinadorService {
   public CoordinadorResponse crear(CoordinadorRequest request) {
     var coordinador = new Coordinador();
     validarYAsignarDatos(coordinador, request);
-    return coordinadorMapper.toResponse(
-      coordinadorRepository.saveAndFlush(coordinador)
+    var coordinadorCreado = coordinadorRepository.saveAndFlush(coordinador);
+    historialAuditoria.registrar(
+      AccionAuditoria.CREO,
+      ModuloAuditoria.COORDINADORES,
+      null,
+      fotografias.deCoordinador(coordinadorCreado)
     );
+    return coordinadorMapper.toResponse(coordinadorCreado);
   }
 
   @Transactional
   public CoordinadorResponse actualizar(Integer id, CoordinadorRequest request) {
     var coordinador = buscarCoordinador(id, true);
+    FotografiaRegistro antes = fotografias.deCoordinador(coordinador);
     validarYAsignarDatos(coordinador, request);
-    return coordinadorMapper.toResponse(
-      coordinadorRepository.saveAndFlush(coordinador)
+    var coordinadorActualizado = coordinadorRepository.saveAndFlush(coordinador);
+    historialAuditoria.registrar(
+      AccionAuditoria.ACTUALIZO,
+      ModuloAuditoria.COORDINADORES,
+      antes,
+      fotografias.deCoordinador(coordinadorActualizado)
     );
+    return coordinadorMapper.toResponse(coordinadorActualizado);
   }
 
   @Transactional
@@ -124,17 +142,30 @@ public class CoordinadorServiceImpl implements CoordinadorService {
       "Estado inválido."
     );
     var coordinador = buscarCoordinador(id, true);
+    FotografiaRegistro antes = fotografias.deCoordinador(coordinador);
     coordinador.setEstado(estado);
-    return coordinadorMapper.toResponse(
-      coordinadorRepository.saveAndFlush(coordinador)
+    var coordinadorActualizado = coordinadorRepository.saveAndFlush(coordinador);
+    historialAuditoria.registrar(
+      AccionAuditoria.segunEstado(estado),
+      ModuloAuditoria.COORDINADORES,
+      antes,
+      fotografias.deCoordinador(coordinadorActualizado)
     );
+    return coordinadorMapper.toResponse(coordinadorActualizado);
   }
 
   @Transactional
   public void eliminarDefinitivamente(Integer id) {
     var coordinador = buscarCoordinador(id, true);
+    FotografiaRegistro antes = fotografias.deCoordinador(coordinador);
     coordinadorRepository.delete(coordinador);
     coordinadorRepository.flush();
+    historialAuditoria.registrar(
+      AccionAuditoria.ELIMINO,
+      ModuloAuditoria.COORDINADORES,
+      antes,
+      null
+    );
   }
 
   public List<CatalogoResponse> usuariosDisponibles() {

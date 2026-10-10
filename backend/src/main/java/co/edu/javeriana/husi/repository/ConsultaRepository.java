@@ -33,7 +33,7 @@ public class ConsultaRepository {
       case "programas" -> "concat(nombre,' ',universidad)";
       case "residentes" -> "concat(nombre,' ',documento)";
       case "usuarios" -> "concat(nombre,' ',correo)";
-      case "historial" -> "concat(usuario,' ',modulo,' ',accion,' ',detalle)";
+      case "historial" -> "concat(usuario,' ',modulo,' ',accion,' ',registro,' ',detalle)";
       case "servicios" -> "concat(nombre,' ',descripcion)";
       case "universidades" -> "concat(nombre,' ',pais)";
       case "rotaciones" -> "concat(residente,' ',universidad,' ',servicio,' ',asignatura)";

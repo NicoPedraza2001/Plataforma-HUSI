@@ -8,6 +8,7 @@ import co.edu.javeriana.husi.exception.NegocioException;
 import co.edu.javeriana.husi.model.entity.RotacionId;
 import co.edu.javeriana.husi.repository.CargaInicialRepository;
 import co.edu.javeriana.husi.service.*;
+import co.edu.javeriana.husi.util.ImportacionEnCurso;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDate;
@@ -29,15 +30,39 @@ public class CargaInicialServiceImpl implements CargaInicialService {
   private final AsignaturaService asignaturaService;
   private final RotacionService rotacionService;
   private final RotacionResidenteService rotacionResidenteService;
+  private final HistorialAuditoriaService historialAuditoria;
 
   @Transactional(readOnly = true)
   public CargaInicialResponse validar(CargaInicialRequest solicitud) {
     return simularOGuardar(solicitud, false);
   }
 
+  /**
+   * Guarda la carga. En el historial se suma a la fila del asistente de Excel (cabecera
+   * X-Lote-Importacion) o, si no la hay, crea su propia fila resumen.
+   */
   @Transactional
   public CargaInicialResponse confirmar(CargaInicialRequest solicitud) {
-    return simularOGuardar(solicitud, true);
+    return historialAuditoria.ejecutarComoImportacion(
+      ImportacionEnCurso.CARGA_INICIAL,
+      () -> {
+        CargaInicialResponse resultado = simularOGuardar(solicitud, true);
+        historialAuditoria.agregarResultadoImportacion(resumirParaHistorial(resultado));
+        return resultado;
+      }
+    );
+  }
+
+  /** Cifras finales que se agregan a la fila resumen de la importación en el historial. */
+  private Map<String, Object> resumirParaHistorial(CargaInicialResponse resultado) {
+    Map<String, Object> resumen = new LinkedHashMap<>();
+    resumen.put("Filas del archivo", resultado.total());
+    resumen.put("Filas guardadas", resultado.validos());
+    resumen.put("Filas en lista de espera", resultado.espera());
+    resumen.put("Filas omitidas", resultado.omitidos());
+    resumen.put("Filas con error", resultado.errores());
+    resumen.put(HistorialAuditoriaServiceImpl.CLAVE_ESTADO_IMPORTACION, "Confirmada");
+    return resumen;
   }
 
   private CargaInicialResponse simularOGuardar(

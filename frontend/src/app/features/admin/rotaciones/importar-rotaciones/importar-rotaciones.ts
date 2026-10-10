@@ -1,6 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FilaCargaInicial, ResultadoCargaInicial } from '../../../../models/carga-inicial.model';
+import { LoteImportacion } from '../../../../services/lote-importacion';
 import {
   ConfiguracionColumnas,
   crearConfiguracionInicial,
@@ -43,6 +44,8 @@ type PendientesPorPaso = Partial<Record<IdPasoImportacion, number>>;
 })
 export class ImportarRotaciones {
   private readonly router = inject(Router);
+  /** Todo lo que se crea o modifica en el asistente queda como una sola fila del historial. */
+  private readonly loteImportacion = inject(LoteImportacion);
 
   protected readonly pasos = PASOS_IMPORTACION;
   protected readonly pasoActual = signal<IdPasoImportacion>('archivo');
@@ -72,6 +75,10 @@ export class ImportarRotaciones {
   protected readonly numeroPasoActual = computed(
     () => this.pasos.findIndex((paso) => paso.id === this.pasoActual()) + 1,
   );
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.loteImportacion.terminar());
+  }
 
   // ---------- Navegación ----------
 
@@ -126,6 +133,7 @@ export class ImportarRotaciones {
 
   protected registrarArchivo(libro: LibroExcel) {
     this.reiniciarImportacion();
+    this.loteImportacion.iniciar(libro.nombreArchivo);
     this.libroExcel.set(libro);
     this.configuracionColumnas.set(crearConfiguracionInicial(libro.hojas));
   }
@@ -169,6 +177,7 @@ export class ImportarRotaciones {
 
   protected registrarCargaFinal(resultado: ResultadoCargaInicial) {
     this.resultadoFinal.set(resultado);
+    this.loteImportacion.terminar();
   }
 
   protected registrarFalloDeConfirmacion(mensaje: string) {
@@ -182,6 +191,7 @@ export class ImportarRotaciones {
   }
 
   private reiniciarImportacion() {
+    this.loteImportacion.terminar();
     this.libroExcel.set(null);
     this.configuracionColumnas.set(null);
     this.filasOriginales.set([]);

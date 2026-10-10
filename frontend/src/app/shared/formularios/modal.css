@@ -58,8 +58,13 @@
 .exito {
   color: var(--husi-green);
 }
-.btn--outline {
+/* .btn.btn--outline y no solo .btn--outline: styles/admin.css se importa después de este
+   archivo y su .btn (texto blanco) dejaba invisibles los botones «Cancelar» de los modales. */
+.btn.btn--outline {
   background: var(--husi-bg);
   color: var(--husi-navy);
   border: 1px solid var(--husi-border);
+}
+.btn.btn--outline:hover:not(:disabled) {
+  border-color: var(--husi-navy);
 }

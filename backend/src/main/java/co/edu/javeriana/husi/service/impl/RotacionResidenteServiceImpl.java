@@ -3,8 +3,14 @@ package co.edu.javeriana.husi.service.impl;
 import co.edu.javeriana.husi.dto.request.TrasladoEsperaRequest;
 import co.edu.javeriana.husi.dto.response.*;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
+import co.edu.javeriana.husi.mapper.FotografiaRegistro;
+import co.edu.javeriana.husi.mapper.RotacionMapper;
 import co.edu.javeriana.husi.model.entity.*;
+import co.edu.javeriana.husi.model.enums.AccionAuditoria;
+import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.*;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.RotacionResidenteService;
 import co.edu.javeriana.husi.util.Calendario;
 import java.util.List;
@@ -29,6 +35,9 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
   private final RotacionResidenteRepository rotacionResidenteRepository;
   private final ResidenteRepository residenteRepository;
   private final RotacionConsultaRepository rotacionConsultaRepository;
+  private final RotacionMapper rotacionMapper;
+  private final HistorialAuditoriaService historialAuditoria;
+  private final FotografiaAuditoriaMapper fotografias;
 
   private NegocioException error(HttpStatus estado, String mensaje) {
     return new NegocioException(estado, mensaje);
@@ -91,6 +100,19 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
     );
   }
 
+  /** Residente, rotación y estado actual de la asignación, tal como los guarda el historial. */
+  private FotografiaRegistro fotografiarAsignacion(RotacionId id, Integer residenteId) {
+    var residente = residenteRepository
+      .findById(residenteId)
+      .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "No se encontró el residente."));
+    var rotacion = rotacionMapper.toResponse(rotacionConsultaRepository.detalle(id));
+    return fotografias.deAsignacion(
+      residente,
+      rotacion,
+      rotacionResidenteRepository.consultarEstado(id, residenteId)
+    );
+  }
+
   public PaginaResponse<ResidenteRotacionResponse> listar(
     RotacionId id,
     int pagina,
@@ -129,6 +151,13 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
       "El residente ya está relacionado; revisa también las asignaciones canceladas."
     );
     rotacionResidenteRepository.insertar(id, residenteId);
+    // El estado (Asignado o Esperando cupo) lo decide la base de datos según el cupo.
+    historialAuditoria.registrar(
+      AccionAuditoria.ASIGNO,
+      ModuloAuditoria.ASIGNACIONES,
+      null,
+      fotografiarAsignacion(id, residenteId)
+    );
   }
 
   @Transactional
@@ -163,7 +192,14 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
         "No hay cupos disponibles. El residente permanece en su estado actual."
       );
     }
+    FotografiaRegistro antes = fotografiarAsignacion(id, residenteId);
     rotacionResidenteRepository.cambiarEstado(id, residenteId, nuevoEstado);
+    historialAuditoria.registrar(
+      AccionAuditoria.CAMBIO_ESTADO,
+      ModuloAuditoria.ASIGNACIONES,
+      antes,
+      fotografiarAsignacion(id, residenteId)
+    );
   }
 
   @Transactional
@@ -175,7 +211,14 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
       HttpStatus.CONFLICT,
       "El residente tiene cupo asignado. Quítale el cupo antes de eliminarlo."
     );
+    FotografiaRegistro antes = fotografiarAsignacion(id, residenteId);
     rotacionResidenteRepository.eliminar(id, residenteId);
+    historialAuditoria.registrar(
+      AccionAuditoria.ELIMINO,
+      ModuloAuditoria.ASIGNACIONES,
+      antes,
+      null
+    );
   }
 
   public List<EsperaServicioResponse> listarEsperaDelServicio(RotacionId id) {
@@ -221,6 +264,11 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
         origen.inicio(),
         origen.fin()
       );
+      // Si no está en la rotación de origen, el traslado de abajo falla y no se registra nada.
+      FotografiaRegistro antes = null;
+      if (
+        rotacionResidenteRepository.existe(rotacionOrigen, origen.residenteId())
+      ) antes = fotografiarAsignacion(rotacionOrigen, origen.residenteId());
       int filasActualizadas = rotacionResidenteRepository.trasladar(
         rotacionOrigen,
         id,
@@ -229,6 +277,12 @@ public class RotacionResidenteServiceImpl implements RotacionResidenteService {
       if (filasActualizadas == 0) throw error(
         HttpStatus.CONFLICT,
         "Uno de los residentes ya no está en espera en esa rotación o pertenece a otro servicio. Actualiza la lista e inténtalo de nuevo."
+      );
+      historialAuditoria.registrar(
+        AccionAuditoria.TRASLADO,
+        ModuloAuditoria.ASIGNACIONES,
+        antes,
+        fotografiarAsignacion(id, origen.residenteId())
       );
     }
   }

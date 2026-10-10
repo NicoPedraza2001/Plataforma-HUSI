@@ -4,9 +4,14 @@ import co.edu.javeriana.husi.dto.request.ServicioRequest;
 import co.edu.javeriana.husi.dto.response.CatalogoResponse;
 import co.edu.javeriana.husi.dto.response.ServicioResponse;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
+import co.edu.javeriana.husi.mapper.FotografiaRegistro;
 import co.edu.javeriana.husi.mapper.ServicioMapper;
 import co.edu.javeriana.husi.model.entity.Servicio;
+import co.edu.javeriana.husi.model.enums.AccionAuditoria;
+import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.ServicioRepository;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.ServicioService;
 import co.edu.javeriana.husi.util.Calendario;
 import java.util.List;
@@ -22,6 +27,8 @@ public class ServicioServiceImpl implements ServicioService {
 
   private final ServicioRepository servicioRepository;
   private final ServicioMapper servicioMapper;
+  private final HistorialAuditoriaService historialAuditoria;
+  private final FotografiaAuditoriaMapper fotografias;
 
   private Servicio buscarServicio(Integer id, boolean bloquear) {
     return (
@@ -94,7 +101,14 @@ public class ServicioServiceImpl implements ServicioService {
   public ServicioResponse crear(ServicioRequest request) {
     var servicio = new Servicio();
     validarYAsignarDatos(servicio, request);
-    return servicioMapper.toResponse(servicioRepository.saveAndFlush(servicio));
+    var servicioCreado = servicioRepository.saveAndFlush(servicio);
+    historialAuditoria.registrar(
+      AccionAuditoria.CREO,
+      ModuloAuditoria.SERVICIOS,
+      null,
+      fotografias.deServicio(servicioCreado)
+    );
+    return servicioMapper.toResponse(servicioCreado);
   }
 
   @Transactional
@@ -118,8 +132,16 @@ public class ServicioServiceImpl implements ServicioService {
         cupoMinimoPermitido +
         "; cancela asignaciones si necesitas reducirlo más."
     );
+    FotografiaRegistro antes = fotografias.deServicio(servicio);
     validarYAsignarDatos(servicio, request);
-    return servicioMapper.toResponse(servicioRepository.saveAndFlush(servicio));
+    var servicioActualizado = servicioRepository.saveAndFlush(servicio);
+    historialAuditoria.registrar(
+      AccionAuditoria.ACTUALIZO,
+      ModuloAuditoria.SERVICIOS,
+      antes,
+      fotografias.deServicio(servicioActualizado)
+    );
+    return servicioMapper.toResponse(servicioActualizado);
   }
 
   @Transactional
@@ -128,8 +150,16 @@ public class ServicioServiceImpl implements ServicioService {
       !"Activo".equals(estado) && !"Inactivo".equals(estado)
     ) throw new NegocioException(HttpStatus.BAD_REQUEST, "Estado inválido.");
     var servicio = buscarServicio(id, true);
+    FotografiaRegistro antes = fotografias.deServicio(servicio);
     servicio.setEstado(estado);
-    return servicioMapper.toResponse(servicioRepository.saveAndFlush(servicio));
+    var servicioActualizado = servicioRepository.saveAndFlush(servicio);
+    historialAuditoria.registrar(
+      AccionAuditoria.segunEstado(estado),
+      ModuloAuditoria.SERVICIOS,
+      antes,
+      fotografias.deServicio(servicioActualizado)
+    );
+    return servicioMapper.toResponse(servicioActualizado);
   }
 
   @Transactional
@@ -139,7 +169,14 @@ public class ServicioServiceImpl implements ServicioService {
       HttpStatus.CONFLICT,
       "El servicio tiene asignaturas o coordinadores asociados, incluso inactivos. Puedes desactivarlo para conservar sus relaciones."
     );
+    FotografiaRegistro antes = fotografias.deServicio(servicio);
     servicioRepository.delete(servicio);
     servicioRepository.flush();
+    historialAuditoria.registrar(
+      AccionAuditoria.ELIMINO,
+      ModuloAuditoria.SERVICIOS,
+      antes,
+      null
+    );
   }
 }

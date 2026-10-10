@@ -3,8 +3,10 @@ package co.edu.javeriana.husi.service.impl;
 import co.edu.javeriana.husi.dto.request.ImportacionRotacionesRequest;
 import co.edu.javeriana.husi.dto.response.ImportacionRotacionesResponse;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.ImportacionRotacionesService;
 import co.edu.javeriana.husi.service.RotacionService;
+import co.edu.javeriana.husi.util.ImportacionEnCurso;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
@@ -18,9 +20,26 @@ public class ImportacionRotacionesServiceImpl
 {
 
   private final RotacionService rotacionService;
+  private final HistorialAuditoriaService historialAuditoria;
+
+  public ImportacionRotacionesResponse procesar(
+    ImportacionRotacionesRequest request,
+    boolean guardar
+  ) {
+    if (!guardar) return procesarFilas(request, false);
+    // En el historial queda una sola fila con el resumen, no una por rotación creada.
+    return historialAuditoria.ejecutarComoImportacion(
+      ImportacionEnCurso.IMPORTACION_ROTACIONES,
+      () -> {
+        var resultado = procesarFilas(request, true);
+        historialAuditoria.agregarResultadoImportacion(resumirParaHistorial(resultado));
+        return resultado;
+      }
+    );
+  }
 
   // Cada creación usa su propia transacción; validar nunca escribe.
-  public ImportacionRotacionesResponse procesar(
+  private ImportacionRotacionesResponse procesarFilas(
     ImportacionRotacionesRequest request,
     boolean guardar
   ) {
@@ -79,6 +98,16 @@ public class ImportacionRotacionesServiceImpl
       contarPorEstado(resultados, "ERROR"),
       resultados
     );
+  }
+
+  /** Cifras finales que se agregan a la fila resumen de la importación en el historial. */
+  private Map<String, Object> resumirParaHistorial(ImportacionRotacionesResponse resultado) {
+    Map<String, Object> resumen = new LinkedHashMap<>();
+    resumen.put("Filas del archivo", resultado.total());
+    resumen.put("Filas omitidas", resultado.omitidos());
+    resumen.put("Filas con error", resultado.errores());
+    resumen.put(HistorialAuditoriaServiceImpl.CLAVE_ESTADO_IMPORTACION, "Finalizada");
+    return resumen;
   }
 
   private long contarPorEstado(

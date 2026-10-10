@@ -3,8 +3,12 @@ package co.edu.javeriana.husi.service.impl;
 import co.edu.javeriana.husi.dto.request.UniversidadRequest;
 import co.edu.javeriana.husi.dto.response.*;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
+import co.edu.javeriana.husi.mapper.FotografiaRegistro;
 import co.edu.javeriana.husi.mapper.UniversidadMapper;
 import co.edu.javeriana.husi.model.entity.Universidad;
+import co.edu.javeriana.husi.model.enums.AccionAuditoria;
+import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.UniversidadRepository;
 import co.edu.javeriana.husi.service.*;
 import java.util.*;
@@ -21,6 +25,8 @@ public class UniversidadServiceImpl implements UniversidadService {
   private final UniversidadRepository universidadRepository;
   private final UniversidadMapper universidadMapper;
   private final ConsultaService consultaService;
+  private final HistorialAuditoriaService historialAuditoria;
+  private final FotografiaAuditoriaMapper fotografias;
 
   public List<UniversidadCatalogoResponse> catalogo() {
     return universidadRepository
@@ -105,9 +111,14 @@ public class UniversidadServiceImpl implements UniversidadService {
   public UniversidadResponse crear(UniversidadRequest request) {
     Universidad universidad = new Universidad();
     validarYAsignarDatos(universidad, request);
-    return universidadMapper.toResponse(
-      universidadRepository.saveAndFlush(universidad)
+    Universidad universidadCreada = universidadRepository.saveAndFlush(universidad);
+    historialAuditoria.registrar(
+      AccionAuditoria.CREO,
+      ModuloAuditoria.UNIVERSIDADES,
+      null,
+      fotografias.deUniversidad(universidadCreada)
     );
+    return universidadMapper.toResponse(universidadCreada);
   }
 
   @Transactional
@@ -116,10 +127,16 @@ public class UniversidadServiceImpl implements UniversidadService {
     UniversidadRequest request
   ) {
     Universidad universidad = buscarUniversidad(id, true);
+    FotografiaRegistro antes = fotografias.deUniversidad(universidad);
     validarYAsignarDatos(universidad, request);
-    return universidadMapper.toResponse(
-      universidadRepository.saveAndFlush(universidad)
+    Universidad universidadActualizada = universidadRepository.saveAndFlush(universidad);
+    historialAuditoria.registrar(
+      AccionAuditoria.ACTUALIZO,
+      ModuloAuditoria.UNIVERSIDADES,
+      antes,
+      fotografias.deUniversidad(universidadActualizada)
     );
+    return universidadMapper.toResponse(universidadActualizada);
   }
 
   @Transactional
@@ -131,11 +148,17 @@ public class UniversidadServiceImpl implements UniversidadService {
       "El estado debe ser Activo o Inactivo."
     );
     Universidad universidad = buscarUniversidad(id, true);
+    FotografiaRegistro antes = fotografias.deUniversidad(universidad);
     universidad.setEstado(estado);
     // No hay cascada: programas y residentes conservan registros, relaciones y estados.
-    return universidadMapper.toResponse(
-      universidadRepository.saveAndFlush(universidad)
+    Universidad universidadActualizada = universidadRepository.saveAndFlush(universidad);
+    historialAuditoria.registrar(
+      AccionAuditoria.segunEstado(estado),
+      ModuloAuditoria.UNIVERSIDADES,
+      antes,
+      fotografias.deUniversidad(universidadActualizada)
     );
+    return universidadMapper.toResponse(universidadActualizada);
   }
 
   @Transactional
@@ -148,8 +171,15 @@ public class UniversidadServiceImpl implements UniversidadService {
         programasAsociados +
         " programas asociados, incluidos los inactivos. Puedes desactivarla para conservar sus relaciones."
     );
+    FotografiaRegistro antes = fotografias.deUniversidad(universidad);
     universidadRepository.delete(universidad);
     universidadRepository.flush();
+    historialAuditoria.registrar(
+      AccionAuditoria.ELIMINO,
+      ModuloAuditoria.UNIVERSIDADES,
+      antes,
+      null
+    );
   }
 
   public PaginaResponse<Map<String, Object>> programas(

@@ -4,9 +4,14 @@ import co.edu.javeriana.husi.dto.request.*;
 import co.edu.javeriana.husi.dto.response.PaginaResponse;
 import co.edu.javeriana.husi.dto.response.RotacionResponse;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
+import co.edu.javeriana.husi.mapper.FotografiaRegistro;
 import co.edu.javeriana.husi.mapper.RotacionMapper;
 import co.edu.javeriana.husi.model.entity.*;
+import co.edu.javeriana.husi.model.enums.AccionAuditoria;
+import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.*;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.RotacionService;
 import co.edu.javeriana.husi.util.Calendario;
 import java.time.LocalDate;
@@ -35,6 +40,8 @@ public class RotacionServiceImpl implements RotacionService {
   private final RotacionRepository rotacionRepository;
   private final RotacionMapper rotacionMapper;
   private final RotacionConsultaRepository rotacionConsultaRepository;
+  private final HistorialAuditoriaService historialAuditoria;
+  private final FotografiaAuditoriaMapper fotografias;
 
   private NegocioException error(HttpStatus estado, String mensaje) {
     return new NegocioException(estado, mensaje);
@@ -221,6 +228,17 @@ public class RotacionServiceImpl implements RotacionService {
     Rotacion rotacion = new Rotacion();
     rotacion.setId(id);
     rotacionConsultaRepository.insertar(rotacion);
+    RotacionResponse rotacionCreada = consultarDetalle(id);
+    historialAuditoria.registrar(
+      AccionAuditoria.CREO,
+      ModuloAuditoria.ROTACIONES,
+      null,
+      fotografias.deRotacion(rotacionCreada)
+    );
+    return rotacionCreada;
+  }
+
+  private RotacionResponse consultarDetalle(RotacionId id) {
     return rotacionMapper.toResponse(rotacionConsultaRepository.detalle(id));
   }
 
@@ -247,8 +265,16 @@ public class RotacionServiceImpl implements RotacionService {
       HttpStatus.CONFLICT,
       "Ya existe una rotación con esas fechas."
     );
+    FotografiaRegistro antes = fotografias.deRotacion(consultarDetalle(id));
     rotacionConsultaRepository.cambiarFechas(id, datos);
-    return rotacionMapper.toResponse(rotacionConsultaRepository.detalle(nuevoId));
+    RotacionResponse rotacionActualizada = consultarDetalle(nuevoId);
+    historialAuditoria.registrar(
+      AccionAuditoria.ACTUALIZO,
+      ModuloAuditoria.ROTACIONES,
+      antes,
+      fotografias.deRotacion(rotacionActualizada)
+    );
+    return rotacionActualizada;
   }
 
   @Transactional
@@ -256,9 +282,17 @@ public class RotacionServiceImpl implements RotacionService {
     Rotacion rotacion = buscarRotacion(id, true);
     validarNoFinalizada(id);
     if (activa) validarAsignaturaActiva(id.getAsignaturaId());
+    FotografiaRegistro antes = fotografias.deRotacion(consultarDetalle(id));
     rotacion.setActiva(activa);
     rotacionRepository.saveAndFlush(rotacion);
-    return rotacionMapper.toResponse(rotacionConsultaRepository.detalle(id));
+    RotacionResponse rotacionActualizada = consultarDetalle(id);
+    historialAuditoria.registrar(
+      activa ? AccionAuditoria.ACTIVO : AccionAuditoria.INACTIVO,
+      ModuloAuditoria.ROTACIONES,
+      antes,
+      fotografias.deRotacion(rotacionActualizada)
+    );
+    return rotacionActualizada;
   }
 
   @Transactional
@@ -273,8 +307,10 @@ public class RotacionServiceImpl implements RotacionService {
         residentesRelacionados +
         " registros de residentes relacionados (incluidos cancelados). Puedes desactivarla para conservar el historial."
     );
+    FotografiaRegistro antes = fotografias.deRotacion(consultarDetalle(id));
     rotacionRepository.delete(rotacion);
     rotacionRepository.flush();
+    historialAuditoria.registrar(AccionAuditoria.ELIMINO, ModuloAuditoria.ROTACIONES, antes, null);
   }
 
   public RotacionRequest validarFila(ImportacionRotacionesRequest.Fila fila) {

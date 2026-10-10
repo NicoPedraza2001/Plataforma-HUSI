@@ -1,16 +1,22 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { RegistroHistorial } from '../models/historial.model';
+import { DetalleMovimiento, RegistroHistorial } from '../models/historial.model';
 import { Pagina, Parametros } from '../models/pagina.model';
 import { API_URL } from './api.config';
 
 @Injectable({ providedIn: 'root' })
 export class HistorialService {
   private readonly http = inject(HttpClient);
+  private readonly url = `${API_URL}/historial`;
 
-  /** GET /api/historial */
+  /** GET /historial (ConsultaController) */
   listar(params: Parametros): Observable<Pagina<RegistroHistorial>> {
-    return this.http.get<Pagina<RegistroHistorial>>(`${API_URL}/historial`, { params });
+    return this.http.get<Pagina<RegistroHistorial>>(this.url, { params });
+  }
+
+  /** GET /historial/{id} (HistorialAuditoriaController) */
+  consultar(id: number): Observable<DetalleMovimiento> {
+    return this.http.get<DetalleMovimiento>(`${this.url}/${id}`);
   }
 }

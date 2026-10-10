@@ -3,9 +3,14 @@ package co.edu.javeriana.husi.service.impl;
 import co.edu.javeriana.husi.dto.request.ResidenteRequest;
 import co.edu.javeriana.husi.dto.response.ResidenteResponse;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
+import co.edu.javeriana.husi.mapper.FotografiaRegistro;
 import co.edu.javeriana.husi.mapper.ResidenteMapper;
 import co.edu.javeriana.husi.model.entity.Residente;
+import co.edu.javeriana.husi.model.enums.AccionAuditoria;
+import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.*;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.ResidenteService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +28,8 @@ public class ResidenteServiceImpl implements ResidenteService {
   private final TipoDocumentoRepository tipoDocumentoRepository;
   private final PerfilAcademicoRepository perfilAcademicoRepository;
   private final ResidenteMapper residenteMapper;
+  private final HistorialAuditoriaService historialAuditoria;
+  private final FotografiaAuditoriaMapper fotografias;
 
   private Residente buscarResidenteBloqueado(Integer id) {
     return residenteRepository
@@ -115,14 +122,29 @@ public class ResidenteServiceImpl implements ResidenteService {
   public ResidenteResponse crear(ResidenteRequest request) {
     var residente = new Residente();
     validarYAsignarDatos(residente, request);
-    return residenteMapper.toResponse(residenteRepository.saveAndFlush(residente));
+    var residenteCreado = residenteRepository.saveAndFlush(residente);
+    historialAuditoria.registrar(
+      AccionAuditoria.CREO,
+      ModuloAuditoria.RESIDENTES,
+      null,
+      fotografias.deResidente(residenteCreado)
+    );
+    return residenteMapper.toResponse(residenteCreado);
   }
 
   @Transactional
   public ResidenteResponse actualizar(Integer id, ResidenteRequest request) {
     var residente = buscarResidenteBloqueado(id);
+    FotografiaRegistro antes = fotografias.deResidente(residente);
     validarYAsignarDatos(residente, request);
-    return residenteMapper.toResponse(residenteRepository.saveAndFlush(residente));
+    var residenteActualizado = residenteRepository.saveAndFlush(residente);
+    historialAuditoria.registrar(
+      AccionAuditoria.ACTUALIZO,
+      ModuloAuditoria.RESIDENTES,
+      antes,
+      fotografias.deResidente(residenteActualizado)
+    );
+    return residenteMapper.toResponse(residenteActualizado);
   }
 
   @Transactional
@@ -131,8 +153,16 @@ public class ResidenteServiceImpl implements ResidenteService {
       !"Activo".equals(estado) && !"Inactivo".equals(estado)
     ) throw new NegocioException(HttpStatus.BAD_REQUEST, "Estado inválido.");
     var residente = buscarResidenteBloqueado(id);
+    FotografiaRegistro antes = fotografias.deResidente(residente);
     residente.setEstado(estado);
-    return residenteMapper.toResponse(residenteRepository.saveAndFlush(residente));
+    var residenteActualizado = residenteRepository.saveAndFlush(residente);
+    historialAuditoria.registrar(
+      AccionAuditoria.segunEstado(estado),
+      ModuloAuditoria.RESIDENTES,
+      antes,
+      fotografias.deResidente(residenteActualizado)
+    );
+    return residenteMapper.toResponse(residenteActualizado);
   }
 
   @Transactional
@@ -142,7 +172,14 @@ public class ResidenteServiceImpl implements ResidenteService {
       HttpStatus.CONFLICT,
       "El residente tiene rotaciones asociadas. Puedes desactivarlo para conservar su historial."
     );
+    FotografiaRegistro antes = fotografias.deResidente(residente);
     residenteRepository.delete(residente);
     residenteRepository.flush();
+    historialAuditoria.registrar(
+      AccionAuditoria.ELIMINO,
+      ModuloAuditoria.RESIDENTES,
+      antes,
+      null
+    );
   }
 }

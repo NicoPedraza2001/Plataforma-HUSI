@@ -4,6 +4,7 @@ import co.edu.javeriana.husi.dto.request.*;
 import co.edu.javeriana.husi.dto.response.*;
 import co.edu.javeriana.husi.exception.NegocioException;
 import co.edu.javeriana.husi.service.*;
+import co.edu.javeriana.husi.util.ImportacionEnCurso;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
@@ -17,9 +18,26 @@ public class ImportacionProgramasServiceImpl
 {
 
   private final ProgramaService programaService;
+  private final HistorialAuditoriaService historialAuditoria;
+
+  public ImportacionProgramasResponse procesar(
+    ImportacionProgramasRequest request,
+    boolean guardar
+  ) {
+    if (!guardar) return procesarFilas(request, false);
+    // En el historial queda una sola fila con el resumen, no una por programa creado.
+    return historialAuditoria.ejecutarComoImportacion(
+      ImportacionEnCurso.IMPORTACION_PROGRAMAS,
+      () -> {
+        var resultado = procesarFilas(request, true);
+        historialAuditoria.agregarResultadoImportacion(resumirParaHistorial(resultado));
+        return resultado;
+      }
+    );
+  }
 
   // Deliberadamente sin transacción de lote: cada crear confirma o revierte su propia fila.
-  public ImportacionProgramasResponse procesar(
+  private ImportacionProgramasResponse procesarFilas(
     ImportacionProgramasRequest request,
     boolean guardar
   ) {
@@ -73,5 +91,15 @@ public class ImportacionProgramasServiceImpl
       );
     }
     return ImportacionProgramasResponse.de(resultados);
+  }
+
+  /** Cifras finales que se agregan a la fila resumen de la importación en el historial. */
+  private Map<String, Object> resumirParaHistorial(ImportacionProgramasResponse resultado) {
+    Map<String, Object> resumen = new LinkedHashMap<>();
+    resumen.put("Filas del archivo", resultado.total());
+    resumen.put("Filas omitidas", resultado.omitidos());
+    resumen.put("Filas con error", resultado.errores());
+    resumen.put(HistorialAuditoriaServiceImpl.CLAVE_ESTADO_IMPORTACION, "Finalizada");
+    return resumen;
   }
 }

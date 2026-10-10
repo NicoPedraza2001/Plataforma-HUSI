@@ -3,9 +3,14 @@ package co.edu.javeriana.husi.service.impl;
 import co.edu.javeriana.husi.dto.request.AsignaturaRequest;
 import co.edu.javeriana.husi.dto.response.*;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
+import co.edu.javeriana.husi.mapper.FotografiaRegistro;
 import co.edu.javeriana.husi.mapper.AsignaturaMapper;
 import co.edu.javeriana.husi.model.entity.Asignatura;
+import co.edu.javeriana.husi.model.enums.AccionAuditoria;
+import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.*;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.AsignaturaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +25,8 @@ public class AsignaturaServiceImpl implements AsignaturaService {
   private final AsignaturaRepository asignaturaRepository;
   private final ServicioRepository servicioRepository;
   private final AsignaturaMapper asignaturaMapper;
+  private final HistorialAuditoriaService historialAuditoria;
+  private final FotografiaAuditoriaMapper fotografias;
 
   private NegocioException error(HttpStatus estado, String mensaje) {
     return new NegocioException(estado, mensaje);
@@ -98,18 +105,29 @@ public class AsignaturaServiceImpl implements AsignaturaService {
   public AsignaturaResponse crear(AsignaturaRequest request) {
     var asignatura = new Asignatura();
     validarYAsignarDatos(asignatura, request);
-    return asignaturaMapper.toResponse(
-      asignaturaRepository.saveAndFlush(asignatura)
+    var asignaturaCreada = asignaturaRepository.saveAndFlush(asignatura);
+    historialAuditoria.registrar(
+      AccionAuditoria.CREO,
+      ModuloAuditoria.ASIGNATURAS,
+      null,
+      fotografias.deAsignatura(asignaturaCreada)
     );
+    return asignaturaMapper.toResponse(asignaturaCreada);
   }
 
   @Transactional
   public AsignaturaResponse actualizar(Integer id, AsignaturaRequest request) {
     var asignatura = buscarAsignatura(id, true);
+    FotografiaRegistro antes = fotografias.deAsignatura(asignatura);
     validarYAsignarDatos(asignatura, request);
-    return asignaturaMapper.toResponse(
-      asignaturaRepository.saveAndFlush(asignatura)
+    var asignaturaActualizada = asignaturaRepository.saveAndFlush(asignatura);
+    historialAuditoria.registrar(
+      AccionAuditoria.ACTUALIZO,
+      ModuloAuditoria.ASIGNATURAS,
+      antes,
+      fotografias.deAsignatura(asignaturaActualizada)
     );
+    return asignaturaMapper.toResponse(asignaturaActualizada);
   }
 
   @Transactional
@@ -119,10 +137,16 @@ public class AsignaturaServiceImpl implements AsignaturaService {
       "Estado inválido."
     );
     var asignatura = buscarAsignatura(id, true);
+    FotografiaRegistro antes = fotografias.deAsignatura(asignatura);
     asignatura.setEstado(estado);
-    return asignaturaMapper.toResponse(
-      asignaturaRepository.saveAndFlush(asignatura)
+    var asignaturaActualizada = asignaturaRepository.saveAndFlush(asignatura);
+    historialAuditoria.registrar(
+      AccionAuditoria.segunEstado(estado),
+      ModuloAuditoria.ASIGNATURAS,
+      antes,
+      fotografias.deAsignatura(asignaturaActualizada)
     );
+    return asignaturaMapper.toResponse(asignaturaActualizada);
   }
 
   @Transactional
@@ -132,7 +156,14 @@ public class AsignaturaServiceImpl implements AsignaturaService {
       HttpStatus.CONFLICT,
       "La asignatura tiene rotaciones asociadas. Puedes desactivarla para conservar el historial."
     );
+    FotografiaRegistro antes = fotografias.deAsignatura(asignatura);
     asignaturaRepository.delete(asignatura);
     asignaturaRepository.flush();
+    historialAuditoria.registrar(
+      AccionAuditoria.ELIMINO,
+      ModuloAuditoria.ASIGNATURAS,
+      antes,
+      null
+    );
   }
 }
