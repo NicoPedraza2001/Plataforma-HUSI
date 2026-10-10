@@ -8,7 +8,7 @@ describe('RevisarCarga', () => {
     const fixture = TestBed.createComponent(RevisarCarga);
     fixture.componentRef.setInput('filas', [
       crearFilaDePrueba({ fila: 2 }),
-      crearFilaDePrueba({ fila: 3 }),
+      crearFilaDePrueba({ fila: 3, inicio: '31/11/2026', fin: '30/12/2026' }),
     ]);
     fixture.detectChanges();
     const revision = fixture.componentInstance as any;
@@ -28,5 +28,25 @@ describe('RevisarCarga', () => {
     revision.editarFilaPorNumero(3);
     expect(revision.filaEnEdicion().fila).toBe(3);
     expect(revision.filasVisibles()).toHaveLength(1);
+  });
+
+  it('una fecha inexistente deja el selector vacío y muestra lo que decía el Excel', () => {
+    const { revision } = crearRevision();
+    revision.editarFilaPorNumero(3);
+    expect(revision.filaEnEdicion().inicio).toBe('');
+    expect(revision.filaEnEdicion().fin).toBe('2026-12-30');
+    expect(revision.fechaOriginalInvalida('inicio')).toBe('31/11/2026');
+  });
+
+  it('no guarda la corrección hasta que las fechas sean válidas', () => {
+    const { revision, filasRecibidas } = crearRevision();
+    revision.editarFilaPorNumero(3);
+    revision.guardarEdicion();
+    expect(revision.errorEdicion()).toContain('Indica');
+    expect(filasRecibidas()).toEqual([]);
+
+    revision.filaEnEdicion().inicio = '2026-11-30';
+    revision.guardarEdicion();
+    expect(filasRecibidas().find((fila) => fila.fila === 3)?.inicio).toBe('2026-11-30');
   });
 });

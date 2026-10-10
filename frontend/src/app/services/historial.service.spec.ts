@@ -29,4 +29,9 @@ describe('HistorialService', () => {
     service.consultar(7).subscribe();
     http.expectOne({ method: 'GET', url: '/api/historial/7' });
   });
+
+  it('cancela una importación por su lote', () => {
+    service.cancelarImportacion('lote-1').subscribe();
+    http.expectOne({ method: 'POST', url: '/api/historial/importaciones/lote-1/cancelar' });
+  });
 });

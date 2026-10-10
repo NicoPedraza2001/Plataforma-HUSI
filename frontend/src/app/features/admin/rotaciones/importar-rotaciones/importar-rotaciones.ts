@@ -44,7 +44,10 @@ type PendientesPorPaso = Partial<Record<IdPasoImportacion, number>>;
 })
 export class ImportarRotaciones {
   private readonly router = inject(Router);
-  /** Todo lo que se crea o modifica en el asistente queda como una sola fila del historial. */
+  /**
+   * Todo lo que se crea o modifica en el asistente queda como una sola fila del historial.
+   * Salir sin confirmar (botón «Cancelar importación», otra pantalla, otro archivo) la cancela.
+   */
   private readonly loteImportacion = inject(LoteImportacion);
 
   protected readonly pasos = PASOS_IMPORTACION;
@@ -77,7 +80,7 @@ export class ImportarRotaciones {
   );
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.loteImportacion.terminar());
+    inject(DestroyRef).onDestroy(() => this.loteImportacion.cancelar());
   }
 
   // ---------- Navegación ----------
@@ -177,7 +180,7 @@ export class ImportarRotaciones {
 
   protected registrarCargaFinal(resultado: ResultadoCargaInicial) {
     this.resultadoFinal.set(resultado);
-    this.loteImportacion.terminar();
+    this.loteImportacion.finalizar();
   }
 
   protected registrarFalloDeConfirmacion(mensaje: string) {
@@ -191,7 +194,7 @@ export class ImportarRotaciones {
   }
 
   private reiniciarImportacion() {
-    this.loteImportacion.terminar();
+    this.loteImportacion.cancelar();
     this.libroExcel.set(null);
     this.configuracionColumnas.set(null);
     this.filasOriginales.set([]);

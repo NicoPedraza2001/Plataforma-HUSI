@@ -13,6 +13,12 @@
   padding: 10px 16px;
   border-radius: var(--radius-sm);
 }
+.fecha-original {
+  display: block;
+  margin-top: 6px;
+  color: var(--husi-red-dark);
+  font-weight: 400;
+}
 .campos {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

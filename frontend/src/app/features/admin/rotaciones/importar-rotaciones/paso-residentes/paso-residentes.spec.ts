@@ -16,7 +16,11 @@ import {
   UNIVERSIDAD_JAVERIANA,
 } from '../datos-de-prueba';
 import { PasoResidentes } from './paso-residentes';
-import { prepararDatosFormulario, revisarResidentes } from './revisar-residentes';
+import {
+  prepararDatosFormulario,
+  revisarResidentes,
+  tieneDocumentoRepetido,
+} from './revisar-residentes';
 
 const TIPOS_DOCUMENTO = [
   { id: 1, codigo: 'CC', nombre: 'Cédula de ciudadanía' },
@@ -89,6 +93,31 @@ describe('revisarResidentes', () => {
     expect(revisiones[0].numerosFila).toEqual([2, 3]);
     expect(revisiones[0].estado).toBe('incompleto');
   });
+
+  it('separa en grupos las filas de un documento que describen a personas distintas', () => {
+    const [revision] = revisarResidentes(
+      [
+        crearFilaDePrueba({ fila: 4 }),
+        crearFilaDePrueba({ fila: 5 }),
+        crearFilaDePrueba({ fila: 56, residente: 'Nombre Distinto' }),
+      ],
+      CATALOGOS,
+      new Map(),
+    );
+    expect(tieneDocumentoRepetido(revision)).toBe(true);
+    expect(revision.variantes.map((variante) => variante.numerosFila)).toEqual([[4, 5], [56]]);
+    expect(revision.observaciones[0]).toContain('mismo documento aparece con datos distintos');
+  });
+
+  it('las filas iguales de un mismo documento no son un documento repetido', () => {
+    const [revision] = revisarResidentes(
+      [crearFilaDePrueba({ fila: 2 }), crearFilaDePrueba({ fila: 3 })],
+      CATALOGOS,
+      new Map(),
+    );
+    expect(tieneDocumentoRepetido(revision)).toBe(false);
+    expect(revision.estado).toBe('nuevo');
+  });
 });
 
 describe('PasoResidentes', () => {
@@ -156,6 +185,47 @@ describe('PasoResidentes', () => {
     await paso.guardarResidente();
     expect(filasEmitidas[0][0].perfilAcademico).toBe('Posgrado');
     expect(paso.revisionEnEdicion()).toBeNull();
+  });
+
+  describe('documento repetido con datos distintos', () => {
+    const FILAS_EN_CONFLICTO = () => [
+      crearFilaDePrueba({ fila: 4, documento: '003', residente: 'Valentina Cárdenas' }),
+      crearFilaDePrueba({ fila: 56, documento: '003', residente: 'Nombre Distinto' }),
+    ];
+
+    it('es la misma persona: todas sus filas usan los datos elegidos', async () => {
+      const { paso, filasEmitidas } = await crearPaso(FILAS_EN_CONFLICTO());
+      const revision = paso.revisiones()[0];
+      paso.usarVarianteEnTodasLasFilas(revision, revision.variantes[0]);
+      expect(filasEmitidas[0].map((fila: FilaCargaInicial) => fila.residente)).toEqual([
+        'Valentina Cárdenas',
+        'Valentina Cárdenas',
+      ]);
+    });
+
+    it('es otra persona: solo sus filas cambian de documento', async () => {
+      const { paso, filasEmitidas, documentosConsultados } = await crearPaso(FILAS_EN_CONFLICTO());
+      const revision = paso.revisiones()[0];
+      paso.empezarCambioDeDocumento(revision.variantes[1]);
+      paso.documentoNuevo.set('003');
+      await paso.cambiarDocumentoDeVariante(revision, revision.variantes[1]);
+      expect(paso.errorDocumentoRepetido()).toContain('mismo documento');
+
+      paso.documentoNuevo.set(' 999 ');
+      await paso.cambiarDocumentoDeVariante(revision, revision.variantes[1]);
+      expect(documentosConsultados.at(-1)).toEqual(['999']);
+      expect(filasEmitidas[0].map((fila: FilaCargaInicial) => fila.documento)).toEqual([
+        '003',
+        '999',
+      ]);
+    });
+
+    it('excluir un grupo solo propone quitar sus filas', async () => {
+      const { paso } = await crearPaso(FILAS_EN_CONFLICTO());
+      const revision = paso.revisiones()[0];
+      paso.excluirVariante(revision, revision.variantes[1]);
+      expect(paso.revisionPorExcluir().numerosFila).toEqual([56]);
+    });
   });
 
   it('usar datos del sistema reescribe las filas con lo registrado', async () => {

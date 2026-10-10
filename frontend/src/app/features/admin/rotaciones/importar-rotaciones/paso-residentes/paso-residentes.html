@@ -122,58 +122,68 @@
             </td>
             <td>
               <div class="acciones-fila">
-                @switch (revision.estado) {
-                  @case ('nuevo') {
-                    <button
-                      class="btn btn--green"
-                      [disabled]="guardando()"
-                      (click)="abrirFormulario(revision)"
-                    >
-                      Crear
-                    </button>
-                  }
-                  @case ('incompleto') {
-                    <button
-                      class="btn btn--green"
-                      [disabled]="guardando()"
-                      (click)="abrirFormulario(revision)"
-                    >
-                      Completar y crear
-                    </button>
-                  }
-                  @case ('diferencias') {
-                    <button
-                      class="btn btn--navy"
-                      [disabled]="guardando()"
-                      (click)="abrirFormulario(revision)"
-                    >
-                      Revisar y actualizar
-                    </button>
-                    <button
-                      class="btn btn--outline"
-                      [disabled]="guardando()"
-                      (click)="usarDatosDelSistema(revision)"
-                    >
-                      Usar datos del sistema
-                    </button>
-                  }
-                  @case ('inactivo') {
-                    <button
-                      class="btn btn--navy"
-                      [disabled]="guardando()"
-                      (click)="activarResidente(revision)"
-                    >
-                      Activar
-                    </button>
-                  }
-                  @case ('encontrado') {
-                    <button
-                      class="btn btn--outline"
-                      [disabled]="guardando()"
-                      (click)="abrirFormulario(revision)"
-                    >
-                      Editar
-                    </button>
+                @if (tieneDocumentoRepetido(revision)) {
+                  <button
+                    class="btn btn--navy"
+                    [disabled]="guardando()"
+                    (click)="abrirDocumentoRepetido(revision)"
+                  >
+                    Resolver documento repetido
+                  </button>
+                } @else {
+                  @switch (revision.estado) {
+                    @case ('nuevo') {
+                      <button
+                        class="btn btn--green"
+                        [disabled]="guardando()"
+                        (click)="abrirFormulario(revision)"
+                      >
+                        Crear
+                      </button>
+                    }
+                    @case ('incompleto') {
+                      <button
+                        class="btn btn--green"
+                        [disabled]="guardando()"
+                        (click)="abrirFormulario(revision)"
+                      >
+                        Completar y crear
+                      </button>
+                    }
+                    @case ('diferencias') {
+                      <button
+                        class="btn btn--navy"
+                        [disabled]="guardando()"
+                        (click)="abrirFormulario(revision)"
+                      >
+                        Revisar y actualizar
+                      </button>
+                      <button
+                        class="btn btn--outline"
+                        [disabled]="guardando()"
+                        (click)="usarDatosDelSistema(revision)"
+                      >
+                        Usar datos del sistema
+                      </button>
+                    }
+                    @case ('inactivo') {
+                      <button
+                        class="btn btn--navy"
+                        [disabled]="guardando()"
+                        (click)="activarResidente(revision)"
+                      >
+                        Activar
+                      </button>
+                    }
+                    @case ('encontrado') {
+                      <button
+                        class="btn btn--outline"
+                        [disabled]="guardando()"
+                        (click)="abrirFormulario(revision)"
+                      >
+                        Editar
+                      </button>
+                    }
                   }
                 }
                 @if (revision.estado !== 'encontrado') {
@@ -284,6 +294,112 @@
         (guardar)="guardarResidente()"
         (cancelar)="cerrarFormulario()"
       />
+    </section>
+  </div>
+}
+
+@if (revisionDocumentoRepetido(); as revision) {
+  <div class="fondo-modal" (keydown.escape)="cerrarDocumentoRepetido()">
+    <section
+      class="panel-modal panel-documento-repetido"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-documento-repetido"
+      appFocoModal
+    >
+      <header>
+        <h2 id="titulo-documento-repetido">
+          Documento repetido: {{ revision.datosEnExcel.tipoDocumento }}
+          {{ revision.datosEnExcel.documento }}
+        </h2>
+        <p>
+          Estas filas comparten el documento pero no describen igual al residente. Para cada grupo
+          decide: si es la <strong>misma persona</strong>, usa sus datos en todas las filas; si es
+          <strong>otra persona</strong>, corrige su documento; o excluye solo esas filas.
+        </p>
+      </header>
+      <div class="cuerpo-documento-repetido">
+        @if (errorDocumentoRepetido()) {
+          <p class="mensaje error" role="alert">{{ errorDocumentoRepetido() }}</p>
+        }
+        @for (variante of revision.variantes; track variante.numerosFila[0]) {
+          <article class="variante">
+            <div class="variante__datos">
+              <strong>{{ variante.datos.nombre || '(sin nombre)' }}</strong>
+              <small
+                >{{ variante.datos.tipoDocumento || 'Sin tipo' }} {{ variante.datos.documento }}
+                @if (variante.datos.perfilAcademico) {
+                  · {{ variante.datos.perfilAcademico }}
+                }
+              </small>
+              <small>{{ variante.datos.programa }} — {{ variante.datos.universidad }}</small>
+              <small
+                >{{ variante.numerosFila.length === 1 ? 'Fila' : 'Filas' }}
+                {{ describirFilas(variante.numerosFila, 10) }}</small
+              >
+            </div>
+            @if (varianteCambiandoDocumento() === variante.numerosFila[0]) {
+              <form
+                class="variante__documento"
+                (ngSubmit)="cambiarDocumentoDeVariante(revision, variante)"
+              >
+                <label
+                  >Documento correcto de {{ variante.datos.nombre || 'esta persona'
+                  }}<input
+                    name="documentoNuevo"
+                    maxlength="50"
+                    [ngModel]="documentoNuevo()"
+                    (ngModelChange)="documentoNuevo.set($event)"
+                /></label>
+                <button class="btn btn--navy" type="submit" [disabled]="guardando()">
+                  Aplicar documento
+                </button>
+                <button
+                  class="btn btn--outline"
+                  type="button"
+                  [disabled]="guardando()"
+                  (click)="cancelarCambioDeDocumento()"
+                >
+                  Cancelar
+                </button>
+              </form>
+            } @else {
+              <div class="acciones-fila">
+                <button
+                  class="btn btn--green"
+                  [disabled]="guardando()"
+                  (click)="usarVarianteEnTodasLasFilas(revision, variante)"
+                >
+                  Es la misma persona: usar estos datos
+                </button>
+                <button
+                  class="btn btn--outline"
+                  [disabled]="guardando()"
+                  (click)="empezarCambioDeDocumento(variante)"
+                >
+                  Es otra persona: corregir documento
+                </button>
+                <button
+                  class="btn btn--outline boton-excluir"
+                  [disabled]="guardando()"
+                  (click)="excluirVariante(revision, variante)"
+                >
+                  Excluir {{ variante.numerosFila.length === 1 ? 'esta fila' : 'estas filas' }}
+                </button>
+              </div>
+            }
+          </article>
+        }
+        <footer>
+          <button
+            class="btn btn--outline"
+            [disabled]="guardando()"
+            (click)="cerrarDocumentoRepetido()"
+          >
+            Cerrar
+          </button>
+        </footer>
+      </div>
     </section>
   </div>
 }

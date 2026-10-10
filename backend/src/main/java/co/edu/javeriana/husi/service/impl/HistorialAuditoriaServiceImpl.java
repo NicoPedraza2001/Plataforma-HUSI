@@ -14,6 +14,7 @@ import co.edu.javeriana.husi.util.ImportacionEnCurso;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,11 @@ public class HistorialAuditoriaServiceImpl implements HistorialAuditoriaService 
 
   public static final String CLAVE_ARCHIVO = "Archivo";
   public static final String CLAVE_ESTADO_IMPORTACION = "Estado de la importación";
+  public static final String IMPORTACION_EN_CURSO = "En curso";
+  public static final String IMPORTACION_CANCELADA = "Cancelada";
+  private static final Pattern FORMATO_UUID = Pattern.compile(
+    "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+  );
   private static final String SEPARADOR = " · ";
   private static final int LONGITUD_MAXIMA_DETALLE = 500;
   private static final int LONGITUD_MAXIMA_REGISTRO = 250;
@@ -87,6 +93,25 @@ public class HistorialAuditoriaServiceImpl implements HistorialAuditoriaService 
     guardarResumen(resumen, datos);
   }
 
+  @Transactional
+  public void cancelarImportacion(String idLote) {
+    String lote = idLote == null ? "" : idLote.strip().toLowerCase(Locale.ROOT);
+    if (!FORMATO_UUID.matcher(lote).matches()) throw new NegocioException(
+      HttpStatus.BAD_REQUEST,
+      "El identificador de la importación no es válido."
+    );
+    historialRepository
+      .bloquearPorLote(lote)
+      .ifPresent(resumen -> {
+        Map<String, Object> datos = historialMapper.leerJson(resumen.getDatosNuevos());
+        // Una importación confirmada o finalizada ya no se puede cancelar.
+        if (!IMPORTACION_EN_CURSO.equals(datos.get(CLAVE_ESTADO_IMPORTACION))) return;
+        datos.remove(CLAVE_ESTADO_IMPORTACION);
+        datos.put(CLAVE_ESTADO_IMPORTACION, IMPORTACION_CANCELADA);
+        guardarResumen(resumen, datos);
+      });
+  }
+
   @Transactional(readOnly = true)
   public HistorialDetalleResponse consultar(Integer id) {
     return historialRepository
@@ -124,7 +149,7 @@ public class HistorialAuditoriaServiceImpl implements HistorialAuditoriaService 
         resumen.setRegistro(recortar(lote.descripcion(), LONGITUD_MAXIMA_REGISTRO));
         Map<String, Object> datosIniciales = new LinkedHashMap<>();
         if (lote.archivo() != null) datosIniciales.put(CLAVE_ARCHIVO, lote.archivo());
-        datosIniciales.put(CLAVE_ESTADO_IMPORTACION, "En curso");
+        datosIniciales.put(CLAVE_ESTADO_IMPORTACION, IMPORTACION_EN_CURSO);
         resumen.setDatosNuevos(historialMapper.aJson(datosIniciales));
         return resumen;
       });

@@ -38,6 +38,8 @@ import {
   prepararDatosFormulario,
   RevisionResidente,
   revisarResidentes,
+  tieneDocumentoRepetido,
+  VarianteResidente,
 } from './revisar-residentes';
 
 /** Documentos por consulta al backend (acepta hasta 5000; se parte para no enviar cuerpos enormes). */
@@ -86,6 +88,20 @@ export class PasoResidentes implements OnInit {
   protected readonly aviso = signal('');
   protected readonly cantidadConPalabra = cantidadConPalabra;
   protected readonly revisionPorExcluir = signal<RevisionResidente | null>(null);
+  protected readonly tieneDocumentoRepetido = tieneDocumentoRepetido;
+
+  // Documento repetido con datos distintos (se identifica por la clave del documento)
+  private readonly claveDocumentoRepetido = signal<string | null>(null);
+  /** Se cierra solo cuando el documento deja de tener datos distintos. */
+  protected readonly revisionDocumentoRepetido = computed(() => {
+    const clave = this.claveDocumentoRepetido();
+    const revision = this.revisiones().find((revisionActual) => revisionActual.clave === clave);
+    return revision && tieneDocumentoRepetido(revision) ? revision : null;
+  });
+  /** Grupo de filas al que se le está escribiendo un documento nuevo (su primera fila). */
+  protected readonly varianteCambiandoDocumento = signal<number | null>(null);
+  protected readonly documentoNuevo = signal('');
+  protected readonly errorDocumentoRepetido = signal('');
 
   // Formulario (reutiliza FormularioResidente del módulo de residentes)
   protected readonly revisionEnEdicion = signal<RevisionResidente | null>(null);
@@ -281,6 +297,96 @@ export class PasoResidentes implements OnInit {
     );
     this.registrarResidente(residenteActualizado, residenteRegistrado.numeroDocumento);
     return residenteActualizado;
+  }
+
+  // ---------- Documento repetido con datos distintos ----------
+
+  protected abrirDocumentoRepetido(revision: RevisionResidente) {
+    this.cancelarCambioDeDocumento();
+    this.claveDocumentoRepetido.set(revision.clave);
+  }
+
+  protected cerrarDocumentoRepetido() {
+    if (this.guardando()) return;
+    this.cancelarCambioDeDocumento();
+    this.claveDocumentoRepetido.set(null);
+  }
+
+  /** Es la misma persona: todas las filas del documento pasan a usar los datos de este grupo. */
+  protected usarVarianteEnTodasLasFilas(revision: RevisionResidente, variante: VarianteResidente) {
+    const filaModelo = this.filas().find((fila) => fila.fila === variante.numerosFila[0]);
+    if (!filaModelo) return;
+    this.filasCambiadas.emit(
+      actualizarFilas(this.filas(), revision.numerosFila, {
+        residente: filaModelo.residente,
+        tipoDocumento: filaModelo.tipoDocumento,
+        perfilAcademico: filaModelo.perfilAcademico,
+        programa: filaModelo.programa,
+        universidad: filaModelo.universidad,
+        pais: filaModelo.pais,
+      }),
+    );
+    this.mostrarAviso(
+      `Las filas ${describirFilas(revision.numerosFila)} ahora son de «${variante.datos.nombre}».`,
+    );
+  }
+
+  protected empezarCambioDeDocumento(variante: VarianteResidente) {
+    this.errorDocumentoRepetido.set('');
+    this.documentoNuevo.set('');
+    this.varianteCambiandoDocumento.set(variante.numerosFila[0]);
+  }
+
+  protected cancelarCambioDeDocumento() {
+    this.varianteCambiandoDocumento.set(null);
+    this.documentoNuevo.set('');
+    this.errorDocumentoRepetido.set('');
+  }
+
+  /**
+   * Es otra persona: sus filas reciben el documento correcto y se revisan por separado. El
+   * documento nuevo se busca en el sistema, porque solo se consultaron los que traía el Excel.
+   */
+  protected async cambiarDocumentoDeVariante(
+    revision: RevisionResidente,
+    variante: VarianteResidente,
+  ) {
+    const documento = this.documentoNuevo().trim();
+    if (!documento) {
+      this.errorDocumentoRepetido.set('Escribe el número de documento correcto.');
+      return;
+    }
+    if (claveDeDocumento(documento) === revision.clave) {
+      this.errorDocumentoRepetido.set('Es el mismo documento; escribe el de la otra persona.');
+      return;
+    }
+    if (this.guardando()) return;
+    this.guardando.set(true);
+    this.errorDocumentoRepetido.set('');
+    try {
+      const [residenteRegistrado] = await firstValueFrom(
+        this.residenteService.buscarPorDocumentos([documento]),
+      );
+      if (residenteRegistrado) this.registrarResidente(residenteRegistrado);
+      this.filasCambiadas.emit(actualizarFilas(this.filas(), variante.numerosFila, { documento }));
+      this.cancelarCambioDeDocumento();
+      this.mostrarAviso(
+        `Las filas ${describirFilas(variante.numerosFila)} de «${variante.datos.nombre}» ahora tienen el documento ${documento}.`,
+      );
+    } catch (e) {
+      this.errorDocumentoRepetido.set(mensajeError(e));
+    } finally {
+      this.guardando.set(false);
+    }
+  }
+
+  /** Quita de la importación solo las filas de este grupo. */
+  protected excluirVariante(revision: RevisionResidente, variante: VarianteResidente) {
+    this.revisionPorExcluir.set({
+      ...revision,
+      datosEnExcel: variante.datos,
+      numerosFila: variante.numerosFila,
+    });
   }
 
   // ---------- Usar datos del sistema, activar, excluir ----------

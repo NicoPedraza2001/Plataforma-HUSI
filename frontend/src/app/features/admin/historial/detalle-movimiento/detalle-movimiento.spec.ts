@@ -58,5 +58,20 @@ describe('DetalleMovimiento', () => {
     expect(texto).toContain('Resumen de la importación');
     expect(texto).toContain('Residentes creados');
     expect(texto).toContain('1000');
+    expect(texto).not.toContain('se canceló');
+  });
+
+  it('una importación cancelada lo indica y sigue mostrando lo que se creó', async () => {
+    const texto: string = (
+      await crear({
+        ...ACTUALIZACION,
+        accion: 'IMPORTÓ',
+        datosAnteriores: undefined,
+        datosNuevos: { 'Universidades creadas': 2, 'Estado de la importación': 'Cancelada' },
+        esImportacion: true,
+      })
+    ).nativeElement.textContent;
+    expect(texto).toContain('se canceló antes de confirmarse');
+    expect(texto).toContain('Universidades creadas');
   });
 });

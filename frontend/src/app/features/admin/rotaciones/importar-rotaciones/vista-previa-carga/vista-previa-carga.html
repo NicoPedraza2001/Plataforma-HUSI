@@ -35,7 +35,6 @@
         <th>Universidad / Programa</th>
         <th>Servicio / Asignatura</th>
         <th>Fechas</th>
-        <th>Se crea además</th>
       </tr>
     </thead>
     <tbody>
@@ -71,17 +70,10 @@
           <td>
             {{ filaAGuardar.fila.inicio }}<small>a {{ filaAGuardar.fila.fin }}</small>
           </td>
-          <td>
-            @for (registro of filaAGuardar.registrosNuevos; track registro) {
-              <span class="registro-nuevo">{{ registro }}</span>
-            } @empty {
-              <small>Solo la asignación</small>
-            }
-          </td>
         </tr>
       } @empty {
         <tr>
-          <td colspan="6" class="tabla__vacia">No hay filas que coincidan con la búsqueda.</td>
+          <td colspan="5" class="tabla__vacia">No hay filas que coincidan con la búsqueda.</td>
         </tr>
       }
     </tbody>

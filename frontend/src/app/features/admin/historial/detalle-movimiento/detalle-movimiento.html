@@ -74,6 +74,12 @@
           }
         </div>
 
+        @if (importacionCancelada()) {
+          <p class="aviso-cancelada" role="note">
+            Esta importación se canceló antes de confirmarse. Los registros que se alcanzaron a
+            crear o modificar en sus pasos se conservan en el sistema; aquí se resumen.
+          </p>
+        }
         @if (movimiento.esImportacion) {
           <p class="datos__nota">
             Una importación se registra como un solo movimiento: aquí se resume cuántos registros

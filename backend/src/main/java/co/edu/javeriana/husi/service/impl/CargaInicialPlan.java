@@ -262,19 +262,14 @@ final class CargaInicialPlan {
     }
     String nombreServicio = leerCampo(fila.servicio(), "servicio", 150, true);
     String nombreAsignatura = leerCampo(fila.asignatura(), "asignatura", 200, true);
-    LocalDate inicio, fin;
-    try {
-      inicio = LocalDate.parse(texto(fila.inicio()));
-      fin = LocalDate.parse(texto(fila.fin()));
-    } catch (Exception e) {
-      throw new FilaRechazada(
-        "ERROR",
-        "Fechas inválidas. Usa celdas de fecha o AAAA-MM-DD."
-      );
-    }
-    if (
-      inicio.getYear() < 1900 || fin.getYear() > 9999 || fin.isBefore(inicio)
-    ) rechazarFila("Revisa el orden de las fechas y el rango 1900–9999.");
+    LocalDate inicio = leerFecha(fila.inicio(), "inicio");
+    LocalDate fin = leerFecha(fila.fin(), "fin");
+    if (inicio.getYear() < 1900 || fin.getYear() > 9999) rechazarFila(
+      "Las fechas deben estar entre los años 1900 y 9999."
+    );
+    if (fin.isBefore(inicio)) rechazarFila(
+      "La fecha de fin (" + fin + ") es anterior a la fecha de inicio (" + inicio + ")."
+    );
 
     var universidad = buscarRegistro(
       "universidad",
@@ -531,6 +526,27 @@ final class CargaInicialPlan {
       .stream()
       .filter(detalle -> detalle.estado().equals(estado))
       .count();
+  }
+
+  /**
+   * Fecha AAAA-MM-DD de la fila. El mensaje nombra el valor recibido: un «31/11/2026» suele ser
+   * una fecha que no existe y que Excel guardó como texto en vez de como fecha.
+   */
+  private LocalDate leerFecha(String valor, String nombreFecha) {
+    String fecha = texto(valor).strip();
+    if (fecha.isEmpty()) rechazarFila("Falta la fecha de " + nombreFecha + ".");
+    try {
+      return LocalDate.parse(fecha);
+    } catch (java.time.format.DateTimeParseException e) {
+      throw new FilaRechazada(
+        "ERROR",
+        "La fecha de " +
+          nombreFecha +
+          " «" +
+          fecha +
+          "» no es válida: no existe en el calendario o no tiene formato AAAA-MM-DD."
+      );
+    }
   }
 
   private void rechazarFila(String mensaje) {

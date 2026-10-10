@@ -45,8 +45,27 @@ describe('loteImportacionInterceptor', () => {
     expect(universidad.headers.get(CABECERA_LOTE)).toBe(residente.headers.get(CABECERA_LOTE));
     expect(residente.headers.get(CABECERA_ARCHIVO)).toBe('Rotaci%C3%B3n%202026-1.xlsx');
 
-    loteImportacion.terminar();
+    loteImportacion.finalizar();
     http.get('/api/historial').subscribe();
     expect(backend.expectOne('/api/historial').request.headers.has(CABECERA_LOTE)).toBe(false);
+  });
+
+  it('cancelar avisa al historial una sola vez y sin marcar el aviso como parte del lote', () => {
+    loteImportacion.iniciar('carga.xlsx');
+    const idLote = loteImportacion.actual()!.id;
+    loteImportacion.cancelar();
+    loteImportacion.cancelar();
+
+    const aviso = backend.expectOne(`/api/historial/importaciones/${idLote}/cancelar`).request;
+    expect(aviso.method).toBe('POST');
+    expect(aviso.headers.has(CABECERA_LOTE)).toBe(false);
+    expect(loteImportacion.actual()).toBeNull();
+  });
+
+  it('finalizar después de confirmar no cancela la importación', () => {
+    loteImportacion.iniciar('carga.xlsx');
+    loteImportacion.finalizar();
+    loteImportacion.cancelar();
+    backend.expectNone((peticion) => peticion.url.includes('/cancelar'));
   });
 });

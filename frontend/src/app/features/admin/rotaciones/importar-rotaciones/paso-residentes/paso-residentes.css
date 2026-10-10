@@ -7,6 +7,32 @@ td strong {
 .badge {
   min-width: 0;
 }
+.panel-documento-repetido {
+  width: min(820px, 100%);
+}
+.cuerpo-documento-repetido {
+  padding: 20px 32px 28px;
+}
+.variante {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+}
+.variante__datos {
+  flex: 1 1 260px;
+}
+.variante__documento {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
 .comparacion {
   width: calc(100% - 64px);
   margin: 20px 32px 0;

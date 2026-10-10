@@ -1,5 +1,6 @@
 import { CampoCarga, FilaCargaInicial } from '../../../../models/carga-inicial.model';
 import { HojaExcel } from '../../../../shared/excel/excel';
+import { normalizarFecha } from './fechas-carga';
 
 /** Campo de la carga inicial que el administrador relaciona con una columna del Excel. */
 export interface CampoDeCarga {
@@ -157,7 +158,9 @@ export function sonConfiguracionesIguales(
 
 /**
  * Convierte las celdas del Excel en filas de carga. Omite las filas sin datos en las
- * columnas elegidas y conserva el número de fila original del Excel.
+ * columnas elegidas y conserva el número de fila original del Excel. Las fechas escritas como
+ * texto («01/11/2026») pasan a AAAA-MM-DD; las que no existen se dejan igual para que la
+ * validación las señale y se corrijan en el paso Rotaciones.
  */
 export function prepararCarga(
   celdasPorFila: string[][],
@@ -177,7 +180,9 @@ export function prepararCarga(
         const columna = columnaPorCampo[indiceCampo];
         const valorComun = valorComunPorCampo[indiceCampo] ?? '';
         const valorCelda = columna >= 0 ? (celdas[columna] ?? '').trim() : '';
-        filaCarga[campo.clave] = (valorCelda || valorComun).trim();
+        const valor = (valorCelda || valorComun).trim();
+        const esFecha = campo.clave === 'inicio' || campo.clave === 'fin';
+        filaCarga[campo.clave] = esFecha ? (normalizarFecha(valor) ?? valor) : valor;
       });
       return filaCarga;
     });

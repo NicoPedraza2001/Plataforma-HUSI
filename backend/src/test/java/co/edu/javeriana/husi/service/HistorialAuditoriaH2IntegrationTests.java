@@ -3,6 +3,8 @@ package co.edu.javeriana.husi.service;
 import static org.assertj.core.api.Assertions.*;
 
 import co.edu.javeriana.husi.dto.request.*;
+import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.util.ImportacionEnCurso;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +60,36 @@ class HistorialAuditoriaH2IntegrationTests {
     assertThat(detalle.datosAnteriores()).containsEntry("País", "Colombia");
     assertThat(detalle.datosNuevos()).containsEntry("País", "Perú").containsEntry("Nombre", nombre);
     assertThat(detalle.esImportacion()).isFalse();
+  }
+
+  @Test
+  void cancelarUnaImportacionConservaLoCreadoYNoAfectaLasConfirmadas() {
+    String lote = UUID.randomUUID().toString();
+    ImportacionEnCurso.iniciar(new ImportacionEnCurso.Lote(lote, "Carga inicial desde Excel", "prueba.xlsx"));
+    try {
+      universidades.crear(new UniversidadRequest("Universidad cancelada " + lote, "Colombia"));
+    } finally {
+      ImportacionEnCurso.terminar();
+    }
+
+    historial.cancelarImportacion(lote);
+    var resumen = historial.consultar(
+      jdbc.queryForObject(
+        "select id_historial from historial_auditoria where lote_importacion=?",
+        Integer.class,
+        lote
+      )
+    );
+    assertThat(resumen.datosNuevos())
+      .containsEntry("Universidades creadas", 1)
+      .containsEntry("Estado de la importación", "Cancelada");
+    assertThat(resumen.detalle()).endsWith("Estado de la importación: Cancelada");
+
+    // Un lote que no creó nada no deja fila; un identificador inválido se rechaza.
+    historial.cancelarImportacion(UUID.randomUUID().toString());
+    assertThatThrownBy(() -> historial.cancelarImportacion("no-es-un-lote")).isInstanceOf(
+      NegocioException.class
+    );
   }
 
   @Test

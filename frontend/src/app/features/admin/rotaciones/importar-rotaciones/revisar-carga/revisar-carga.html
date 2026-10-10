@@ -13,12 +13,37 @@
     </p>
     <div class="campos">
       @for (campo of campos; track campo.clave) {
-        <label
-          >{{ campo.nombre
-          }}<input [(ngModel)]="fila[campo.clave]" [maxlength]="campo.max" [disabled]="bloqueado()"
-        /></label>
+        @if (esCampoFecha(campo.clave)) {
+          <label
+            >{{ campo.nombre
+            }}<input
+              type="date"
+              min="1900-01-01"
+              max="9999-12-31"
+              [(ngModel)]="fila[campo.clave]"
+              [disabled]="bloqueado()"
+            />
+            @if (fechaOriginalInvalida($any(campo.clave)); as fechaOriginal) {
+              <small class="fecha-original"
+                >En el Excel decía «{{ fechaOriginal }}», que no es una fecha válida. Elige la fecha
+                correcta.</small
+              >
+            }
+          </label>
+        } @else {
+          <label
+            >{{ campo.nombre
+            }}<input
+              [(ngModel)]="fila[campo.clave]"
+              [maxlength]="campo.max"
+              [disabled]="bloqueado()"
+          /></label>
+        }
       }
     </div>
+    @if (errorEdicion()) {
+      <p class="mensaje error" role="alert">{{ errorEdicion() }}</p>
+    }
     <button class="btn btn--navy" (click)="guardarEdicion()" [disabled]="bloqueado()">
       Guardar corrección
     </button>

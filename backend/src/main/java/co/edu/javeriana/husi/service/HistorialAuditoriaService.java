@@ -31,5 +31,12 @@ public interface HistorialAuditoriaService {
   /** Agrega datos finales (filas guardadas, omitidas…) al resumen de la importación en curso. */
   void agregarResultadoImportacion(Map<String, Object> resultado);
 
+  /**
+   * El administrador abandonó el asistente de Excel antes de confirmar: el resumen queda como
+   * «Cancelada» y conserva lo que se alcanzó a crear. No hace nada si el lote no creó nada o
+   * ya terminó.
+   */
+  void cancelarImportacion(String idLote);
+
   HistorialDetalleResponse consultar(Integer id);
 }

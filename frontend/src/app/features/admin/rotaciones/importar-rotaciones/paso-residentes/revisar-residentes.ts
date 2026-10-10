@@ -28,11 +28,23 @@ export interface DatosResidenteEnExcel {
   universidad: string;
 }
 
+/** Filas de un mismo documento que traen exactamente los mismos datos del residente. */
+export interface VarianteResidente {
+  datos: DatosResidenteEnExcel;
+  numerosFila: number[];
+}
+
 /** Un residente del Excel (todas sus filas) comparado con el registro de la base de datos. */
 export interface RevisionResidente {
   clave: string;
   numerosFila: number[];
   datosEnExcel: DatosResidenteEnExcel;
+  /**
+   * Formas distintas en que las filas de este documento describen al residente. Si hay más de
+   * una, el administrador debe decidir si es la misma persona o si alguna fila tiene mal el
+   * documento; mientras tanto no se crea ni se actualiza nada (ver `tieneDocumentoRepetido`).
+   */
+  variantes: VarianteResidente[];
   /** Código del catálogo que corresponde al tipo del Excel (acepta código o nombre). */
   codigoTipoDocumento: string | null;
   /** Nombre del catálogo para el perfil del Excel; '' si el Excel no trae perfil. */
@@ -99,19 +111,37 @@ function leerDatosEnExcel(fila: FilaCargaInicial): DatosResidenteEnExcel {
   };
 }
 
+/** Datos del residente que deben coincidir en todas las filas de un mismo documento. */
+const CAMPOS_DEL_RESIDENTE = [
+  { campo: 'residente', etiqueta: 'nombre' },
+  { campo: 'tipoDocumento', etiqueta: 'tipo de documento' },
+  { campo: 'perfilAcademico', etiqueta: 'perfil académico' },
+  { campo: 'programa', etiqueta: 'programa' },
+  { campo: 'universidad', etiqueta: 'universidad' },
+] as const;
+
+/** Un mismo documento aparece con datos distintos: hay que resolverlo antes de crear o actualizar. */
+export function tieneDocumentoRepetido(revision: RevisionResidente): boolean {
+  return revision.variantes.length > 1;
+}
+
+/** Agrupa las filas de un documento según los datos del residente que traen. */
+function separarVariantes(filasDelResidente: readonly FilaCargaInicial[]): VarianteResidente[] {
+  const filasPorVariante = agruparFilas(filasDelResidente, (fila) =>
+    CAMPOS_DEL_RESIDENTE.map(({ campo }) => claveDeTexto(fila[campo])).join('|'),
+  );
+  return [...filasPorVariante.values()].map((filasDeLaVariante) => ({
+    datos: leerDatosEnExcel(filasDeLaVariante[0]),
+    numerosFila: filasDeLaVariante.map((fila) => fila.fila),
+  }));
+}
+
 /** Avisa si las filas de un mismo documento no traen los mismos datos del residente. */
 function buscarFilasInconsistentes(filasDelResidente: readonly FilaCargaInicial[]): string[] {
-  const camposAComparar = [
-    { campo: 'residente', etiqueta: 'nombre' },
-    { campo: 'tipoDocumento', etiqueta: 'tipo de documento' },
-    { campo: 'perfilAcademico', etiqueta: 'perfil académico' },
-    { campo: 'programa', etiqueta: 'programa' },
-  ] as const;
-  return camposAComparar
-    .map(({ campo, etiqueta }) => ({
-      etiqueta,
-      valores: valoresDistintos(filasDelResidente, campo),
-    }))
+  return CAMPOS_DEL_RESIDENTE.map(({ campo, etiqueta }) => ({
+    etiqueta,
+    valores: valoresDistintos(filasDelResidente, campo),
+  }))
     .filter(({ valores }) => valores.length > 1)
     .map(
       ({ etiqueta, valores }) => `Sus filas traen distinto ${etiqueta}: ${valores.join(' / ')}.`,
@@ -152,7 +182,13 @@ export function revisarResidentes(
       ? (residentesPorDocumento.get(claveDeDocumento(datosEnExcel.documento)) ?? null)
       : null;
 
+    const variantes = separarVariantes(filasDelResidente);
     const observaciones = buscarFilasInconsistentes(filasDelResidente);
+    if (variantes.length > 1) {
+      observaciones.unshift(
+        'El mismo documento aparece con datos distintos. Indica si es la misma persona o corrige el documento de las filas que son de otra.',
+      );
+    }
     if (codigoTipoDocumento === null) {
       observaciones.push(
         datosEnExcel.tipoDocumento
@@ -175,6 +211,7 @@ export function revisarResidentes(
       clave,
       numerosFila: filasDelResidente.map((fila) => fila.fila),
       datosEnExcel,
+      variantes,
       codigoTipoDocumento,
       nombrePerfilAcademico,
       programa,

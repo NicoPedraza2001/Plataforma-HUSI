@@ -7,6 +7,10 @@ import { HistorialService } from '../../../../services/historial.service';
 import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 import { claseBadgeAccion, compararDatos } from '../comparar-datos';
 
+/** Backend: HistorialAuditoriaServiceImpl.CLAVE_ESTADO_IMPORTACION e IMPORTACION_CANCELADA. */
+const CLAVE_ESTADO_IMPORTACION = 'Estado de la importación';
+const IMPORTACION_CANCELADA = 'Cancelada';
+
 /**
  * Ventana con todo lo que se sabe de un movimiento del historial: quién lo hizo, cuándo, sobre
  * qué registro y cómo estaba el registro antes y después. Una importación muestra su resumen.
@@ -44,6 +48,14 @@ export class DetalleMovimiento {
   protected readonly esComparacion = computed(() => {
     const movimiento = this.movimiento();
     return !!movimiento?.datosAnteriores && !!movimiento?.datosNuevos;
+  });
+  /** Se abandonó el asistente antes de confirmar; lo creado en sus pasos se conserva. */
+  protected readonly importacionCancelada = computed(() => {
+    const movimiento = this.movimiento();
+    return (
+      !!movimiento?.esImportacion &&
+      movimiento.datosNuevos?.[CLAVE_ESTADO_IMPORTACION] === IMPORTACION_CANCELADA
+    );
   });
   protected readonly tituloDatos = computed(() => {
     const movimiento = this.movimiento();

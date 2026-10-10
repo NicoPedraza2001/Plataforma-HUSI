@@ -4,6 +4,7 @@ import { FilaCargaInicial } from '../../../../../models/carga-inicial.model';
 import { Paginacion } from '../../../../../shared/paginacion/paginacion';
 import { CAMPOS_CARGA } from '../campos-carga';
 import { normalizarBusqueda } from '../emparejamiento';
+import { describirErrorDeFechas, normalizarFecha } from '../fechas-carga';
 
 const FILAS_POR_PAGINA = 20;
 
@@ -27,6 +28,9 @@ export class RevisarCarga {
   protected readonly paginaSolicitada = signal(1);
   protected readonly textoBusqueda = signal('');
   protected readonly filaEnEdicion = signal<FilaCargaInicial | null>(null);
+  /** Fechas tal como venían, para mostrarlas si no eran válidas y el selector quedó vacío. */
+  protected readonly fechasOriginales = signal({ inicio: '', fin: '' });
+  protected readonly errorEdicion = signal('');
 
   protected readonly filasFiltradas = computed(() => {
     const busqueda = normalizarBusqueda(this.textoBusqueda());
@@ -74,20 +78,43 @@ export class RevisarCarga {
     this.editarFila(fila);
   }
 
+  /** Los campos de fecha se editan con selector de fecha (siempre AAAA-MM-DD). */
+  protected esCampoFecha(clave: string): boolean {
+    return clave === 'inicio' || clave === 'fin';
+  }
+
+  /** La fecha que venía en el Excel no se pudo leer: se muestra para saber qué corregir. */
+  protected fechaOriginalInvalida(clave: 'inicio' | 'fin'): string {
+    const original = this.fechasOriginales()[clave];
+    return original && !normalizarFecha(original) ? original : '';
+  }
+
   protected editarFila(fila: FilaCargaInicial) {
     if (this.bloqueado()) return;
-    this.filaEnEdicion.set({ ...fila });
+    this.fechasOriginales.set({ inicio: fila.inicio, fin: fila.fin });
+    this.errorEdicion.set('');
+    this.filaEnEdicion.set({
+      ...fila,
+      inicio: normalizarFecha(fila.inicio) ?? '',
+      fin: normalizarFecha(fila.fin) ?? '',
+    });
     this.edicion.emit(true);
   }
 
   protected cancelarEdicion() {
     this.filaEnEdicion.set(null);
+    this.errorEdicion.set('');
     this.edicion.emit(false);
   }
 
   protected guardarEdicion() {
     const filaCorregida = this.filaEnEdicion();
     if (!filaCorregida || this.bloqueado()) return;
+    const errorDeFechas = describirErrorDeFechas(filaCorregida.inicio, filaCorregida.fin);
+    if (errorDeFechas) {
+      this.errorEdicion.set(errorDeFechas);
+      return;
+    }
     this.cambiar.emit(
       this.filas().map((fila) => (fila.fila === filaCorregida.fila ? { ...filaCorregida } : fila)),
     );

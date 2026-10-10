@@ -19,4 +19,14 @@ export class HistorialService {
   consultar(id: number): Observable<DetalleMovimiento> {
     return this.http.get<DetalleMovimiento>(`${this.url}/${id}`);
   }
+
+  /** POST /historial/importaciones/{lote}/cancelar (HistorialAuditoriaController) */
+  cancelarImportacion(idLote: string): Observable<void> {
+    return this.http.post<void>(this.urlCancelarImportacion(idLote), null);
+  }
+
+  /** Misma ruta que `cancelarImportacion`, para `navigator.sendBeacon` al cerrar la pestaña. */
+  urlCancelarImportacion(idLote: string): string {
+    return `${this.url}/importaciones/${idLote}/cancelar`;
+  }
 }
