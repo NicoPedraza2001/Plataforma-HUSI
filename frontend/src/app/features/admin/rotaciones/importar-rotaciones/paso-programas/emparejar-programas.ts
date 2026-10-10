@@ -11,6 +11,12 @@ import {
   RegistroDelSistema,
 } from '../emparejamiento';
 import { buscarUniversidadPorNombre } from '../paso-universidades/emparejar-universidades';
+import {
+  buscarConvenio,
+  buscarErrorDeConvenioSegunPais,
+  convenioSegunPais,
+  esUniversidadPropia,
+} from '../../../programas/programas-de-convenio';
 
 function convertirEnRegistro(programa: Programa): RegistroDelSistema {
   return { id: programa.id, nombre: programa.nombre, estado: programa.estado };
@@ -53,8 +59,11 @@ export function emparejarProgramas(
     const programasDeLaUniversidad = universidad
       ? programasDelSistema.filter((programa) => programa.universidadId === universidad.id)
       : [];
+    // Una universidad nacional nunca puede elegir «Convenio Internacional».
     const programasActivos = programasDeLaUniversidad.filter(
-      (programa) => programa.estado === 'Activo',
+      (programa) =>
+        programa.estado === 'Activo' &&
+        !(universidad && buscarErrorDeConvenioSegunPais(programa.nombre, universidad)),
     );
     const programaRegistrado =
       universidad && nombreEnExcel
@@ -94,6 +103,30 @@ export function emparejarProgramas(
         ...grupo,
         estado: 'incompleto',
         observaciones: ['Estas filas no tienen programa.'],
+      };
+    }
+    const errorDeConvenio = esUniversidadPropia(universidad.nombre)
+      ? null
+      : buscarErrorDeConvenioSegunPais(nombreEnExcel, universidad);
+    if (errorDeConvenio) {
+      return {
+        ...grupo,
+        estado: 'incompleto',
+        registro: null,
+        observaciones: [errorDeConvenio],
+      };
+    }
+    if (!programaRegistrado && !esUniversidadPropia(universidad.nombre)) {
+      const convenioSugerido = buscarConvenio(nombreEnExcel) ?? convenioSegunPais(universidad.pais);
+      return {
+        ...grupo,
+        estado: 'nuevo',
+        observaciones: [
+          `«${universidad.nombre}» es externa a la Javeriana: sus filas se registran como «${convenioSugerido}».`,
+        ],
+        sugerencias: programasActivos
+          .filter((programa) => buscarConvenio(programa.nombre) !== null)
+          .map(convertirEnRegistro),
       };
     }
     if (!programaRegistrado) {

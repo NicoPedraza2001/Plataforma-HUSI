@@ -299,11 +299,21 @@ final class CargaInicialPlan {
       "nombre_programa",
       nombrePrograma
     );
+    if (!ProgramasDeConvenio.esUniversidadPropia(nombreUniversidad)) {
+      ProgramasDeConvenio.buscarErrorDeConvenioSegunPais(
+        nombrePrograma,
+        nombreUniversidad,
+        texto(universidad.get("pais"))
+      ).ifPresent(this::rechazarFila);
+    }
     var programa = buscarRegistro("programa", criteriosPrograma);
-    if (programa == null) programa = registrarNuevo(
-      "programa",
-      criteriosPrograma
-    );
+    if (programa == null) {
+      if (
+        !ProgramasDeConvenio.esUniversidadPropia(nombreUniversidad) &&
+        ProgramasDeConvenio.buscarConvenio(nombrePrograma).isEmpty()
+      ) rechazarFila(ProgramasDeConvenio.MENSAJE_SOLO_CONVENIOS);
+      programa = registrarNuevo("programa", criteriosPrograma);
+    }
 
     var residente = buscarRegistro(
       "residente",

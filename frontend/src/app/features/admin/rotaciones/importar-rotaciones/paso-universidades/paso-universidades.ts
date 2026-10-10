@@ -58,7 +58,6 @@ export class PasoUniversidades {
   protected readonly grupoEnCreacion = signal<GrupoEmparejamiento | null>(null);
   protected readonly nombreNuevaUniversidad = signal('');
   protected readonly paisNuevaUniversidad = signal('');
-  protected readonly perfilNuevaUniversidad = signal('');
   protected readonly errorFormulario = signal('');
 
   protected readonly grupos = computed(() =>
@@ -113,7 +112,6 @@ export class PasoUniversidades {
   protected abrirCreacion(grupo: GrupoEmparejamiento) {
     this.nombreNuevaUniversidad.set(grupo.valorEnExcel);
     this.paisNuevaUniversidad.set(grupo.contexto.split(',')[0]?.trim() ?? '');
-    this.perfilNuevaUniversidad.set('');
     this.errorFormulario.set('');
     this.grupoEnCreacion.set(grupo);
   }
@@ -131,7 +129,6 @@ export class PasoUniversidades {
       const universidadCreada = await this.crearUniversidad(
         this.nombreNuevaUniversidad(),
         this.paisNuevaUniversidad(),
-        this.perfilNuevaUniversidad(),
       );
       this.filasCambiadas.emit(
         this.aplicarUniversidadEnFilas(this.filas(), grupo, universidadCreada),
@@ -156,11 +153,7 @@ export class PasoUniversidades {
     const { procesados, errores } = await procesarEnLote(
       gruposACrear,
       async (grupo) => {
-        const universidadCreada = await this.crearUniversidad(
-          grupo.valorEnExcel,
-          grupo.contexto,
-          '',
-        );
+        const universidadCreada = await this.crearUniversidad(grupo.valorEnExcel, grupo.contexto);
         filasActualizadas = this.aplicarUniversidadEnFilas(
           filasActualizadas,
           grupo,
@@ -178,13 +171,9 @@ export class PasoUniversidades {
     if (errores.length) this.error.set('No se pudieron crear: ' + errores.join(' · '));
   }
 
-  private async crearUniversidad(nombre: string, pais: string, perfil: string) {
+  private async crearUniversidad(nombre: string, pais: string) {
     const universidadCreada = await firstValueFrom(
-      this.universidadService.crear({
-        nombre: nombre.trim(),
-        pais: pais.trim(),
-        perfil: perfil.trim() || null,
-      }),
+      this.universidadService.crear({ nombre: nombre.trim(), pais: pais.trim() }),
     );
     this.reemplazarUniversidadEnCatalogo(universidadCreada);
     return universidadCreada;

@@ -5,7 +5,7 @@ import co.edu.javeriana.husi.dto.response.*;
 import java.util.*;
 
 public interface UniversidadService {
-  List<CatalogoResponse> catalogo();
+  List<UniversidadCatalogoResponse> catalogo();
   UniversidadResponse consultar(Integer id);
   UniversidadResponse crear(UniversidadRequest request);
   UniversidadResponse actualizar(Integer id, UniversidadRequest request);

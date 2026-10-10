@@ -56,6 +56,32 @@ describe('Rotaciones conectadas', () => {
       .flush({ contenido: [], pagina: 1, totalPaginas: 1, totalElementos: 0 });
     http.verify();
   });
+  it('muestra inicio y fin en columnas y filtra por rango de fechas', () => {
+    const { fixture, http } = crear();
+    const encabezados = [...fixture.nativeElement.querySelectorAll('th')].map((celda: any) =>
+      celda.textContent.trim(),
+    );
+    expect(encabezados).toContain('Fecha de inicio');
+    expect(encabezados).toContain('Fecha de fin');
+    expect(fixture.nativeElement.textContent).toContain('31/01/2091');
+    const componente = fixture.componentInstance as any;
+    componente.filtroDesde = '2091-01-15';
+    componente.filtroHasta = '2091-02-15';
+    componente.filtrarPorFechas();
+    http
+      .expectOne(
+        (peticion) =>
+          peticion.url === '/api/rotaciones/gestion' &&
+          peticion.params.get('desde') === '2091-01-15' &&
+          peticion.params.get('hasta') === '2091-02-15',
+      )
+      .flush({ contenido: [fila], pagina: 1, totalPaginas: 1, totalElementos: 1 });
+    componente.filtroHasta = '2091-01-01';
+    componente.filtrarPorFechas();
+    http.expectNone((peticion) => peticion.url === '/api/rotaciones/gestion');
+    expect(componente.errorFiltroFechas()).toContain('no puede ser anterior');
+    http.verify();
+  });
   it('cambiar de página consulta al backend', () => {
     const { fixture, http } = crear();
     (fixture.componentInstance as any).cargar(2);
@@ -103,7 +129,7 @@ describe('Rotaciones conectadas', () => {
     expect(fixture.nativeElement.querySelector('.estado-directo').textContent.trim()).toBe(
       'Inactivo',
     );
-    expect(fixture.nativeElement.querySelectorAll('thead th').length).toBe(5);
+    expect(fixture.nativeElement.querySelectorAll('thead th').length).toBe(6);
     expect(fixture.nativeElement.querySelectorAll('tbody .acciones-registro button').length).toBe(
       3,
     );

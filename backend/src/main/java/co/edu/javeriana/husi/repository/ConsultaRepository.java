@@ -35,7 +35,7 @@ public class ConsultaRepository {
       case "usuarios" -> "concat(nombre,' ',correo)";
       case "historial" -> "concat(usuario,' ',modulo,' ',accion,' ',detalle)";
       case "servicios" -> "concat(nombre,' ',descripcion)";
-      case "universidades" -> "concat(nombre,' ',pais,' ',perfil)";
+      case "universidades" -> "concat(nombre,' ',pais)";
       case "rotaciones" -> "concat(residente,' ',universidad,' ',servicio,' ',asignatura)";
       default -> "nombre";
     };

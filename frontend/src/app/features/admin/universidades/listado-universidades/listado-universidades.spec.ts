@@ -9,7 +9,6 @@ describe('Universidades conectado', () => {
     id: 55,
     nombre: 'Universidad prueba',
     pais: 'Colombia',
-    perfil: null,
     estado: 'Activo',
   };
   function iniciar() {
@@ -72,7 +71,6 @@ describe('Universidades conectado', () => {
     expect(post.request.body).toEqual({
       nombre: 'Nueva universidad',
       pais: 'Colombia',
-      perfil: null,
     });
     post.flush({ ...universidad, nombre: 'Nueva universidad' });
     await Promise.resolve();

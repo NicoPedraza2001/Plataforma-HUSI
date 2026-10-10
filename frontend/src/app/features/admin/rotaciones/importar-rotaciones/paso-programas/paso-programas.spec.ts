@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { FilaCargaInicial } from '../../../../../models/carga-inicial.model';
 import { ProgramaRequest } from '../../../../../models/programa.model';
+import { UniversidadDetalle } from '../../../../../models/universidad.model';
 import { ProgramaService } from '../../../../../services/programa.service';
 import { UniversidadService } from '../../../../../services/universidad.service';
 import {
@@ -10,6 +11,8 @@ import {
   esperarCargas,
   PROGRAMA_MEDICINA_INTERNA,
   PROGRAMA_PEDIATRIA,
+  UNIVERSIDAD_ANDES,
+  UNIVERSIDAD_BARCELONA,
   UNIVERSIDAD_JAVERIANA,
 } from '../datos-de-prueba';
 import { emparejarProgramas } from './emparejar-programas';
@@ -32,27 +35,72 @@ describe('emparejarProgramas', () => {
     expect(grupos[1].sugerencias[0].id).toBe(PROGRAMA_PEDIATRIA.id);
     expect(grupos[2].sePuedeCrear).toBe(false);
   });
+
+  it('en universidades externas a la Javeriana indica el convenio según el país', () => {
+    const filas = [
+      crearFilaDePrueba({
+        fila: 2,
+        universidad: UNIVERSIDAD_ANDES.nombre,
+        programa: 'Especialización en Pediatría',
+      }),
+    ];
+    const [grupo] = emparejarProgramas(filas, new Map(), [UNIVERSIDAD_ANDES], []);
+    expect(grupo.estado).toBe('nuevo');
+    expect(grupo.observaciones[0]).toContain('Convenio Nacional');
+  });
+
+  it('no deja usar el convenio internacional en una universidad nacional', () => {
+    const filas = [
+      crearFilaDePrueba({
+        fila: 2,
+        universidad: UNIVERSIDAD_ANDES.nombre,
+        programa: 'Convenio Internacional',
+      }),
+    ];
+    const [grupo] = emparejarProgramas(filas, new Map(), [UNIVERSIDAD_ANDES], []);
+    expect(grupo.estado).toBe('incompleto');
+    expect(grupo.observaciones[0]).toContain('es nacional');
+  });
+
+  it('no deja usar el convenio nacional en una universidad del exterior', () => {
+    const filas = [
+      crearFilaDePrueba({
+        fila: 2,
+        universidad: UNIVERSIDAD_BARCELONA.nombre,
+        pais: UNIVERSIDAD_BARCELONA.pais,
+        programa: 'Convenio Nacional',
+      }),
+    ];
+    const [grupo] = emparejarProgramas(filas, new Map(), [UNIVERSIDAD_BARCELONA], []);
+    expect(grupo.estado).toBe('incompleto');
+    expect(grupo.observaciones[0]).toContain('es internacional');
+  });
 });
 
 describe('PasoProgramas', () => {
-  async function crearPaso(filas: FilaCargaInicial[]) {
+  async function crearPaso(
+    filas: FilaCargaInicial[],
+    universidades: UniversidadDetalle[] = [UNIVERSIDAD_JAVERIANA],
+  ) {
     const programaServiceFalso = {
       buscar: () => of(crearPaginaDePrueba([PROGRAMA_MEDICINA_INTERNA])),
-      crear: (datos: ProgramaRequest) =>
+      crear: vi.fn((datos: ProgramaRequest) =>
         of({
           id: 30,
           nombre: datos.nombre,
           universidadId: datos.universidadId,
-          universidad: UNIVERSIDAD_JAVERIANA.nombre,
+          universidad: universidades.find((universidad) => universidad.id === datos.universidadId)!
+            .nombre,
           estado: 'Activo',
         }),
+      ),
     };
     TestBed.configureTestingModule({
       providers: [
         { provide: ProgramaService, useValue: programaServiceFalso },
         {
           provide: UniversidadService,
-          useValue: { buscar: () => of(crearPaginaDePrueba([UNIVERSIDAD_JAVERIANA])) },
+          useValue: { buscar: () => of(crearPaginaDePrueba(universidades)) },
         },
       ],
     });
@@ -67,7 +115,7 @@ describe('PasoProgramas', () => {
     paso.filasCambiadas.subscribe((filasNuevas: FilaCargaInicial[]) =>
       filasEmitidas.push(filasNuevas),
     );
-    return { paso, filasEmitidas };
+    return { paso, filasEmitidas, programaServiceFalso };
   }
 
   it('should create', async () => {
@@ -82,5 +130,26 @@ describe('PasoProgramas', () => {
     await paso.crearProgramasEnLote();
     expect(filasEmitidas[0][0].programa).toBe('Neurocirugía');
     expect(paso.programasDelSistema().map((programa: { id: number }) => programa.id)).toContain(30);
+  });
+
+  it('asigna un solo convenio a todos los programas de una universidad externa', async () => {
+    const { paso, filasEmitidas, programaServiceFalso } = await crearPaso(
+      [
+        crearFilaDePrueba({ fila: 2, universidad: UNIVERSIDAD_ANDES.nombre, programa: 'Cirugía' }),
+        crearFilaDePrueba({ fila: 3, universidad: UNIVERSIDAD_ANDES.nombre, programa: 'Urología' }),
+      ],
+      [UNIVERSIDAD_JAVERIANA, UNIVERSIDAD_ANDES],
+    );
+    expect(paso.gruposParaCrearEnLote()).toHaveLength(2);
+    await paso.crearProgramasEnLote();
+    expect(programaServiceFalso.crear).toHaveBeenCalledTimes(1);
+    expect(programaServiceFalso.crear).toHaveBeenCalledWith({
+      nombre: 'Convenio Nacional',
+      universidadId: UNIVERSIDAD_ANDES.id,
+    });
+    expect(filasEmitidas[0].map((fila) => fila.programa)).toEqual([
+      'Convenio Nacional',
+      'Convenio Nacional',
+    ]);
   });
 });

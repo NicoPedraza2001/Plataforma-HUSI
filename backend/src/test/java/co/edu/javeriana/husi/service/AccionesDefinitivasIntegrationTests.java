@@ -31,8 +31,7 @@ class AccionesDefinitivasIntegrationTests {
       .crear(
         new UniversidadRequest(
           "ACCIONES-" + UUID.randomUUID(),
-          "Colombia",
-          null
+          "Ecuador"
         )
       )
       .id();
@@ -41,7 +40,7 @@ class AccionesDefinitivasIntegrationTests {
   @Test
   void estadosSonReversiblesYProgramasInactivosSiguenEnElListado() {
     int universidadId = universidad();
-    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
+    var programaCreado = programas.crear(new ProgramaRequest("Convenio Internacional", universidadId));
     assertThat(programas.cambiarEstado(programaCreado.id(), "Inactivo").estado()).isEqualTo(
       "Inactivo"
     );
@@ -50,7 +49,7 @@ class AccionesDefinitivasIntegrationTests {
     );
     assertThat(
       programas
-        .actualizar(programaCreado.id(), new ProgramaRequest("Editado inactivo", universidadId))
+        .actualizar(programaCreado.id(), new ProgramaRequest("Convenio Internacional", universidadId))
         .estado()
     ).isEqualTo("Inactivo");
     assertThat(programas.cambiarEstado(programaCreado.id(), "Activo").estado()).isEqualTo(
@@ -64,7 +63,7 @@ class AccionesDefinitivasIntegrationTests {
   @Test
   void eliminaFisicamenteProgramaSinResidentesYUniversidadSinProgramas() {
     int universidadId = universidad();
-    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
+    var programaCreado = programas.crear(new ProgramaRequest("Convenio Internacional", universidadId));
     programas.eliminarDefinitivamente(programaCreado.id());
     assertThat(
       jdbc.queryForObject(
@@ -86,7 +85,7 @@ class AccionesDefinitivasIntegrationTests {
   @Test
   void protegeProgramasInactivosAsociadosAUniversidad() {
     int universidadId = universidad();
-    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
+    var programaCreado = programas.crear(new ProgramaRequest("Convenio Internacional", universidadId));
     programas.cambiarEstado(programaCreado.id(), "Inactivo");
     assertThatThrownBy(() ->
       universidades.eliminarDefinitivamente(universidadId)
@@ -103,7 +102,7 @@ class AccionesDefinitivasIntegrationTests {
   @Test
   void protegeResidentesInactivosYNoFuerzaCascadas() {
     int universidadId = universidad();
-    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
+    var programaCreado = programas.crear(new ProgramaRequest("Convenio Internacional", universidadId));
     jdbc.update(
       "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento,estado) values(?,1,'Prueba',?,'Inactivo')",
       programaCreado.id(),
@@ -124,7 +123,7 @@ class AccionesDefinitivasIntegrationTests {
   @Test
   void noReactivaProgramaSiUniversidadEstaInactiva() {
     int universidadId = universidad();
-    var programaCreado = programas.crear(new ProgramaRequest("Programa prueba", universidadId));
+    var programaCreado = programas.crear(new ProgramaRequest("Convenio Internacional", universidadId));
     programas.cambiarEstado(programaCreado.id(), "Inactivo");
     universidades.cambiarEstado(universidadId, "Inactivo");
     assertThatThrownBy(() ->

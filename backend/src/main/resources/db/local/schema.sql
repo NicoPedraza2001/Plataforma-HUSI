@@ -33,7 +33,6 @@ CREATE TABLE universidad (
 
     nombre_universidad  VARCHAR(150) NOT NULL UNIQUE,
     pais                VARCHAR(100) NOT NULL,
-    perfil              VARCHAR(50),
 
     estado              VARCHAR(20) NOT NULL DEFAULT 'Activo',
 

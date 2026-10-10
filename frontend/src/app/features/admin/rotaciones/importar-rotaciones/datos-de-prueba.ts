@@ -42,6 +42,21 @@ export const UNIVERSIDAD_ROSARIO_INACTIVA: UniversidadDetalle = {
   estado: 'Inactivo',
 };
 
+/** Universidad externa a la Javeriana: sus programas son de convenio. */
+export const UNIVERSIDAD_ANDES: UniversidadDetalle = {
+  id: 3,
+  nombre: 'Universidad de los Andes',
+  pais: 'Colombia',
+  estado: 'Activo',
+};
+
+export const UNIVERSIDAD_BARCELONA: UniversidadDetalle = {
+  id: 4,
+  nombre: 'Universidad de Barcelona',
+  pais: 'España',
+  estado: 'Activo',
+};
+
 export const PROGRAMA_MEDICINA_INTERNA: Programa = {
   id: 10,
   nombre: 'Medicina Interna',

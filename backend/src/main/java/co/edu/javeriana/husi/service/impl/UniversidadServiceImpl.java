@@ -22,12 +22,16 @@ public class UniversidadServiceImpl implements UniversidadService {
   private final UniversidadMapper universidadMapper;
   private final ConsultaService consultaService;
 
-  public List<CatalogoResponse> catalogo() {
+  public List<UniversidadCatalogoResponse> catalogo() {
     return universidadRepository
       .findByEstadoOrderByNombreAsc("Activo")
       .stream()
       .map(universidad ->
-        new CatalogoResponse(universidad.getId(), universidad.getNombre())
+        new UniversidadCatalogoResponse(
+          universidad.getId(),
+          universidad.getNombre(),
+          universidad.getPais()
+        )
       )
       .toList();
   }
@@ -60,9 +64,8 @@ public class UniversidadServiceImpl implements UniversidadService {
     Universidad universidad,
     UniversidadRequest request
   ) {
-    String nombre = validarTexto(request.nombre(), 150, "nombre", true);
-    String pais = validarTexto(request.pais(), 100, "país", true);
-    String perfil = validarTexto(request.perfil(), 50, "perfil", false);
+    String nombre = validarTexto(request.nombre(), 150, "nombre");
+    String pais = validarTexto(request.pais(), 100, "país");
     if (
       universidadRepository.existsByNombreIgnoreCaseAndIdNot(
         nombre,
@@ -74,18 +77,16 @@ public class UniversidadServiceImpl implements UniversidadService {
     );
     universidad.setNombre(nombre);
     universidad.setPais(pais);
-    universidad.setPerfil(perfil);
   }
 
-  /** Devuelve el texto sin espacios sobrantes, o null si queda vacío y no es obligatorio. */
+  /** Devuelve el texto obligatorio sin espacios sobrantes o rechaza si está vacío o es muy largo. */
   private String validarTexto(
     String valor,
     int longitudMaxima,
-    String nombreCampo,
-    boolean obligatorio
+    String nombreCampo
   ) {
     String limpio = valor == null ? "" : valor.strip();
-    if (obligatorio && limpio.isEmpty()) throw error(
+    if (limpio.isEmpty()) throw error(
       HttpStatus.BAD_REQUEST,
       "El campo " + nombreCampo + " es obligatorio."
     );
@@ -97,7 +98,7 @@ public class UniversidadServiceImpl implements UniversidadService {
         longitudMaxima +
         " caracteres."
     );
-    return limpio.isEmpty() ? null : limpio;
+    return limpio;
   }
 
   @Transactional

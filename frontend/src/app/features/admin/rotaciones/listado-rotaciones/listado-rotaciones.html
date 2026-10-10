@@ -50,6 +50,38 @@
       </select></label
     >
   </div>
+  <div class="filtros-fechas">
+    <label
+      >Desde<input
+        type="date"
+        [(ngModel)]="filtroDesde"
+        (ngModelChange)="filtrarPorFechas()"
+        aria-describedby="ayuda-filtro-fechas"
+    /></label>
+    <label
+      >Hasta<input
+        type="date"
+        [(ngModel)]="filtroHasta"
+        [min]="filtroDesde"
+        (ngModelChange)="filtrarPorFechas()"
+        aria-describedby="ayuda-filtro-fechas"
+    /></label>
+    <button
+      class="btn btn--outline"
+      type="button"
+      [disabled]="!filtroDesde && !filtroHasta"
+      (click)="limpiarFiltroFechas()"
+    >
+      Limpiar fechas
+    </button>
+  </div>
+  <p id="ayuda-filtro-fechas" class="ayuda">
+    Con un rango de fechas se muestran las rotaciones que estuvieron, están o estarán en curso en
+    algún día de ese periodo.
+  </p>
+  @if (errorFiltroFechas()) {
+    <p class="mensaje error" role="alert">{{ errorFiltroFechas() }}</p>
+  }
   <p class="ayuda">
     {{ consulta.datos()?.totalElementos ?? 0 }} rotaciones · El estado activo/inactivo es
     independiente de la disponibilidad de cupos.
@@ -59,7 +91,8 @@
       <thead>
         <tr>
           <th>Asignatura / Servicio</th>
-          <th>Fechas</th>
+          <th>Fecha de inicio</th>
+          <th>Fecha de fin</th>
           <th>Cupos disponibles</th>
           <th>Asociados</th>
           <th class="col-acciones-registro">Acciones</th>
@@ -68,11 +101,11 @@
       <tbody>
         @if (consulta.cargando()) {
           <tr>
-            <td colspan="5" role="status">Cargando rotaciones…</td>
+            <td colspan="6" role="status">Cargando rotaciones…</td>
           </tr>
         } @else if (consulta.error()) {
           <tr>
-            <td colspan="5">No se pudo obtener el listado.</td>
+            <td colspan="6">No se pudo obtener el listado.</td>
           </tr>
         } @else {
           @for (
@@ -83,11 +116,8 @@
               <td>
                 {{ rotacion.asignatura }}<small>{{ rotacion.servicio }}</small>
               </td>
-              <td>
-                {{ rotacion.inicio | date: 'dd/MM/yyyy' }}<br />{{
-                  rotacion.fin | date: 'dd/MM/yyyy'
-                }}
-              </td>
+              <td>{{ rotacion.inicio | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ rotacion.fin | date: 'dd/MM/yyyy' }}</td>
               <td>
                 {{ rotacion.cupoDisponible }}<small>{{ rotacion.disponibilidad }}</small>
               </td>
@@ -141,7 +171,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="5">
+              <td colspan="6">
                 No hay rotaciones que coincidan con la búsqueda. Puedes agregar una rotación o
                 cambiar los filtros.
               </td>

@@ -10,6 +10,7 @@ import co.edu.javeriana.husi.repository.*;
 import co.edu.javeriana.husi.service.RotacionService;
 import co.edu.javeriana.husi.util.Calendario;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,8 @@ public class RotacionServiceImpl implements RotacionService {
     "q",
     "activa",
     "servicioId",
+    "desde",
+    "hasta",
     "pagina",
     "tamano"
   );
@@ -51,6 +54,20 @@ public class RotacionServiceImpl implements RotacionService {
     }
   }
 
+  /** Convierte un parámetro de la URL (AAAA-MM-DD) en fecha; null si no viene. */
+  private LocalDate leerFechaOpcional(Map<String, String> filtros, String nombreFiltro) {
+    String valor = filtros.getOrDefault(nombreFiltro, "").strip();
+    if (valor.isEmpty()) return null;
+    try {
+      return LocalDate.parse(valor);
+    } catch (DateTimeParseException e) {
+      throw error(
+        HttpStatus.BAD_REQUEST,
+        "La fecha «" + nombreFiltro + "» no es válida. Usa el formato AAAA-MM-DD."
+      );
+    }
+  }
+
   @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
   public PaginaResponse<RotacionResponse> listar(Map<String, String> filtros) {
     if (!FILTROS_PERMITIDOS.containsAll(filtros.keySet())) throw error(
@@ -73,10 +90,18 @@ public class RotacionServiceImpl implements RotacionService {
     Integer servicioId = filtros.containsKey("servicioId")
       ? leerEnteroPositivo(filtros.get("servicioId"), Integer.MAX_VALUE)
       : null;
+    LocalDate desde = leerFechaOpcional(filtros, "desde");
+    LocalDate hasta = leerFechaOpcional(filtros, "hasta");
+    if (desde != null && hasta != null && hasta.isBefore(desde)) throw error(
+      HttpStatus.BAD_REQUEST,
+      "La fecha «hasta» no puede ser anterior a la fecha «desde»."
+    );
     var pagina = rotacionConsultaRepository.listar(
       busqueda,
       activa,
       servicioId,
+      desde,
+      hasta,
       leerEnteroPositivo(filtros.getOrDefault("pagina", "1"), 1000000),
       leerEnteroPositivo(filtros.getOrDefault("tamano", "10"), 100)
     );

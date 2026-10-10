@@ -12,7 +12,6 @@ import { TextoObligatorio } from '../../../../shared/formularios/restricciones-e
 export class FormularioUniversidad {
   readonly nombre = model('');
   readonly pais = model('');
-  readonly perfil = model('');
   readonly edicion = input(false);
   readonly guardando = input(false);
   readonly errorFormulario = input('');

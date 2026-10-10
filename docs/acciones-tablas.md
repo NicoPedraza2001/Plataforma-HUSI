@@ -4,7 +4,7 @@ Actualización del 14 de septiembre de 2026.
 
 Las tres tablas muestran exactamente tres acciones por registro: botón Activo/Inactivo, Editar y papelera sin texto visible (con nombre accesible y tooltip). El estado cambia sin diálogo y se actualiza con la respuesta del backend; si falla, conserva el estado anterior y muestra el error. Mientras se guarda se bloquean nuevas acciones.
 
-Universidades usa Nombre, País, Perfil, Asociados y Acciones. Ver programas está en Asociados. Rotaciones usa Asignatura/Servicio, Fechas, Cupos disponibles y Acciones. Los filtros de estado se mantienen. Programas lista activos e inactivos, también dentro de una universidad, para permitir reactivar desde la misma fila. La edición de programas inactivos conserva su estado.
+Universidades usa Nombre, País, Asociados y Acciones. Ver programas está en Asociados. Rotaciones usa Asignatura/Servicio, Fechas, Cupos disponibles y Acciones. Los filtros de estado se mantienen. Programas lista activos e inactivos, también dentro de una universidad, para permitir reactivar desde la misma fila. La edición de programas inactivos conserva su estado.
 
 La papelera abre una advertencia irreversible, ofrece Cancelar/Eliminar definitivamente y recomienda desactivar si se utilizará después. El backend bloquea el borrado de universidades con programas, programas con residentes y rotaciones con asignaciones, incluyendo relaciones inactivas/canceladas. No hay cascadas ni cambios de esquema.
 

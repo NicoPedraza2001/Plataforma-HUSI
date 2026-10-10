@@ -6,6 +6,7 @@ import co.edu.javeriana.husi.model.entity.Rotacion;
 import co.edu.javeriana.husi.model.entity.RotacionId;
 import co.edu.javeriana.husi.repository.support.ConsultaSql;
 import jakarta.persistence.EntityManager;
+import java.time.LocalDate;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -24,10 +25,18 @@ public class RotacionConsultaRepository {
   from rotacion r join asignatura a on a.id_asignatura=r.id_asignatura join servicio s on s.id_servicio=a.id_servicio
   """;
 
+  /**
+   * Lista las rotaciones con filtros opcionales. {@code desde}/{@code hasta} devuelven las
+   * rotaciones que se cruzan con ese rango: las que estaban, están o estarán en curso en
+   * algún día del periodo (empiezan antes de que el rango termine y terminan después de que
+   * empiece).
+   */
   public PaginaResponse<Map<String, Object>> listar(
     String busqueda,
     Boolean activa,
     Integer servicioId,
+    LocalDate desde,
+    LocalDate hasta,
     int pagina,
     int tamano
   ) {
@@ -42,6 +51,14 @@ public class RotacionConsultaRepository {
     if (servicioId != null) {
       where += " and \"servicioId\"=:servicio";
       parametros.put("servicio", servicioId);
+    }
+    if (desde != null) {
+      where += " and fin>=:desde";
+      parametros.put("desde", desde);
+    }
+    if (hasta != null) {
+      where += " and inicio<=:hasta";
+      parametros.put("hasta", hasta);
     }
     String from = " from (" + SELECT_ROTACION + ") datos" + where;
     long total = (

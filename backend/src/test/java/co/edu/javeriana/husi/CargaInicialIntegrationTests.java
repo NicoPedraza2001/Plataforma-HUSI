@@ -28,7 +28,7 @@ class CargaInicialIntegrationTests {
       numeroFila,
       "Universidad importación",
       "Colombia",
-      "Programa importación",
+      "Convenio Nacional",
       "Residente " + documento,
       "CC",
       documento,
@@ -139,6 +139,78 @@ class CargaInicialIntegrationTests {
         .validar(new CargaInicialRequest(List.of(buenas), false, null))
         .errores()
     ).isEqualTo(1);
+  }
+
+  @Test
+  void rechazaProgramasPropiosEnUniversidadesExternas() {
+    var filaConConvenio = fila(2, "IMP-Z", "Servicio convenio", "1");
+    var filaConProgramaPropio = new Fila(
+      2,
+      "Universidad externa sin convenio " + filaConConvenio.documento(),
+      filaConConvenio.pais(),
+      "Especialización en Pediatría",
+      filaConConvenio.residente(),
+      filaConConvenio.tipoDocumento(),
+      filaConConvenio.documento(),
+      "",
+      filaConConvenio.servicio(),
+      "1",
+      "1",
+      filaConConvenio.asignatura(),
+      filaConConvenio.inicio(),
+      filaConConvenio.fin()
+    );
+    var resultado = carga.validar(request(List.of(filaConProgramaPropio)));
+    assertThat(resultado.errores()).isEqualTo(1);
+    assertThat(resultado.filas().getFirst().mensaje()).contains("Convenio Nacional");
+  }
+
+  @Test
+  void rechazaConvenioInternacionalEnUniversidadNacional() {
+    var filaNacional = fila(2, "IMP-N", "Servicio convenio nacional", "1");
+    var filaConConvenioInternacional = new Fila(
+      2,
+      "Universidad nacional " + UUID.randomUUID(),
+      "colombia",
+      "Convenio Internacional",
+      filaNacional.residente(),
+      filaNacional.tipoDocumento(),
+      filaNacional.documento(),
+      "",
+      filaNacional.servicio(),
+      "1",
+      "1",
+      filaNacional.asignatura(),
+      filaNacional.inicio(),
+      filaNacional.fin()
+    );
+    var resultado = carga.validar(request(List.of(filaConConvenioInternacional)));
+    assertThat(resultado.errores()).isEqualTo(1);
+    assertThat(resultado.filas().getFirst().mensaje()).contains("es nacional");
+  }
+
+  @Test
+  void rechazaConvenioNacionalEnUniversidadInternacional() {
+    var filaBase = fila(2, "IMP-I", "Servicio convenio internacional", "1");
+    var filaConConvenioNacional = new Fila(
+      2,
+      "Universidad internacional " + UUID.randomUUID(),
+      "España",
+      "Convenio Nacional",
+      filaBase.residente(),
+      filaBase.tipoDocumento(),
+      filaBase.documento(),
+      "",
+      filaBase.servicio(),
+      "1",
+      "1",
+      filaBase.asignatura(),
+      filaBase.inicio(),
+      filaBase.fin()
+    );
+    var resultado = carga.validar(request(List.of(filaConConvenioNacional)));
+    assertThat(resultado.errores()).isEqualTo(1);
+    assertThat(resultado.filas().getFirst().mensaje()).contains("es internacional");
   }
 
   @Test

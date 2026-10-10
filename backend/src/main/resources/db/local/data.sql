@@ -1,7 +1,7 @@
 -- Datos ficticios exclusivos de H2 para recorrer los módulos.
 INSERT INTO rol(nombre_rol) VALUES ('Administrador'),('Coordinador');
-INSERT INTO universidad(nombre_universidad,pais,perfil) VALUES ('Universidad de demostración','Colombia','Nacional');
-INSERT INTO programa(id_universidad,nombre_programa) VALUES (1,'Programa de demostración');
+INSERT INTO universidad(nombre_universidad,pais) VALUES ('Universidad de demostración','Colombia');
+INSERT INTO programa(id_universidad,nombre_programa) VALUES (1,'Convenio Nacional');
 INSERT INTO servicio(nombre,cupo_maximo_instalado,cupo_simultaneo) VALUES ('Servicio de demostración',3,2);
 INSERT INTO asignatura(id_servicio,nombre_asignatura) VALUES (1,'Asignatura de demostración');
 INSERT INTO tipo_documento(codigo,nombre) VALUES ('CC','Cédula de ciudadanía'),('TI','Tarjeta de identidad'),('CE','Cédula de extranjería'),('PA','Pasaporte'),('RUT','Registro único tributario'),('PEP','Permiso especial de permanencia'),('PPT','Permiso por protección temporal');

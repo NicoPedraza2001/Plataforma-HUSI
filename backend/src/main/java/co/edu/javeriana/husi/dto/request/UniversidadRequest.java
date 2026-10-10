@@ -8,7 +8,5 @@ public record UniversidadRequest(
   String nombre,
   @NotBlank(message = "Escribe el país.")
   @Size(max = 100, message = "El país admite hasta 100 caracteres.")
-  String pais,
-  @Size(max = 50, message = "El perfil admite hasta 50 caracteres.")
-  String perfil
+  String pais
 ) {}

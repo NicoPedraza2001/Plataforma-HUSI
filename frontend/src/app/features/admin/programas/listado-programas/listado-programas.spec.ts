@@ -26,7 +26,7 @@ describe('Programas conectado', () => {
               tamano: 10,
             }),
       ),
-      listar: vi.fn(() => of([{ id: 2, nombre: 'Universidad de prueba' }])),
+      listar: vi.fn(() => of([{ id: 2, nombre: 'Universidad de prueba', pais: 'Colombia' }])),
       crear: vi.fn(() => of(programa)),
       actualizar: vi.fn(() => of(programa)),
       eliminarDefinitivamente: vi.fn(() => of(undefined)),

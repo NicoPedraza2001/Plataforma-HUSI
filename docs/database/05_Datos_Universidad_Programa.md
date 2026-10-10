@@ -12,8 +12,8 @@ referenciarlos sin consultar la base. Al final se resincronizan las
 secuencias.
 
 ```sql
-INSERT INTO universidad (id_universidad, nombre_universidad, pais, perfil) VALUES
-    (1, 'Pontificia Universidad Javeriana', 'Colombia', 'Nacional');
+INSERT INTO universidad (id_universidad, nombre_universidad, pais) VALUES
+    (1, 'Pontificia Universidad Javeriana', 'Colombia');
 
 INSERT INTO programa (id_programa, id_universidad, nombre_programa) VALUES
     (1, 1, 'Especialización en Anestesiología'),

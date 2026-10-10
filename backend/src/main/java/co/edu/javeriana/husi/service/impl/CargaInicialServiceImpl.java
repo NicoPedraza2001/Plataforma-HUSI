@@ -98,8 +98,7 @@ public class CargaInicialServiceImpl implements CargaInicialService {
         .crear(
           new UniversidadRequest(
             texto(valores.get("nombre_universidad")),
-            texto(valores.get("pais")),
-            null
+            texto(valores.get("pais"))
           )
         )
         .id();

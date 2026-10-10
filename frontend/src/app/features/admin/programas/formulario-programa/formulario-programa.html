@@ -1,16 +1,5 @@
-<form (ngSubmit)="form.valid && guardar.emit()" #form="ngForm">
+<form (ngSubmit)="form.valid && !errorDeConvenio() && guardar.emit()" #form="ngForm">
   <h3>Información básica</h3>
-  <label for="nombre-programa">Nombre del programa <span aria-hidden="true">*</span></label>
-  <input
-    id="nombre-programa"
-    name="nombre"
-    [(ngModel)]="nombre"
-    required
-    maxlength="150"
-    [disabled]="guardando()"
-    autofocus
-    placeholder="Ej. Especialización en Pediatría"
-  />
   <label for="universidad-programa">Universidad <span aria-hidden="true">*</span></label>
   <select
     id="universidad-programa"
@@ -24,10 +13,46 @@
       <option [ngValue]="opcionUniversidad.id">{{ opcionUniversidad.nombre }}</option>
     }
   </select>
+  @if (soloAdmiteConvenios()) {
+    <label for="nombre-programa">Tipo de convenio <span aria-hidden="true">*</span></label>
+    <select
+      id="nombre-programa"
+      name="nombre"
+      [(ngModel)]="nombre"
+      required
+      [disabled]="guardando()"
+      autofocus
+    >
+      @for (convenio of programasDeConvenio; track convenio) {
+        <option [ngValue]="convenio">{{ convenio }}</option>
+      }
+    </select>
+  } @else {
+    <label for="nombre-programa">Nombre del programa <span aria-hidden="true">*</span></label>
+    <input
+      id="nombre-programa"
+      name="nombre"
+      [(ngModel)]="nombre"
+      required
+      maxlength="150"
+      [disabled]="guardando()"
+      autofocus
+      placeholder="Ej. Especialización en Pediatría"
+    />
+  }
   <p class="ayuda">
-    Los dos campos son obligatorios. Solo se muestran universidades activas. Al entrar desde una
-    universidad, queda seleccionada automáticamente.
+    @if (soloAdmiteConvenios()) {
+      Las universidades externas a la Pontificia Universidad Javeriana no registran programas
+      propios: se manejan como Convenio Nacional (universidades de Colombia) o Convenio
+      Internacional.
+    } @else {
+      Los dos campos son obligatorios. Solo se muestran universidades activas. Al entrar desde una
+      universidad, queda seleccionada automáticamente.
+    }
   </p>
+  @if (errorDeConvenio()) {
+    <p class="mensaje error" role="alert">{{ errorDeConvenio() }}</p>
+  }
   @if (!universidades().length) {
     <p class="error" role="alert">
       No hay universidades activas. Debe existir una universidad antes de crear programas.
@@ -50,7 +75,11 @@
       (click)="cancelar.emit()"
     >
       Cancelar</button
-    ><button class="btn btn--navy" type="submit" [disabled]="guardando() || form.invalid">
+    ><button
+      class="btn btn--navy"
+      type="submit"
+      [disabled]="guardando() || form.invalid || !!errorDeConvenio()"
+    >
       {{ guardando() ? 'Guardando…' : 'Guardar programa' }}
     </button>
   </footer>

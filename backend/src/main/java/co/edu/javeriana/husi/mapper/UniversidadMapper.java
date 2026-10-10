@@ -12,7 +12,6 @@ public class UniversidadMapper {
       universidad.getId(),
       universidad.getNombre(),
       universidad.getPais(),
-      universidad.getPerfil(),
       universidad.getEstado()
     );
   }

@@ -1,7 +1,8 @@
 <h2>Programas</h2>
 <p class="ayuda">
   Cada programa se busca dentro de su universidad. Crea los nuevos o elige el registrado si está
-  escrito de otra forma; al elegirlo, todas sus filas pasan a usar el nombre del sistema.
+  escrito de otra forma; al elegirlo, todas sus filas pasan a usar el nombre del sistema. Las
+  universidades externas a la Javeriana se manejan como Convenio Nacional o Convenio Internacional.
 </p>
 
 @if (cargandoCatalogos()) {
@@ -43,17 +44,19 @@
         >{{
           cantidadConPalabra(
             gruposParaCrearEnLote().length,
-            'programa nuevo no se parece',
-            'programas nuevos no se parecen'
+            'programa nuevo se puede resolver',
+            'programas nuevos se pueden resolver'
           )
         }}
-        a ninguno registrado en su universidad.</span
+        sin revisar: no se parecen a ninguno registrado o pertenecen a una universidad externa (se
+        asignan a su convenio).</span
       >
       <button class="btn btn--green" [disabled]="guardando()" (click)="crearProgramasEnLote()">
         {{
           guardando()
             ? 'Creando…'
-            : 'Crear ' + cantidadConPalabra(gruposParaCrearEnLote().length, 'programa', 'programas')
+            : 'Resolver ' +
+              cantidadConPalabra(gruposParaCrearEnLote().length, 'programa', 'programas')
         }}
       </button>
     </p>

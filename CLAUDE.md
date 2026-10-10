@@ -62,7 +62,7 @@ La estructura es un espejo del backend para encontrar cada pieza en ambos lados:
 | `services/programa.service.ts` → `ProgramaService` | `controller/ProgramaController` (`/api/programas`) |
 | `services/universidad.service.ts` → `UniversidadService` | `controller/UniversidadController` (`/api/universidades`) |
 | `models/programa.model.ts` → `Programa`, `ProgramaRequest` | `dto/response/ProgramaResponse`, `dto/request/ProgramaRequest` |
-| `models/universidad.model.ts` → `Universidad` | `dto/response/CatalogoResponse` |
+| `models/universidad.model.ts` → `Universidad`, `UniversidadDetalle` | `dto/response/UniversidadCatalogoResponse`, `dto/response/UniversidadResponse` |
 | `models/importacion-programas.model.ts` | `dto/*/ImportacionProgramas*` |
 | `models/api-error.model.ts` → `ApiError` + `services/api-error.ts` | `exception/ApiExceptionHandler` |
 

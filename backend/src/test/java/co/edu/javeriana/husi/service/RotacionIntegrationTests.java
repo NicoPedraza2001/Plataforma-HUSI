@@ -200,6 +200,41 @@ class RotacionIntegrationTests {
   }
 
   @Test
+  void filtraPorRangoDeFechasLasRotacionesQueSeCruzan() {
+    var rotacion = datos(asignatura());
+    rotacionService.crear(rotacion);
+    var rotacionDelAnoSiguiente = new RotacionRequest(
+      rotacion.asignaturaId(),
+      rotacion.inicio().plusYears(1),
+      rotacion.fin().plusYears(1)
+    );
+    rotacionService.crear(rotacionDelAnoSiguiente);
+    String nombre = rotacionService.consultar(clave(rotacion)).asignatura();
+    // Un rango que solo toca el último día de la primera rotación la incluye.
+    assertThat(
+      rotacionService
+        .listar(Map.of("q", nombre, "desde", rotacion.fin().toString(), "hasta", rotacion.fin().toString()))
+        .totalElementos()
+    ).isEqualTo(1);
+    assertThat(
+      rotacionService
+        .listar(Map.of("q", nombre, "desde", rotacion.inicio().toString()))
+        .totalElementos()
+    ).isEqualTo(2);
+    assertThat(
+      rotacionService
+        .listar(Map.of("q", nombre, "hasta", rotacion.inicio().minusDays(1).toString()))
+        .totalElementos()
+    ).isZero();
+    assertThatThrownBy(() ->
+      rotacionService.listar(Map.of("desde", "2099-02-01", "hasta", "2099-01-01"))
+    ).hasMessageContaining("no puede ser anterior");
+    assertThatThrownBy(() ->
+      rotacionService.listar(Map.of("desde", "31/01/2099"))
+    ).hasMessageContaining("AAAA-MM-DD");
+  }
+
+  @Test
   void validaFechasDuplicadosYAsignatura() {
     var rotacion = datos(asignatura());
     rotacionService.crear(rotacion);

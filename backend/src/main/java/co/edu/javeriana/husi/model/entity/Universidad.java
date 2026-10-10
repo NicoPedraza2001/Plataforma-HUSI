@@ -26,9 +26,6 @@ public class Universidad {
   @Column(nullable = false, length = 100)
   private String pais;
 
-  @Column(length = 50)
-  private String perfil;
-
   @Column(nullable = false, length = 20)
   private String estado = "Activo";
 }

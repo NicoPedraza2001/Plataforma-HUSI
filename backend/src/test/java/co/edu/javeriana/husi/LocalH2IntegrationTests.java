@@ -78,11 +78,11 @@ class LocalH2IntegrationTests {
   void crudRelacionadosYCuposEnH2() throws Exception {
     int uni = crear(
       "universidades",
-      "{\"nombre\":\"Universidad local test\",\"pais\":\"Colombia\",\"perfil\":null}"
+      "{\"nombre\":\"Universidad local test\",\"pais\":\"Colombia\"}"
     );
     int prog = crear(
       "programas",
-      "{\"nombre\":\"Programa local test\",\"universidadId\":" + uni + "}"
+      "{\"nombre\":\"Convenio Nacional\",\"universidadId\":" + uni + "}"
     );
     int res = crear(
       "residentes",

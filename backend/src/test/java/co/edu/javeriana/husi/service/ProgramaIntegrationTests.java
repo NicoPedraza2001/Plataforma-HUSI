@@ -45,9 +45,9 @@ class ProgramaIntegrationTests {
   @Test
   void crearConsultarActualizarYDesactivarConservaElRegistroYResidentes() {
     var creado = programas.crear(
-      new ProgramaRequest("  Pediatría  ", universidadId)
+      new ProgramaRequest("  convenio nacional  ", universidadId)
     );
-    assertThat(creado.nombre()).isEqualTo("Pediatría");
+    assertThat(creado.nombre()).isEqualTo("Convenio Nacional");
     assertThat(programas.consultar(creado.id()).universidad()).isEqualTo(
       universidad
     );
@@ -59,10 +59,10 @@ class ProgramaIntegrationTests {
     );
     programas.actualizar(
       creado.id(),
-      new ProgramaRequest("Pediatría actualizada", universidadId)
+      new ProgramaRequest(" CONVENIO NACIONAL ", universidadId)
     );
     assertThat(programas.consultar(creado.id()).nombre()).isEqualTo(
-      "Pediatría actualizada"
+      "Convenio Nacional"
     );
     programas.desactivar(creado.id());
     assertThat(repository.findById(creado.id())).isPresent();
@@ -79,10 +79,10 @@ class ProgramaIntegrationTests {
 
   @Test
   void rechazaDuplicadosInclusoInactivosYUniversidadesInvalidas() {
-    var programaCreado = programas.crear(new ProgramaRequest("Neurología", universidadId));
+    var programaCreado = programas.crear(new ProgramaRequest("Convenio Nacional", universidadId));
     programas.desactivar(programaCreado.id());
     assertThatThrownBy(() ->
-      programas.crear(new ProgramaRequest(" NEUROLOGÍA ", universidadId))
+      programas.crear(new ProgramaRequest(" CONVENIO NACIONAL ", universidadId))
     ).isInstanceOfSatisfying(NegocioException.class, error ->
       assertThat(error.getStatus()).isEqualTo(HttpStatus.CONFLICT)
     );
@@ -98,18 +98,83 @@ class ProgramaIntegrationTests {
   }
 
   @Test
-  void validacionNoGuardaYCargaMixtaIdentificaCadaFila() {
+  void universidadExternaSoloAdmiteConvenioNacionalOInternacional() {
+    assertThatThrownBy(() ->
+      programas.crear(new ProgramaRequest("Pediatría", universidadId))
+    ).hasMessageContaining("Convenio Nacional");
+    var lote = new ImportacionProgramasRequest(
+      List.of(new ImportacionProgramasRequest.Fila(2, "Pediatría", universidad))
+    );
+    assertThat(importacion.procesar(lote, false).errores()).isEqualTo(1);
+  }
+
+  @Test
+  void universidadNacionalNoAdmiteConvenioInternacional() {
+    String universidadNacional = "TEST-NACIONAL-" + UUID.randomUUID();
+    Integer universidadNacionalId = jdbc.queryForObject(
+      "INSERT INTO universidad(nombre_universidad,pais,estado) VALUES (?, 'colombia', 'Activo') RETURNING id_universidad",
+      Integer.class,
+      universidadNacional
+    );
+    assertThatThrownBy(() ->
+      programas.crear(new ProgramaRequest("Convenio Internacional", universidadNacionalId))
+    ).hasMessageContaining("es nacional");
+    var convenioNacional = programas.crear(
+      new ProgramaRequest("Convenio Nacional", universidadNacionalId)
+    );
+    assertThatThrownBy(() ->
+      programas.actualizar(
+        convenioNacional.id(),
+        new ProgramaRequest("Convenio Internacional", universidadNacionalId)
+      )
+    ).hasMessageContaining("no puede ser internacional");
     var lote = new ImportacionProgramasRequest(
       List.of(
-        new ImportacionProgramasRequest.Fila(2, "Programa A", universidad),
-        new ImportacionProgramasRequest.Fila(3, "programa a", universidad),
+        new ImportacionProgramasRequest.Fila(2, "Convenio Internacional", universidadNacional)
+      )
+    );
+    assertThat(importacion.procesar(lote, false).errores()).isEqualTo(1);
+  }
+
+  @Test
+  void universidadInternacionalNoAdmiteConvenioNacional() {
+    Integer universidadInternacionalId = jdbc.queryForObject(
+      "INSERT INTO universidad(nombre_universidad,pais,estado) VALUES (?, 'españa', 'Activo') RETURNING id_universidad",
+      Integer.class,
+      "TEST-INTERNACIONAL-" + UUID.randomUUID()
+    );
+    assertThatThrownBy(() ->
+      programas.crear(new ProgramaRequest("Convenio Nacional", universidadInternacionalId))
+    ).hasMessageContaining("no puede ser nacional");
+    assertThat(
+      programas
+        .crear(new ProgramaRequest("Convenio Internacional", universidadInternacionalId))
+        .nombre()
+    ).isEqualTo("Convenio Internacional");
+  }
+
+  @Test
+  void validacionNoGuardaYCargaMixtaIdentificaCadaFila() {
+    String universidadInternacional = "TEST-EXT-" + UUID.randomUUID();
+    jdbc.update(
+      "INSERT INTO universidad(nombre_universidad,pais,estado) VALUES (?, 'Francia', 'Activo')",
+      universidadInternacional
+    );
+    var lote = new ImportacionProgramasRequest(
+      List.of(
+        new ImportacionProgramasRequest.Fila(2, "Convenio Nacional", universidad),
+        new ImportacionProgramasRequest.Fila(3, "convenio nacional", universidad),
         new ImportacionProgramasRequest.Fila(4, "", universidad),
         new ImportacionProgramasRequest.Fila(
           5,
-          "Programa B",
+          "Convenio Nacional",
           "Universidad inexistente de prueba"
         ),
-        new ImportacionProgramasRequest.Fila(6, "Programa C", universidad)
+        new ImportacionProgramasRequest.Fila(
+          6,
+          "Convenio Internacional",
+          universidadInternacional
+        )
       )
     );
     long antes = repository.count();

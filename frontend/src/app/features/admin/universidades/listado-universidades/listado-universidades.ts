@@ -41,7 +41,6 @@ export class ListadoUniversidades {
   protected edicion: UniversidadDetalle | null = null;
   protected nombre = '';
   protected pais = '';
-  protected perfil = '';
 
   constructor() {
     this.cargar();
@@ -79,7 +78,6 @@ export class ListadoUniversidades {
     this.edicion = universidad;
     this.nombre = universidad?.nombre ?? '';
     this.pais = universidad?.pais ?? '';
-    this.perfil = universidad?.perfil ?? '';
     this.errorFormulario.set('');
     this.aviso.set('');
     this.formularioAbierto.set(true);
@@ -90,17 +88,10 @@ export class ListadoUniversidades {
     const datos = {
       nombre: this.nombre.trim(),
       pais: this.pais.trim(),
-      perfil: this.perfil.trim() || null,
     };
-    if (
-      !datos.nombre ||
-      !datos.pais ||
-      datos.nombre.length > 150 ||
-      datos.pais.length > 100 ||
-      (datos.perfil?.length ?? 0) > 50
-    ) {
+    if (!datos.nombre || !datos.pais || datos.nombre.length > 150 || datos.pais.length > 100) {
       this.errorFormulario.set(
-        'Completa nombre y país. Máximos: nombre 150, país 100 y perfil 50 caracteres.',
+        'Completa nombre y país. Máximos: nombre 150 y país 100 caracteres.',
       );
       return;
     }

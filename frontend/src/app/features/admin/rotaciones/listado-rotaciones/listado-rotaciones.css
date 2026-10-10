@@ -177,8 +177,17 @@ small {
   padding: 10px 16px;
   border-radius: var(--radius-sm);
 }
+.filtros-fechas {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 220px) auto;
+  gap: 16px;
+  align-items: end;
+  justify-content: start;
+  margin-top: 16px;
+}
 @media (max-width: 900px) {
-  .filtros {
+  .filtros,
+  .filtros-fechas {
     grid-template-columns: 1fr;
   }
 }

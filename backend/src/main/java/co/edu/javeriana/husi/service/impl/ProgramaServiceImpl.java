@@ -81,6 +81,26 @@ public class ProgramaServiceImpl implements ProgramaService {
     return universidad;
   }
 
+  /**
+   * Las universidades externas a la Javeriana no registran programas propios (ver
+   * {@link ProgramasDeConvenio}) y el convenio debe corresponder al país de la universidad.
+   * Devuelve el nombre tal como se guarda o rechaza cualquier otro.
+   */
+  private String validarNombreSegunUniversidad(String nombre, Universidad universidad) {
+    if (ProgramasDeConvenio.esUniversidadPropia(universidad.getNombre())) return nombre;
+    String convenio = ProgramasDeConvenio.buscarConvenio(nombre).orElseThrow(() ->
+      error(HttpStatus.BAD_REQUEST, ProgramasDeConvenio.MENSAJE_SOLO_CONVENIOS)
+    );
+    ProgramasDeConvenio.buscarErrorDeConvenioSegunPais(
+      convenio,
+      universidad.getNombre(),
+      universidad.getPais()
+    ).ifPresent(mensaje -> {
+      throw error(HttpStatus.BAD_REQUEST, mensaje);
+    });
+    return convenio;
+  }
+
   /** Rechaza si la universidad ya tiene un programa con ese nombre (salvo {@code idExcluido}). */
   private void validarSinDuplicado(
     Integer universidadId,
@@ -101,8 +121,11 @@ public class ProgramaServiceImpl implements ProgramaService {
 
   @Transactional
   public ProgramaResponse crear(ProgramaRequest request) {
-    String nombre = validarNombre(request.nombre());
     Universidad universidad = buscarUniversidadActiva(request.universidadId());
+    String nombre = validarNombreSegunUniversidad(
+      validarNombre(request.nombre()),
+      universidad
+    );
     validarSinDuplicado(universidad.getId(), nombre, null);
     Programa programa = new Programa();
     programa.setNombre(nombre);
@@ -117,8 +140,11 @@ public class ProgramaServiceImpl implements ProgramaService {
       HttpStatus.CONFLICT,
       "El programa no está disponible."
     );
-    String nombre = validarNombre(request.nombre());
     Universidad universidad = buscarUniversidadActiva(request.universidadId());
+    String nombre = validarNombreSegunUniversidad(
+      validarNombre(request.nombre()),
+      universidad
+    );
     validarSinDuplicado(universidad.getId(), nombre, id);
     programa.setNombre(nombre);
     programa.setUniversidad(universidad);
@@ -192,9 +218,10 @@ public class ProgramaServiceImpl implements ProgramaService {
       HttpStatus.BAD_REQUEST,
       "El nombre de universidad es ambiguo. Revisa el catálogo."
     );
-    Integer universidadId = coincidencias.getFirst().getId();
-    validarSinDuplicado(universidadId, nombreLimpio, null);
-    return new ProgramaRequest(nombreLimpio, universidadId);
+    Universidad universidad = coincidencias.getFirst();
+    String nombrePrograma = validarNombreSegunUniversidad(nombreLimpio, universidad);
+    validarSinDuplicado(universidad.getId(), nombrePrograma, null);
+    return new ProgramaRequest(nombrePrograma, universidad.getId());
   }
 
   private static NegocioException error(HttpStatus estado, String mensaje) {

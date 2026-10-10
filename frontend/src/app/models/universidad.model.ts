@@ -1,16 +1,17 @@
+/** Backend: dto/response/UniversidadCatalogoResponse (solo universidades activas). */
 export interface UniversidadCatalogo {
   id: number;
   nombre: string;
-}
-export interface UniversidadDetalle extends UniversidadCatalogo {
   pais: string;
-  perfil?: string | null;
+}
+/** Backend: dto/response/UniversidadResponse. */
+export interface UniversidadDetalle extends UniversidadCatalogo {
   estado: 'Activo' | 'Inactivo';
 }
+/** Backend: dto/request/UniversidadRequest. */
 export interface UniversidadDatos {
   nombre: string;
   pais: string;
-  perfil: string | null;
 }
 
 export type Universidad = UniversidadCatalogo;

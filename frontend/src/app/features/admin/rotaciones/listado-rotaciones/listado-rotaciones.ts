@@ -54,6 +54,10 @@ export class ListadoRotaciones {
   protected terminoBusqueda = '';
   protected filtroEstado = '';
   protected filtroServicioId = '';
+  /** Rango de fechas (AAAA-MM-DD): muestra las rotaciones en curso en algún día del rango. */
+  protected filtroDesde = '';
+  protected filtroHasta = '';
+  protected readonly errorFiltroFechas = signal('');
   protected asignaturaId = 0;
   protected inicio = '';
   protected fin = '';
@@ -67,7 +71,24 @@ export class ListadoRotaciones {
     const params: Parametros = { q: this.terminoBusqueda, pagina, tamano: 10 };
     if (this.filtroEstado) params['activa'] = this.filtroEstado;
     if (this.filtroServicioId) params['servicioId'] = this.filtroServicioId;
+    if (this.filtroDesde) params['desde'] = this.filtroDesde;
+    if (this.filtroHasta) params['hasta'] = this.filtroHasta;
     this.consulta.cargar(params, espera);
+  }
+
+  protected filtrarPorFechas() {
+    if (this.filtroDesde && this.filtroHasta && this.filtroHasta < this.filtroDesde) {
+      this.errorFiltroFechas.set('La fecha «Hasta» no puede ser anterior a la fecha «Desde».');
+      return;
+    }
+    this.errorFiltroFechas.set('');
+    this.cargar();
+  }
+
+  protected limpiarFiltroFechas() {
+    this.filtroDesde = '';
+    this.filtroHasta = '';
+    this.filtrarPorFechas();
   }
 
   protected async abrirFormulario(fila: RotacionGestion | null = null) {

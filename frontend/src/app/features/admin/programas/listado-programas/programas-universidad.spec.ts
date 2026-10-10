@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 import { ListadoProgramas } from './listado-programas';
 
 describe('Programas de una universidad', () => {
-  it('consulta por ID y lo conserva al crear un programa, sin importación', async () => {
+  it('consulta por ID y, al ser universidad externa, crea su programa como convenio', async () => {
     TestBed.configureTestingModule({
       imports: [ListadoProgramas],
       providers: [
@@ -23,7 +23,9 @@ describe('Programas de una universidad', () => {
       http = TestBed.inject(HttpTestingController);
     const pagina = { contenido: [], totalElementos: 0, totalPaginas: 1, pagina: 1, tamano: 10 };
     http.expectOne((peticion) => peticion.url === '/api/universidades/72/programas').flush(pagina);
-    http.expectOne('/api/universidades').flush([{ id: 72, nombre: 'Universidad de prueba' }]);
+    http
+      .expectOne('/api/universidades')
+      .flush([{ id: 72, nombre: 'Universidad de prueba', pais: 'Colombia' }]);
     http
       .expectOne('/api/universidades/72')
       .flush({ id: 72, nombre: 'Universidad de prueba', pais: 'Colombia', estado: 'Activo' });
@@ -36,19 +38,22 @@ describe('Programas de una universidad', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('#universidad-programa').disabled).toBe(true);
-    const input = fixture.nativeElement.querySelector('#nombre-programa') as HTMLInputElement;
-    input.value = 'Programa nuevo';
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    await fixture.whenStable();
+    const tipoDeConvenio = fixture.nativeElement.querySelector(
+      '#nombre-programa',
+    ) as HTMLSelectElement;
+    expect(tipoDeConvenio.tagName).toBe('SELECT');
+    expect([...tipoDeConvenio.options].map((opcion) => opcion.text.trim())).toEqual([
+      'Convenio Nacional',
+      'Convenio Internacional',
+    ]);
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
     const post = http.expectOne(
       (peticion) => peticion.url === '/api/programas' && peticion.method === 'POST',
     );
-    expect(post.request.body).toEqual({ nombre: 'Programa nuevo', universidadId: 72 });
+    expect(post.request.body).toEqual({ nombre: 'Convenio Nacional', universidadId: 72 });
     post.flush({
       id: 90,
-      nombre: 'Programa nuevo',
+      nombre: 'Convenio Nacional',
       universidadId: 72,
       universidad: 'Universidad de prueba',
       estado: 'Activo',
@@ -56,7 +61,9 @@ describe('Programas de una universidad', () => {
     await Promise.resolve();
     await Promise.resolve();
     http.expectOne((peticion) => peticion.url === '/api/universidades/72/programas').flush(pagina);
-    http.expectOne('/api/universidades').flush([{ id: 72, nombre: 'Universidad de prueba' }]);
+    http
+      .expectOne('/api/universidades')
+      .flush([{ id: 72, nombre: 'Universidad de prueba', pais: 'Colombia' }]);
     http
       .expectOne('/api/universidades/72')
       .flush({ id: 72, nombre: 'Universidad de prueba', estado: 'Activo' });

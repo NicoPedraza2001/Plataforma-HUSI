@@ -16,9 +16,9 @@ public class UniversidadController {
 
   private final UniversidadService universidades;
 
-  // Mantiene el catálogo usado por formularios e importación existentes.
+  // Catálogo de universidades activas; el país decide qué convenio aplica a sus programas.
   @GetMapping
-  public List<CatalogoResponse> listar() {
+  public List<UniversidadCatalogoResponse> listar() {
     return universidades.catalogo();
   }
 

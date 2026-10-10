@@ -28,18 +28,17 @@ class UniversidadIntegrationTests {
   JdbcTemplate jdbc;
 
   private UniversidadRequest datos(String nombre) {
-    return new UniversidadRequest(nombre, "Colombia", null);
+    return new UniversidadRequest(nombre, "Ecuador");
   }
 
   @Test
   void crearEditarConsultarPersisteCamposYConservaEstado() {
     String nombre = "UNI-" + UUID.randomUUID();
     var universidadCreada = universidades.crear(
-      new UniversidadRequest(" " + nombre + " ", " Colombia ", " Docencia ")
+      new UniversidadRequest(" " + nombre + " ", " Colombia ")
     );
     assertThat(universidadCreada.nombre()).isEqualTo(nombre);
     assertThat(universidadCreada.pais()).isEqualTo("Colombia");
-    assertThat(universidadCreada.perfil()).isEqualTo("Docencia");
     assertThat(
       jdbc.queryForObject(
         "select nombre_universidad from universidad where id_universidad=?",
@@ -50,10 +49,9 @@ class UniversidadIntegrationTests {
     universidades.cambiarEstado(universidadCreada.id(), "Inactivo");
     var editada = universidades.actualizar(
       universidadCreada.id(),
-      new UniversidadRequest(nombre + " editada", "Ecuador", " ")
+      new UniversidadRequest(nombre + " editada", "Ecuador")
     );
     assertThat(editada.estado()).isEqualTo("Inactivo");
-    assertThat(editada.perfil()).isNull();
     assertThat(universidades.consultar(universidadCreada.id()).pais()).isEqualTo("Ecuador");
     assertThat(
       consultas
@@ -76,13 +74,8 @@ class UniversidadIntegrationTests {
       universidades.crear(datos(" "))
     ).hasMessageContaining("obligatorio");
     assertThatThrownBy(() ->
-      universidades.crear(new UniversidadRequest("Nombre", " ", null))
+      universidades.crear(new UniversidadRequest("Nombre", " "))
     ).hasMessageContaining("obligatorio");
-    assertThatThrownBy(() ->
-      universidades.crear(
-        new UniversidadRequest("Nombre", "Colombia", "x".repeat(51))
-      )
-    ).hasMessageContaining("50");
     assertThatThrownBy(() ->
       universidades.cambiarEstado(universidadCreada.id(), "Eliminado")
     ).hasMessageContaining("Activo o Inactivo");
@@ -95,7 +88,7 @@ class UniversidadIntegrationTests {
   void desactivarNoBorraNiCambiaLosProgramasYResidentes() {
     var universidadCreada = universidades.crear(datos("UNI-" + UUID.randomUUID()));
     var programaCreado = programas.crear(
-      new ProgramaRequest("Programa conservación", universidadCreada.id())
+      new ProgramaRequest("Convenio Internacional", universidadCreada.id())
     );
     jdbc.update(
       "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values(?,1,?,?)",
@@ -117,11 +110,16 @@ class UniversidadIntegrationTests {
       )
     ).isEqualTo(1);
     assertThatThrownBy(() ->
-      programas.crear(new ProgramaRequest("Otro", universidadCreada.id()))
+      programas.crear(new ProgramaRequest("Convenio Internacional", universidadCreada.id()))
     ).hasMessageContaining("inactiva");
     universidades.cambiarEstado(universidadCreada.id(), "Activo");
     assertThat(
-      programas.crear(new ProgramaRequest("Otro", universidadCreada.id())).universidadId()
+      programas
+        .actualizar(
+          programaCreado.id(),
+          new ProgramaRequest("Convenio Internacional", universidadCreada.id())
+        )
+        .universidadId()
     ).isEqualTo(universidadCreada.id());
   }
 
@@ -129,9 +127,13 @@ class UniversidadIntegrationTests {
   void filtraProgramasPorIdInclusoDespuesDeRenombrarUniversidad() {
     var universidadA = universidades.crear(datos("UNI-A-" + UUID.randomUUID()));
     var universidadB = universidades.crear(datos("UNI-B-" + UUID.randomUUID()));
-    var pa = programas.crear(new ProgramaRequest("Programa A", universidadA.id()));
-    programas.crear(new ProgramaRequest("Programa B", universidadA.id()));
-    programas.crear(new ProgramaRequest("Programa externo", universidadB.id()));
+    var pa = programas.crear(new ProgramaRequest("Convenio Internacional", universidadA.id()));
+    // Programa anterior a la regla de convenios: solo se puede insertar directo en la base.
+    jdbc.update(
+      "insert into programa(id_universidad,nombre_programa) values(?,'Programa histórico')",
+      universidadA.id()
+    );
+    programas.crear(new ProgramaRequest("Convenio Internacional", universidadB.id()));
     universidades.actualizar(universidadA.id(), datos(universidadA.nombre() + " editada"));
     var pagina = universidades.programas(
       universidadA.id(),

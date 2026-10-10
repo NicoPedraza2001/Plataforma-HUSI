@@ -25,11 +25,11 @@
 <section class="card" [attr.aria-busy]="consulta.cargando()">
   <div class="filtros-universidades">
     <label class="search"
-      ><span class="sr-only">Buscar universidad, país o perfil</span
+      ><span class="sr-only">Buscar universidad o país</span
       ><input
         type="search"
         class="search__input"
-        placeholder="Buscar universidad, país o perfil…"
+        placeholder="Buscar universidad o país…"
         [value]="terminoBusqueda()"
         (input)="buscar($any($event.target).value)"
         maxlength="200"
@@ -54,7 +54,6 @@
         <tr>
           <th scope="col">Nombre</th>
           <th scope="col">País</th>
-          <th scope="col">Perfil</th>
           <th scope="col">Asociados</th>
           <th scope="col" class="col-acciones-registro">Acciones</th>
         </tr>
@@ -62,18 +61,17 @@
       <tbody>
         @if (consulta.cargando()) {
           <tr>
-            <td colspan="5" class="tabla__vacia" role="status">Cargando universidades…</td>
+            <td colspan="4" class="tabla__vacia" role="status">Cargando universidades…</td>
           </tr>
         } @else if (consulta.error()) {
           <tr>
-            <td colspan="5" class="tabla__vacia">No se pudo obtener el listado.</td>
+            <td colspan="4" class="tabla__vacia">No se pudo obtener el listado.</td>
           </tr>
         } @else {
           @for (universidad of filas(); track universidad.id) {
             <tr>
               <td>{{ universidad.nombre }}</td>
               <td>{{ universidad.pais }}</td>
-              <td>{{ universidad.perfil || 'Sin perfil' }}</td>
               <td>
                 <a
                   class="btn btn--outline enlace-asociados"
@@ -125,7 +123,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="5" class="tabla__vacia">
+              <td colspan="4" class="tabla__vacia">
                 {{
                   terminoBusqueda() || filtroEstado() !== 'Todos'
                     ? 'No hay universidades que coincidan con los filtros.'
@@ -162,7 +160,6 @@
       <app-formulario-universidad
         [(nombre)]="nombre"
         [(pais)]="pais"
-        [(perfil)]="perfil"
         [edicion]="!!edicion"
         [errorFormulario]="errorFormulario()"
         [guardando]="guardando()"

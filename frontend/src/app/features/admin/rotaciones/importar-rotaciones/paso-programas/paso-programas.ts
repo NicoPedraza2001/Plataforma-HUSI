@@ -9,6 +9,7 @@ import { UniversidadService } from '../../../../../services/universidad.service'
 import { consultarTodasLasPaginas } from '../../../../../shared/consulta/todas-las-paginas';
 import { FocoModal } from '../../../../../shared/foco-modal/foco-modal';
 import { FormularioPrograma } from '../../../programas/formulario-programa/formulario-programa';
+import { convenioSegunPais, esUniversidadPropia } from '../../../programas/programas-de-convenio';
 import { ConfirmarExclusion } from '../confirmar-exclusion/confirmar-exclusion';
 import {
   actualizarFilas,
@@ -24,7 +25,7 @@ import {
   AsociacionElegida,
   TablaEmparejamiento,
 } from '../tabla-emparejamiento/tabla-emparejamiento';
-import { emparejarProgramas } from './emparejar-programas';
+import { buscarProgramaDeUniversidad, emparejarProgramas } from './emparejar-programas';
 
 /**
  * Paso 4: programas del Excel frente a los registrados en cada universidad. Mismas
@@ -79,9 +80,16 @@ export class PasoProgramas {
   protected readonly totalNuevos = computed(
     () => this.grupos().filter((grupo) => grupo.estado === 'nuevo').length,
   );
-  /** Nuevos sin parecido con ningún programa de su universidad: se pueden crear sin revisar. */
+  /**
+   * Nuevos que se pueden resolver sin revisar: los de la Javeriana sin parecido con ningún
+   * programa registrado y todos los de universidades externas (van a su convenio).
+   */
   protected readonly gruposParaCrearEnLote = computed(() =>
-    this.grupos().filter((grupo) => grupo.estado === 'nuevo' && !grupo.sugerencias.length),
+    this.grupos().filter(
+      (grupo) =>
+        grupo.estado === 'nuevo' &&
+        (!grupo.sugerencias.length || !!this.universidadExternaDelGrupo(grupo)),
+    ),
   );
 
   constructor() {
@@ -135,11 +143,14 @@ export class PasoProgramas {
     this.guardando.set(true);
     this.errorFormulario.set('');
     try {
-      const programaCreado = await this.crearPrograma(this.nombreNuevoPrograma(), universidadId);
-      this.filasCambiadas.emit(this.aplicarProgramaEnFilas(this.filas(), grupo, programaCreado));
+      const programa = await this.reutilizarOCrearPrograma(
+        this.nombreNuevoPrograma(),
+        universidadId,
+      );
+      this.filasCambiadas.emit(this.aplicarProgramaEnFilas(this.filas(), grupo, programa));
       this.grupoEnCreacion.set(null);
       this.mostrarAviso(
-        `Programa «${programaCreado.nombre}» creado y asignado a ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')}.`,
+        `Programa «${programa.nombre}» asignado a ${cantidadConPalabra(grupo.numerosFila.length, 'fila', 'filas')}.`,
       );
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
@@ -157,8 +168,12 @@ export class PasoProgramas {
     const { procesados, errores } = await procesarEnLote(
       gruposACrear,
       async (grupo) => {
-        const programaCreado = await this.crearPrograma(grupo.valorEnExcel, grupo.contextoId!);
-        filasActualizadas = this.aplicarProgramaEnFilas(filasActualizadas, grupo, programaCreado);
+        const universidadExterna = this.universidadExternaDelGrupo(grupo);
+        const nombrePrograma = universidadExterna
+          ? convenioSegunPais(universidadExterna.pais)
+          : grupo.valorEnExcel;
+        const programa = await this.reutilizarOCrearPrograma(nombrePrograma, grupo.contextoId!);
+        filasActualizadas = this.aplicarProgramaEnFilas(filasActualizadas, grupo, programa);
       },
       (grupo) => `${grupo.valorEnExcel} (${grupo.contexto})`,
       mensajeError,
@@ -166,12 +181,22 @@ export class PasoProgramas {
     this.filasCambiadas.emit(filasActualizadas);
     this.guardando.set(false);
     this.mostrarAviso(
-      `${segunCantidad(procesados, 'Se creó', 'Se crearon')} ${cantidadConPalabra(procesados, 'programa', 'programas')}.`,
+      `${segunCantidad(procesados, 'Se resolvió', 'Se resolvieron')} ${cantidadConPalabra(procesados, 'programa', 'programas')}.`,
     );
     if (errores.length) this.error.set('No se pudieron crear: ' + errores.join(' · '));
   }
 
-  private async crearPrograma(nombre: string, universidadId: number) {
+  /**
+   * Varios programas del Excel de una misma universidad externa terminan en el mismo
+   * convenio: si ese programa ya está activo en la universidad se reutiliza en vez de crearlo.
+   */
+  private async reutilizarOCrearPrograma(nombre: string, universidadId: number) {
+    const programaRegistrado = buscarProgramaDeUniversidad(
+      this.programasDelSistema(),
+      universidadId,
+      nombre,
+    );
+    if (programaRegistrado?.estado === 'Activo') return programaRegistrado;
     const programaCreado = await firstValueFrom(
       this.programaService.crear({ nombre: nombre.trim(), universidadId }),
     );
@@ -222,6 +247,14 @@ export class PasoProgramas {
   }
 
   // ---------- Auxiliares ----------
+
+  /** Universidad del grupo si es externa a la Javeriana; null si es la Javeriana o no existe. */
+  private universidadExternaDelGrupo(grupo: GrupoEmparejamiento): UniversidadDetalle | null {
+    const universidad = this.universidadesDelSistema().find(
+      (registrada) => registrada.id === grupo.contextoId,
+    );
+    return universidad && !esUniversidadPropia(universidad.nombre) ? universidad : null;
+  }
 
   /** Las filas del grupo pasan a usar el nombre exacto del programa y de su universidad. */
   private aplicarProgramaEnFilas(
