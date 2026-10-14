@@ -129,11 +129,10 @@ class ConsultaIntegrationTests {
       "periodos",
       "roles"
     );
-    assertThat(dashboard.consultar(Map.of())).containsKeys(
-      "indicadores",
-      "rotacionesPorServicio",
-      "ocupacionPorServicio"
-    );
+    assertThat(dashboard.consultar(Map.of()))
+      .hasFieldOrProperty("indicadores")
+      .hasFieldOrProperty("rotacionesPorServicio")
+      .hasFieldOrProperty("ocupacionPorServicio");
   }
 
   @Test

@@ -20,7 +20,7 @@ Las validaciones repetidas están en `shared/formularios/validadores.ts` y se co
 | Usuario | Nombre y apellido 100, correo 150 y rol obligatorios; correo válido y único; contraseña nueva de al menos 8 caracteres y máximo 72 bytes UTF-8; hash almacenado hasta 255 |
 | Servicio | Nombre 150 único; descripción opcional sin límite artificial (TEXT); cupos enteros 0–2147483647; simultáneo no supera máximo |
 | Asignatura | Nombre 200 y servicio obligatorios; combinación servicio/nombre única |
-| Coordinador | Usuario y servicio obligatorios; usuario único, activo, con rol Coordinador al asignarlo |
+| Coordinador | Se guarda desde Usuario: con rol Coordinador el servicio es obligatorio y debe estar activo (o ser el que ya coordinaba); una asignación por usuario |
 | Rotación | Asignatura y fechas obligatorias; fin igual o posterior al inicio; fechas 1900–9999; clave compuesta única; cupos calculados, nunca editados desde el formulario |
 | Asignación | Residente y rotación existentes; clave compuesta única; Asignado, Esperando cupo o Cancelado |
 

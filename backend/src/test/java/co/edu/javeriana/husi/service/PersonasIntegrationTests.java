@@ -45,7 +45,7 @@ class PersonasIntegrationTests {
   private String clave = "PruebaCRUD2026!";
 
   private UsuarioRequest usuario(String correo, String password) {
-    return new UsuarioRequest("Prueba", "Integración", correo, rol(), password);
+    return new UsuarioRequest("Prueba", "Integración", correo, rol(), password, null);
   }
 
   @Test
@@ -158,7 +158,7 @@ class PersonasIntegrationTests {
     assertThat(new BCryptPasswordEncoder().matches(clave, hash)).isTrue();
     usuarios.actualizar(
       registroCreado.id(),
-      new UsuarioRequest("Editado", "Apellido", correo, rol(), "")
+      new UsuarioRequest("Editado", "Apellido", correo, rol(), "", null)
     );
     assertThat(
       jdbc.queryForObject(
@@ -211,7 +211,8 @@ class PersonasIntegrationTests {
           "B",
           "otro@example.test",
           Integer.MAX_VALUE,
-          clave
+          clave,
+          null
         )
       )
     ).isInstanceOf(NegocioException.class);

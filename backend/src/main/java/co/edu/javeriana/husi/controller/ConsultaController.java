@@ -16,7 +16,6 @@ public class ConsultaController {
     "/residentes",
     "/servicios",
     "/asignaturas",
-    "/coordinadores",
     "/usuarios",
     "/historial",
     "/rotaciones",

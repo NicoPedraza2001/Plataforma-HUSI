@@ -15,3 +15,22 @@ export interface Perfil {
   correo: string;
   rol: string;
 }
+
+/**
+ * Backend: dto/request/ActualizacionPerfilRequest. Solo se envían los campos que cambian; los
+ * que se omiten se conservan.
+ */
+export interface ActualizacionPerfilRequest {
+  nombres?: string;
+  apellidos?: string;
+}
+
+/**
+ * Backend: dto/request/ActualizacionCredencialesRequest. La contraseña actual siempre es
+ * obligatoria; el correo y la contraseña nueva solo se envían si cambian.
+ */
+export interface ActualizacionCredencialesRequest {
+  contrasenaActual: string;
+  correo?: string;
+  contrasenaNueva?: string;
+}

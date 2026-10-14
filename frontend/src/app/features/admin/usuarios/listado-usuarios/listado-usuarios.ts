@@ -7,6 +7,7 @@ import { Usuario, UsuarioRequest } from '../../../../models/usuario.model';
 import { mensajeError } from '../../../../services/api-error';
 import { CatalogoService } from '../../../../services/catalogo.service';
 import { RolService } from '../../../../services/rol.service';
+import { ServicioService } from '../../../../services/servicio.service';
 import { UsuarioService } from '../../../../services/usuario.service';
 import { Consulta } from '../../../../shared/consulta/consulta';
 import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
@@ -25,6 +26,7 @@ export class ListadoUsuarios {
   private readonly usuarioService = inject(UsuarioService);
   private readonly catalogoService = inject(CatalogoService);
   private readonly rolService = inject(RolService);
+  private readonly servicioService = inject(ServicioService);
 
   // Estado de la pantalla y datos del formulario
   protected readonly consulta = new Consulta<Pagina<Usuario>>((params) =>
@@ -51,6 +53,7 @@ export class ListadoUsuarios {
   protected readonly aviso = signal('');
   protected readonly errorFormulario = signal('');
   protected readonly opciones = signal<OpcionCatalogo[]>([]);
+  protected readonly servicios = signal<OpcionCatalogo[]>([]);
   protected readonly pendienteEliminar = signal<Usuario | null>(null);
   protected idEnEdicion: number | null = null;
   protected datosFormulario: UsuarioRequest = {
@@ -59,6 +62,7 @@ export class ListadoUsuarios {
     correo: '',
     contrasena: '',
     rolId: null,
+    servicioId: null,
   };
 
   constructor() {
@@ -113,11 +117,23 @@ export class ListadoUsuarios {
     this.errorFormulario.set('');
     this.aviso.set('');
     try {
-      const opciones = await firstValueFrom(this.rolService.listar());
+      const [opciones, serviciosActivos] = await Promise.all([
+        firstValueFrom(this.rolService.listar()),
+        firstValueFrom(this.servicioService.catalogo()),
+      ]);
       this.idEnEdicion = fila?.id ?? null;
+      let servicios = serviciosActivos;
       if (fila) {
         const detalle = await firstValueFrom(this.usuarioService.consultar(fila.id));
-        this.datosFormulario = { ...detalle, contrasena: '' };
+        this.datosFormulario = {
+          nombre: detalle.nombre,
+          apellido: detalle.apellido,
+          correo: detalle.correo,
+          contrasena: '',
+          rolId: detalle.rolId,
+          servicioId: detalle.servicioId,
+        };
+        servicios = this.conServicioActual(serviciosActivos, detalle.servicioId, detalle.servicio);
       } else
         this.datosFormulario = {
           nombre: '',
@@ -125,14 +141,29 @@ export class ListadoUsuarios {
           correo: '',
           contrasena: '',
           rolId: null,
+          servicioId: null,
         };
       this.opciones.set(opciones);
+      this.servicios.set(servicios);
       this.formularioAbierto.set(true);
     } catch (e) {
       this.errorFormulario.set(mensajeError(e));
     } finally {
       this.guardando.set(false);
     }
+  }
+
+  /**
+   * El catálogo solo trae servicios activos. Si el coordinador ya tenía uno que se desactivó, se
+   * agrega para que el formulario lo muestre y se pueda conservar (el backend lo permite).
+   */
+  private conServicioActual(
+    activos: OpcionCatalogo[],
+    servicioId: number | null,
+    servicio: string | null,
+  ): OpcionCatalogo[] {
+    if (servicioId === null || activos.some((opcion) => opcion.id === servicioId)) return activos;
+    return [...activos, { id: servicioId, nombre: `${servicio} (inactivo)` }];
   }
 
   protected async guardar() {

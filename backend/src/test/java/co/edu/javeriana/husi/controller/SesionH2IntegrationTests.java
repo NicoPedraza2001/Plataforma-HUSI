@@ -33,10 +33,22 @@ class SesionH2IntegrationTests {
   @Autowired
   JdbcTemplate jdbc;
 
-  /** Crea un coordinador con la sesión del administrador y devuelve su correo. */
+  /**
+   * Crea un coordinador (con el servicio que coordina, obligatorio para ese rol) usando la sesión
+   * del administrador y devuelve su correo.
+   */
   private String crearCoordinador() throws Exception {
+    var administrador = ClienteApiDePrueba.conSesionDeAdministrador(puerto);
+    var servicio = administrador.enviar(
+      "POST",
+      "servicios",
+      "{\"nombre\":\"Servicio " + UUID.randomUUID() + "\",\"cupoSimultaneo\":1,\"cupoMaximoInstalado\":1}"
+    );
+    assertThat(servicio.statusCode()).as(servicio.body()).isEqualTo(201);
+    String idServicio = servicio.body().replaceAll("^\\{\"id\":(\\d+).*", "$1");
+
     String correo = "coordinador-" + UUID.randomUUID() + "@example.test";
-    var respuesta = ClienteApiDePrueba.conSesionDeAdministrador(puerto).enviar(
+    var respuesta = administrador.enviar(
       "POST",
       "usuarios",
       "{\"nombre\":\"Coordinador\",\"apellido\":\"Prueba\",\"correo\":\"" +
@@ -45,7 +57,9 @@ class SesionH2IntegrationTests {
         ID_ROL_COORDINADOR +
         ",\"contrasena\":\"" +
         CONTRASENA_COORDINADOR +
-        "\"}"
+        "\",\"servicioId\":" +
+        idServicio +
+        "}"
     );
     assertThat(respuesta.statusCode()).as(respuesta.body()).isEqualTo(201);
     return correo;
@@ -177,5 +191,63 @@ class SesionH2IntegrationTests {
     assertThat(cliente.enviar("POST", "sesion/cerrar", "").statusCode()).isEqualTo(204);
     assertThat(cliente.get("sesion/perfil").statusCode()).isEqualTo(401);
     assertThat(cliente.get("universidades").statusCode()).isEqualTo(401);
+  }
+
+  @Test
+  void ajustesActualizaSoloLosNombresEnviados() throws Exception {
+    String correo = crearCoordinador();
+    var coordinador = new ClienteApiDePrueba(puerto);
+    coordinador.iniciarSesion(correo, CONTRASENA_COORDINADOR);
+
+    var respuesta = coordinador.enviar("PATCH", "sesion/perfil", "{\"nombres\":\"  Ana María \"}");
+
+    assertThat(respuesta.statusCode()).as(respuesta.body()).isEqualTo(200);
+    assertThat(respuesta.body())
+      .contains("\"nombres\":\"Ana María\"")
+      .contains("\"apellidos\":\"Prueba\"");
+    assertThat(
+      coordinador.enviar("PATCH", "sesion/perfil", "{\"apellidos\":\"   \"}").statusCode()
+    ).isEqualTo(400);
+    assertThat(coordinador.enviar("PATCH", "sesion/perfil", "{}").statusCode()).isEqualTo(400);
+  }
+
+  @Test
+  void ajustesCambiaCorreoYContrasenaConLaContrasenaActual() throws Exception {
+    String correo = crearCoordinador();
+    String correoNuevo = "nuevo-" + correo;
+    var coordinador = new ClienteApiDePrueba(puerto);
+    coordinador.iniciarSesion(correo, CONTRASENA_COORDINADOR);
+
+    var contrasenaErrada = coordinador.enviar(
+      "PATCH",
+      "sesion/credenciales",
+      "{\"contrasenaActual\":\"no-es-esta-1\",\"correo\":\"" + correoNuevo + "\"}"
+    );
+    assertThat(contrasenaErrada.statusCode()).isEqualTo(400);
+    assertThat(contrasenaErrada.body()).contains("contraseña actual no es correcta");
+
+    var respuesta = coordinador.enviar(
+      "PATCH",
+      "sesion/credenciales",
+      "{\"contrasenaActual\":\"" +
+        CONTRASENA_COORDINADOR +
+        "\",\"correo\":\"" +
+        correoNuevo.toUpperCase() +
+        "\",\"contrasenaNueva\":\"Otra-Clave-2\"}"
+    );
+    assertThat(respuesta.statusCode()).as(respuesta.body()).isEqualTo(200);
+    assertThat(respuesta.body()).contains(correoNuevo).doesNotContain("Otra-Clave-2");
+    assertThat(coordinador.get("sesion/perfil").statusCode()).isEqualTo(200);
+
+    var sesionNueva = new ClienteApiDePrueba(puerto);
+    assertThat(sesionNueva.iniciarSesion(correo, CONTRASENA_COORDINADOR).statusCode()).isEqualTo(401);
+    assertThat(sesionNueva.iniciarSesion(correoNuevo, "Otra-Clave-2").statusCode()).isEqualTo(200);
+    assertThat(
+      jdbc.queryForObject(
+        "select count(*) from historial_auditoria where datos_nuevos like '%Se cambió%' and datos_nuevos like ?",
+        Integer.class,
+        "%" + correoNuevo + "%"
+      )
+    ).isEqualTo(1);
   }
 }

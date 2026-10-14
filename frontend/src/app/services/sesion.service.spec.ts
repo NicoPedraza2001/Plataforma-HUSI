@@ -33,4 +33,22 @@ describe('SesionService', () => {
     servicio.perfil().subscribe();
     expect(http.expectOne('/api/sesion/perfil').request.method).toBe('GET');
   });
+
+  it('actualiza solo los datos del perfil que se envían', () => {
+    servicio.actualizarPerfil({ apellidos: 'Gómez' }).subscribe();
+    const solicitud = http.expectOne('/api/sesion/perfil');
+    expect(solicitud.request.method).toBe('PATCH');
+    expect(solicitud.request.body).toEqual({ apellidos: 'Gómez' });
+    solicitud.flush({});
+  });
+
+  it('actualiza las credenciales con la contraseña actual en el cuerpo', () => {
+    const cambio = { contrasenaActual: 'actual-123', contrasenaNueva: 'nueva-1234' };
+    servicio.actualizarCredenciales(cambio).subscribe();
+    const solicitud = http.expectOne('/api/sesion/credenciales');
+    expect(solicitud.request.method).toBe('PATCH');
+    expect(solicitud.request.body).toEqual(cambio);
+    expect(solicitud.request.urlWithParams).not.toContain('actual-123');
+    solicitud.flush({});
+  });
 });

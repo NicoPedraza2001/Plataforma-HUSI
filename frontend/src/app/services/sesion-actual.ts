@@ -63,6 +63,11 @@ export class SesionActual {
     }
   }
 
+  /** Ajustes guardó cambios en la cuenta: el layout muestra los datos nuevos sin recargar. */
+  reemplazarPerfil(perfil: Perfil): void {
+    this.perfilActual.set(perfil);
+  }
+
   /** El backend avisó que la sesión ya no existe (expiró o se cerró). */
   olvidar(): void {
     this.perfilActual.set(null);

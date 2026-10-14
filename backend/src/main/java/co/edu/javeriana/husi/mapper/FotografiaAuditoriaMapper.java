@@ -2,6 +2,7 @@ package co.edu.javeriana.husi.mapper;
 
 import co.edu.javeriana.husi.dto.response.RotacionResponse;
 import co.edu.javeriana.husi.model.entity.*;
+import co.edu.javeriana.husi.repository.CoordinadorRepository;
 import co.edu.javeriana.husi.repository.ProgramaRepository;
 import co.edu.javeriana.husi.repository.RolRepository;
 import co.edu.javeriana.husi.util.Calendario;
@@ -26,6 +27,7 @@ public class FotografiaAuditoriaMapper {
 
   private final ProgramaRepository programaRepository;
   private final RolRepository rolRepository;
+  private final CoordinadorRepository coordinadorRepository;
 
   public FotografiaRegistro deUniversidad(Universidad universidad) {
     Map<String, Object> datos = new LinkedHashMap<>();
@@ -93,20 +95,6 @@ public class FotografiaAuditoriaMapper {
     );
   }
 
-  public FotografiaRegistro deCoordinador(Coordinador coordinador) {
-    Usuario usuario = coordinador.getUsuario();
-    String nombreCompleto = usuario.getNombre() + " " + usuario.getApellido();
-    Map<String, Object> datos = new LinkedHashMap<>();
-    datos.put("Usuario", nombreCompleto);
-    datos.put("Correo", usuario.getCorreo());
-    datos.put("Servicio", coordinador.getServicio().getNombre());
-    datos.put("Estado", coordinador.getEstado());
-    return new FotografiaRegistro(
-      nombreCompleto + " — " + coordinador.getServicio().getNombre(),
-      datos
-    );
-  }
-
   /** Nunca incluye la contraseña, ni siquiera cifrada. */
   public FotografiaRegistro deUsuario(Usuario usuario) {
     Map<String, Object> datos = new LinkedHashMap<>();
@@ -114,6 +102,9 @@ public class FotografiaAuditoriaMapper {
     datos.put("Apellido", usuario.getApellido());
     datos.put("Correo", usuario.getCorreo());
     datos.put("Rol", rolRepository.consultarNombre(usuario.getRolId()));
+    coordinadorRepository
+      .findByUsuarioId(usuario.getId())
+      .ifPresent(coordinador -> datos.put("Servicio", coordinador.getServicio().getNombre()));
     datos.put("Estado", usuario.getEstado());
     return new FotografiaRegistro(
       usuario.getNombre() + " " + usuario.getApellido() + " (" + usuario.getCorreo() + ")",

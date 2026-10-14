@@ -40,7 +40,6 @@ class LocalH2IntegrationTests {
       "usuarios",
       "servicios",
       "asignaturas",
-      "coordinadores",
       "rotaciones",
       "rotaciones/gestion",
       "rotaciones/gestion/catalogos",
@@ -98,11 +97,9 @@ class LocalH2IntegrationTests {
     );
     int user = crear(
       "usuarios",
-      "{\"nombre\":\"Usuario\",\"apellido\":\"Local\",\"correo\":\"local-test@example.test\",\"rolId\":2,\"contrasena\":\"LocalTest123!\"}"
-    );
-    int coord = crear(
-      "coordinadores",
-      "{\"usuarioId\":" + user + ",\"servicioId\":" + serv + "}"
+      "{\"nombre\":\"Usuario\",\"apellido\":\"Local\",\"correo\":\"local-test@example.test\",\"rolId\":2,\"contrasena\":\"LocalTest123!\",\"servicioId\":" +
+        serv +
+        "}"
     );
     String rot = "rotaciones/gestion/" + asig + "/2099-01-01/2099-01-31";
     var creada = enviar(
@@ -201,7 +198,6 @@ class LocalH2IntegrationTests {
       "servicios/" + serv,
       "asignaturas/" + asig,
       "usuarios/" + user,
-      "coordinadores/" + coord,
     }) {
       assertThat(get(ruta).statusCode()).as(ruta).isEqualTo(200);
       assertThat(
@@ -214,13 +210,6 @@ class LocalH2IntegrationTests {
         .as(ruta)
         .isIn(200, 204);
     }
-    assertThat(
-      enviar(
-        "DELETE",
-        "coordinadores/" + coord + "/definitivo",
-        ""
-      ).statusCode()
-    ).isEqualTo(204);
     assertThat(
       enviar("DELETE", "usuarios/" + user + "/definitivo", "").statusCode()
     ).isEqualTo(204);
@@ -280,7 +269,6 @@ class LocalH2IntegrationTests {
       "usuarios?q=local",
       "servicios?q=demo",
       "asignaturas?q=demo",
-      "coordinadores?q=local",
       "rotaciones?q=demo",
       "rotaciones/gestion?q=demo",
       "historial?desde=2020-01-01&hasta=2100-01-01",

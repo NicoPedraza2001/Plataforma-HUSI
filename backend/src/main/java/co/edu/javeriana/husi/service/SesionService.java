@@ -1,5 +1,7 @@
 package co.edu.javeriana.husi.service;
 
+import co.edu.javeriana.husi.dto.request.ActualizacionCredencialesRequest;
+import co.edu.javeriana.husi.dto.request.ActualizacionPerfilRequest;
 import co.edu.javeriana.husi.dto.request.InicioSesionRequest;
 import co.edu.javeriana.husi.dto.response.PerfilResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,4 +19,13 @@ public interface SesionService {
   void cerrarSesion(HttpServletRequest request, HttpServletResponse response);
 
   PerfilResponse perfil();
+
+  /** Cambia solo los nombres y/o apellidos que lleguen; deja constancia en el historial. */
+  PerfilResponse actualizarPerfil(ActualizacionPerfilRequest request);
+
+  /**
+   * Cambia el correo y/o la contraseña tras comprobar la contraseña actual. Los fallos cuentan
+   * para el bloqueo por intentos, igual que en el inicio de sesión.
+   */
+  PerfilResponse actualizarCredenciales(ActualizacionCredencialesRequest request);
 }

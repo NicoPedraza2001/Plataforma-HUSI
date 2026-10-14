@@ -1,7 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { InicioSesionRequest, Perfil } from '../models/sesion.model';
+import {
+  ActualizacionCredencialesRequest,
+  ActualizacionPerfilRequest,
+  InicioSesionRequest,
+  Perfil,
+} from '../models/sesion.model';
 import { API_URL } from './api.config';
 
 /**
@@ -25,5 +30,15 @@ export class SesionService {
   /** GET /api/sesion/perfil */
   perfil(): Observable<Perfil> {
     return this.http.get<Perfil>(`${API_URL}/sesion/perfil`);
+  }
+
+  /** PATCH /api/sesion/perfil */
+  actualizarPerfil(request: ActualizacionPerfilRequest): Observable<Perfil> {
+    return this.http.patch<Perfil>(`${API_URL}/sesion/perfil`, request);
+  }
+
+  /** PATCH /api/sesion/credenciales */
+  actualizarCredenciales(request: ActualizacionCredencialesRequest): Observable<Perfil> {
+    return this.http.patch<Perfil>(`${API_URL}/sesion/credenciales`, request);
   }
 }

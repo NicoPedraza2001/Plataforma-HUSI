@@ -1,5 +1,7 @@
 package co.edu.javeriana.husi.controller;
 
+import co.edu.javeriana.husi.dto.request.ActualizacionCredencialesRequest;
+import co.edu.javeriana.husi.dto.request.ActualizacionPerfilRequest;
 import co.edu.javeriana.husi.dto.request.InicioSesionRequest;
 import co.edu.javeriana.husi.dto.response.PerfilResponse;
 import co.edu.javeriana.husi.service.SesionService;
@@ -10,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-/** Inicio y cierre de sesión. Las reglas de acceso están en security/ConfiguracionSeguridad. */
+/** Inicio y cierre de sesión, y ajustes de la cuenta propia. Las reglas de acceso están en security/ConfiguracionSeguridad. */
 @RestController
 @RequestMapping("/sesion")
 @RequiredArgsConstructor
@@ -37,5 +39,19 @@ public class SesionController {
   @GetMapping("/perfil")
   public PerfilResponse perfil() {
     return sesionService.perfil();
+  }
+
+  /** Pantalla de ajustes: nombres y/o apellidos del usuario en sesión. */
+  @PatchMapping("/perfil")
+  public PerfilResponse actualizarPerfil(@Valid @RequestBody ActualizacionPerfilRequest request) {
+    return sesionService.actualizarPerfil(request);
+  }
+
+  /** Pantalla de ajustes: correo y/o contraseña; exige la contraseña actual. */
+  @PatchMapping("/credenciales")
+  public PerfilResponse actualizarCredenciales(
+    @Valid @RequestBody ActualizacionCredencialesRequest request
+  ) {
+    return sesionService.actualizarCredenciales(request);
   }
 }

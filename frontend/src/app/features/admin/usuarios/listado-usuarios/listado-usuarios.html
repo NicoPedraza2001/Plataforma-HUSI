@@ -39,11 +39,11 @@
           stroke-linecap="round"
         />
       </svg>
-      <span class="sr-only">Buscar usuario por nombre o correo</span>
+      <span class="sr-only">Buscar usuario por nombre, correo o servicio</span>
       <input
         class="search__input"
         type="search"
-        placeholder="Buscar por nombre o correo..."
+        placeholder="Buscar por nombre, correo o servicio..."
         [value]="terminoBusqueda()"
         (input)="buscar($any($event.target).value)"
       />
@@ -112,6 +112,7 @@
           <th scope="col">Nombre</th>
           <th scope="col">Correo</th>
           <th scope="col">Rol</th>
+          <th scope="col">Servicio</th>
 
           <th class="col-acciones-registro" scope="col">Acciones</th>
         </tr>
@@ -125,6 +126,7 @@
               <td>{{ usuario.nombre }}</td>
               <td class="col-correo">{{ usuario.correo }}</td>
               <td>{{ usuario.rol }}</td>
+              <td>{{ usuario.servicio ?? '—' }}</td>
               <td class="col-acciones-registro">
                 <div class="acciones-registro">
                   <button
@@ -160,7 +162,7 @@
             </tr>
           } @empty {
             <tr>
-              <td class="tabla__vacia" colspan="5">
+              <td class="tabla__vacia" colspan="6">
                 No hay usuarios que coincidan con la búsqueda
               </td>
             </tr>
@@ -199,6 +201,7 @@
       <app-formulario-usuario
         [(datos)]="datosFormulario"
         [opciones]="opciones()"
+        [servicios]="servicios()"
         [edicion]="!!idEnEdicion"
         [guardando]="guardando()"
         [errorFormulario]="errorFormulario()"

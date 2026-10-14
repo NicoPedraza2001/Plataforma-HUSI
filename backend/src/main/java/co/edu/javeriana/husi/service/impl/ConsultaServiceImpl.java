@@ -57,7 +57,7 @@ public class ConsultaServiceImpl implements ConsultaService {
           "estado",
           "periodo"
         );
-        case "asignaturas", "coordinadores" -> Set.of("estado", "servicioId");
+        case "asignaturas" -> Set.of("estado", "servicioId");
         case "usuarios" -> Set.of("rol", "estado");
         case "servicios", "universidades" -> Set.of("estado");
         case "historial" -> Set.of("modulo", "accion", "desde", "hasta");

@@ -29,10 +29,9 @@ public class ConsultaRepository {
     // Columnas donde busca el texto libre (filtro q) en cada listado.
     String camposBusqueda = switch (dominio) {
       case "asignaturas" -> "concat(nombre,' ',servicio)";
-      case "coordinadores" -> "concat(nombre,' ',correo,' ',servicio)";
       case "programas" -> "concat(nombre,' ',universidad)";
       case "residentes" -> "concat(nombre,' ',documento)";
-      case "usuarios" -> "concat(nombre,' ',correo)";
+      case "usuarios" -> "concat(nombre,' ',correo,' ',coalesce(servicio,''))";
       case "historial" -> "concat(usuario,' ',modulo,' ',accion,' ',registro,' ',detalle)";
       case "servicios" -> "concat(nombre,' ',descripcion)";
       case "universidades" -> "concat(nombre,' ',pais)";

@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { Ajustes } from './features/admin/ajustes/ajustes';
 import { ListadoAsignaturas } from './features/admin/asignaturas/listado-asignaturas/listado-asignaturas';
-import { ListadoCoordinadores } from './features/admin/coordinadores/listado-coordinadores/listado-coordinadores';
 import { PanelDashboard } from './features/admin/dashboard/panel-dashboard/panel-dashboard';
 import { Historial } from './features/admin/historial/historial';
 import { ListadoProgramas } from './features/admin/programas/listado-programas/listado-programas';
@@ -45,7 +44,6 @@ export const routes: Routes = [
       { path: 'rotaciones', component: ListadoRotaciones },
       { path: 'importar-excel', component: ImportarRotaciones },
       { path: 'asignaturas', component: ListadoAsignaturas },
-      { path: 'coordinadores', component: ListadoCoordinadores },
       { path: 'universidades', component: ListadoUniversidades },
       { path: 'universidades/:universidadId/programas', component: ListadoProgramas },
       {

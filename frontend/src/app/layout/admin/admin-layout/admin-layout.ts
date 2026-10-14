@@ -57,7 +57,6 @@ export class AdminLayout {
       title: 'Administración',
       items: [
         { label: 'Usuarios', link: '/admin/usuarios' },
-        { label: 'Coordinadores', link: '/admin/coordinadores' },
         { label: 'Historial', link: '/admin/historial' },
         { label: 'Ajustes', link: '/admin/ajustes' },
       ],

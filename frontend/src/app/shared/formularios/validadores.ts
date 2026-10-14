@@ -15,13 +15,15 @@ export function enteroBaseDatos(control: AbstractControl): ValidationErrors | nu
     : { enteroBaseDatos: true };
 }
 
+/** Misma regla que el backend: al menos 8 caracteres, no solo espacios y hasta 72 bytes. */
+export function esClaveBcryptValida(valor: string): boolean {
+  return (
+    valor.trim().length > 0 && valor.length >= 8 && new TextEncoder().encode(valor).length <= 72
+  );
+}
+
 export function claveBcrypt(control: AbstractControl): ValidationErrors | null {
   const valor: unknown = control.value;
   if (valor === null || valor === undefined || valor === '') return null;
-  return typeof valor === 'string' &&
-    valor.trim().length > 0 &&
-    valor.length >= 8 &&
-    new TextEncoder().encode(valor).length <= 72
-    ? null
-    : { claveBcrypt: true };
+  return typeof valor === 'string' && esClaveBcryptValida(valor) ? null : { claveBcrypt: true };
 }

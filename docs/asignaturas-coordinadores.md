@@ -5,9 +5,9 @@ Implementación en Desarrollo_Santi sobre el esquema existente; no requiere migr
 ## Pantallas y organización
 
 - `/admin/asignaturas`: listado, búsqueda por nombre o servicio, filtros de servicio y estado, paginación, formulario de creación/edición y confirmación de eliminación.
-- `/admin/coordinadores`: listado, búsqueda por nombre, correo o servicio; los mismos filtros y acciones.
-- `frontend/src/app/features/admin/asignaturas/` y `coordinadores/`: cada módulo separa `listado-*` y `formulario-*` en TypeScript, HTML, CSS y pruebas.
-- `frontend/src/app/models/`: contratos Asignatura/Coordinador y sus Request; se reutiliza OpcionCatalogo.
+- Los coordinadores ya no tienen pantalla propia: se crean y editan en `/admin/usuarios` (ver «Coordinadores» abajo).
+- `frontend/src/app/features/admin/asignaturas/`: separa `listado-*` y `formulario-*` en TypeScript, HTML, CSS y pruebas.
+- `frontend/src/app/models/`: contrato Asignatura y su Request; se reutiliza OpcionCatalogo.
 - `frontend/src/app/services/`: clientes HTTP de cada dominio; los componentes no utilizan HttpClient.
 - Backend: controller → service/interfaz → service/impl → repository. Entidades en model/entity, DTO en dto/request y dto/response, conversión en mapper.
 - Se reutilizan Consulta, Paginacion, FocoModal, IconoPapelera y estilos compartidos. ConsultaController/ConsultaService/ConsultaRepository/ListadoSql resuelven búsquedas y paginación en PostgreSQL, con parámetros enlazados.
@@ -16,16 +16,20 @@ Implementación en Desarrollo_Santi sobre el esquema existente; no requiere migr
 
 - Asignatura pertenece a Servicio (`id_servicio`). Nombre obligatorio, máximo 200 caracteres. No se permite duplicar nombre dentro del mismo servicio, ignorando mayúsculas y espacios exteriores; puede repetirse en otro servicio.
 - Si una asignatura tiene rotaciones, se bloquean su eliminación definitiva y el cambio de servicio para conservar el historial. Puede editarse su nombre o cambiar su estado.
-- Coordinador relaciona Usuario con Servicio. La restricción existente `UNIQUE(id_usuario)` permite una sola asignación por usuario, incluso inactiva. Un servicio admite varios coordinadores.
-- Para una nueva asignación, se ofrecen usuarios activos con rol Coordinador y sin asignación; se valida también en backend. Cambiar el rol de un usuario asociado exige retirar primero su asignación.
 - Solo se ofrecen servicios activos al crear o cambiar relaciones. Al editar se conserva la referencia actual aunque se haya inactivado, sin obligar a reemplazarla.
-- Activo/Inactivo se guarda inmediatamente sin modal, de forma independiente al estado del servicio/usuario. No se activan ni desactivan padres automáticamente.
-- Eliminar un coordinador borra únicamente la relación: no borra Usuario ni Servicio. La advertencia lo explica.
 - Los catálogos se consultan completos, sin truncarlos a la primera página del listado. No se exponen contraseñas.
+
+## Coordinadores
+
+- Un coordinador es un usuario con rol Coordinador y un servicio asignado; en su perfil verá los residentes con rotaciones activas en ese servicio.
+- Se crea y edita desde `/admin/usuarios`: al elegir el rol Coordinador, el formulario pide el servicio (`UsuarioRequest.servicioId`). Con otro rol el servicio se ignora.
+- `UsuarioServiceImpl` mantiene la tabla `coordinador` (`UNIQUE(id_usuario)`): la crea o cambia de servicio al guardar, la retira si el usuario deja de ser coordinador o se elimina, y copia el estado Activo/Inactivo del usuario (el dashboard cuenta servicios sin coordinador activo).
+- Por ahora un servicio admite varios coordinadores; la regla de uno por servicio está pendiente de definir con el hospital.
+- El listado de usuarios muestra y busca por el servicio coordinado.
 
 ## Endpoints
 
-Prefijo `/api`. Para ambos recursos (`asignaturas`, `coordinadores`):
+Prefijo `/api`. Para `asignaturas`:
 
 | Método | Ruta | Uso |
 |---|---|---|
@@ -36,9 +40,8 @@ Prefijo `/api`. Para ambos recursos (`asignaturas`, `coordinadores`):
 | PATCH | `/{recurso}/{id}/estado` | Activo/Inactivo |
 | DELETE | `/{recurso}/{id}/definitivo` | Borrado físico protegido |
 | GET | `/servicios/catalogo?soloActivos=true` | Opciones de servicios; false incluye inactivos para filtros |
-| GET | `/coordinadores/usuarios-disponibles` | Usuarios elegibles |
 
-AsignaturaRequest: `{nombre, servicioId}`. CoordinadorRequest: `{usuarioId, servicioId}`. EstadoRequest: `{estado}`.
+AsignaturaRequest: `{nombre, servicioId}`. UsuarioRequest (coordinadores): `{nombre, apellido, correo, rolId, contrasena, servicioId}`. EstadoRequest: `{estado}`.
 
 ## Verificación
 

@@ -98,6 +98,7 @@
 
 .bloque__titulo {
   padding-inline: 8px;
+  font-family: var(--font-serif);
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--husi-navy);
@@ -111,6 +112,9 @@
 }
 
 .campo__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.84rem;
   font-weight: 600;
   color: var(--husi-navy);
@@ -173,6 +177,40 @@
 .campo__aviso {
   font-size: 0.78rem;
   color: var(--estado-alerta);
+}
+
+/* Marca qué campos tocó el usuario, para que sepa qué se va a guardar. */
+.campo__cambio {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--husi-teal-dark);
+  background: rgba(74, 211, 200, 0.14);
+}
+
+.campo__estado--ok {
+  font-size: 0.78rem;
+  color: var(--estado-ok);
+}
+
+.campo__nota,
+.bloque__nota,
+.bloque__ayuda {
+  font-size: 0.78rem;
+  color: var(--husi-muted);
+}
+
+.bloque__ayuda {
+  margin: 4px 0 -4px;
+  line-height: 1.5;
+}
+
+.estado-carga {
+  margin: 18px auto;
+  max-width: 820px;
+  color: var(--husi-muted);
 }
 
 /* ===================== OJO DE LA CONTRASEÑA ===================== */
@@ -263,6 +301,51 @@
   border-color: var(--husi-navy);
 }
 
+/* ===================== CONFIRMACIÓN ===================== */
+/* El fondo, el panel y los botones vienen de shared/formularios/modal.css. */
+.resumen-cambios {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 22px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resumen-cambios__fila {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  background: var(--husi-surface);
+  font-size: 0.88rem;
+}
+
+.resumen-cambios__campo {
+  font-weight: 700;
+  color: var(--husi-navy);
+}
+
+/* Lo anterior tachado y apagado; lo nuevo en navy: se lee el cambio de un vistazo. */
+.resumen-cambios__antes {
+  color: var(--husi-muted);
+  text-decoration: line-through;
+  overflow-wrap: anywhere;
+}
+
+.resumen-cambios__flecha {
+  color: var(--husi-teal-dark);
+  font-weight: 700;
+}
+
+.resumen-cambios__despues {
+  color: var(--husi-navy);
+  overflow-wrap: anywhere;
+}
+
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 720px) {
   :host {
@@ -285,5 +368,13 @@
   .bloque__acciones {
     margin-left: 0;
     justify-content: flex-end;
+  }
+
+  .resumen-cambios__fila {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .resumen-cambios__campo {
+    grid-column: 1 / -1;
   }
 }
