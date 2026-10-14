@@ -1,0 +1,82 @@
+<div class="barra">
+  <div class="chips" role="group" aria-label="Filtrar por motivo">
+    @for (chip of chips(); track chip.motivo) {
+      <button
+        type="button"
+        class="chip"
+        [attr.aria-pressed]="motivo() === chip.motivo"
+        (click)="motivo.set(chip.motivo)"
+      >
+        {{ chip.etiqueta }} <strong>{{ chip.cantidad }}</strong>
+      </button>
+    }
+  </div>
+
+  <button
+    type="button"
+    class="btn btn--green"
+    [disabled]="!filtrados().length || exportando()"
+    (click)="exportar()"
+  >
+    Exportar a Excel
+  </button>
+</div>
+
+<div class="table-wrap">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th scope="col">Residente</th>
+        <th scope="col">Programa</th>
+        <th scope="col">Motivo</th>
+        <th scope="col">Detalle</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (residente of filas(); track residente.clave) {
+        <tr>
+          <td>{{ residente.residente }}</td>
+          <td>{{ residente.programa }}</td>
+          <td>
+            <span class="badge" [class]="motivos[residente.motivo].badge">
+              {{ motivos[residente.motivo].etiqueta }}
+            </span>
+          </td>
+          <td class="col-detalle">
+            @let abierto = expandidos().has(residente.clave);
+            @for (
+              linea of abierto ? residente.lineas : residente.lineas.slice(0, lineasVisibles);
+              track $index
+            ) {
+              <span class="detalle__linea">{{ linea }}</span>
+            }
+            @if (residente.lineas.length > lineasVisibles) {
+              <button
+                type="button"
+                class="detalle__mas"
+                [attr.aria-expanded]="abierto"
+                (click)="alternarDetalle(residente.clave)"
+              >
+                {{
+                  abierto ? 'Ver menos' : '+' + (residente.lineas.length - lineasVisibles) + ' más'
+                }}
+              </button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td class="tabla__vacia" colspan="4">Nada que revisar en este corte</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (totalPaginas() > 1) {
+  <app-paginacion
+    [paginaActual]="pagina()"
+    [totalPaginas]="totalPaginas()"
+    (cambio)="pagina.set($event)"
+  />
+}

@@ -1,0 +1,111 @@
+<div class="cabecera">
+  <ul class="escala" aria-label="Escala de ocupación">
+    <li class="escala__item">
+      <span class="celda celda--0 muestra" aria-hidden="true"></span>
+      Sin residentes
+    </li>
+    @for (paso of escala; track paso.nivel) {
+      <li class="escala__item">
+        <span class="celda muestra" [class]="'celda--' + paso.nivel" aria-hidden="true">
+          @if (paso.nivel === 'exceso') {
+            !
+          }
+        </span>
+        {{ paso.etiqueta }}
+      </li>
+    }
+  </ul>
+  <button
+    type="button"
+    class="vista"
+    [attr.aria-pressed]="vistaTabla()"
+    (click)="vistaTabla.set(!vistaTabla())"
+  >
+    {{ vistaTabla() ? 'Ver mapa' : 'Ver tabla' }}
+  </button>
+</div>
+
+@if (!filas().length) {
+  <p class="vacio">No hay asignaciones en la ventana de este corte.</p>
+} @else if (vistaTabla()) {
+  <div class="table-wrap">
+    <table class="tabla tabla--compacta">
+      <caption class="sr-only">
+        Pico de residentes simultáneos por servicio y mes, frente al cupo
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Servicio</th>
+          <th scope="col" class="num">Cupo</th>
+          @for (mes of meses(); track mes.clave) {
+            <th scope="col" class="num">{{ mes.corta }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of visibles(); track fila.servicio) {
+          <tr>
+            <th scope="row">{{ fila.servicio }}</th>
+            <td class="num">{{ fila.cupo }}</td>
+            @for (celda of fila.celdas; track celda.mes) {
+              <td class="num" [class.num--exceso]="celda.nivel === 'exceso'">
+                {{ celda.pico || '—' }}
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <div class="mapa" [style.grid-template-columns]="columnas()">
+    <span></span>
+    @for (mes of meses(); track mes.clave) {
+      <span class="mapa__mes">{{ mes.corta }}</span>
+    }
+
+    @for (fila of visibles(); track fila.servicio; let indiceFila = $index) {
+      <span class="mapa__servicio" [title]="etiquetaFila(fila)">
+        {{ fila.servicio }}
+        @if (fila.diasExceso) {
+          <span class="mapa__aviso" aria-hidden="true">!</span>
+        }
+        <span class="sr-only">{{ etiquetaFila(fila) }}</span>
+      </span>
+      @for (celda of fila.celdas; track celda.mes; let columna = $index) {
+        <span
+          class="celda"
+          [class]="'celda--' + celda.nivel"
+          [class.celda--activa]="activo()?.fila === indiceFila && activo()?.columna === columna"
+          aria-hidden="true"
+          (pointerenter)="activo.set({ fila: indiceFila, columna })"
+          (pointerleave)="activo.set(null)"
+        >
+          @if (celda.nivel === 'exceso') {
+            {{ celda.porcentaje }}%
+          }
+          @if (detalle(); as globo) {
+            @if (globo.fila === indiceFila && globo.columna === columna) {
+              <span class="globo">
+                <strong
+                  >{{ globo.pico }} de {{ globo.cupo }} cupos · {{ globo.porcentaje }}%</strong
+                >
+                {{ globo.servicio }} · {{ globo.mes }}
+              </span>
+            }
+          }
+        </span>
+      }
+    }
+  </div>
+}
+
+@if (ocultas() && filas().length) {
+  <button type="button" class="vista vista--mas" (click)="todos.set(!todos())">
+    {{
+      todos()
+        ? 'Ver solo los ' + filasIniciales + ' más ocupados'
+        : 'Ver los ' + filas().length + ' servicios'
+    }}
+  </button>
+}

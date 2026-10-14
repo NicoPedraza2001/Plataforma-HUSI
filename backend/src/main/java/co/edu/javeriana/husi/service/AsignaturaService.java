@@ -1,9 +1,12 @@
 package co.edu.javeriana.husi.service;
 
 import co.edu.javeriana.husi.dto.request.AsignaturaRequest;
+import co.edu.javeriana.husi.dto.response.AsignaturaCatalogoResponse;
 import co.edu.javeriana.husi.dto.response.AsignaturaResponse;
+import java.util.List;
 
 public interface AsignaturaService {
+  List<AsignaturaCatalogoResponse> catalogo();
   AsignaturaResponse consultar(Integer id);
   AsignaturaResponse crear(AsignaturaRequest request);
   AsignaturaResponse actualizar(Integer id, AsignaturaRequest request);

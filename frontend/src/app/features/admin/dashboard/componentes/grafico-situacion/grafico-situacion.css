@@ -1,0 +1,179 @@
+/* Barras 100% apiladas, una por programa. La identidad de cada categoría se lee en la
+   leyenda (con su total) y en la vista de tabla; el color nunca es el único canal. */
+:host {
+  display: block;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+}
+
+.leyenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
+.leyenda__item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.74rem;
+  color: var(--husi-muted);
+}
+
+.leyenda__item strong {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--husi-text);
+}
+
+.muestra {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.muestra--1,
+.segmento--1 {
+  background: var(--grafico-1);
+}
+
+.muestra--2,
+.segmento--2 {
+  background: var(--grafico-2);
+}
+
+.muestra--3,
+.segmento--3 {
+  background: var(--grafico-3);
+}
+
+.vista {
+  padding: 4px 10px;
+  border: 1px solid var(--husi-border);
+  border-radius: 999px;
+  background: var(--husi-bg);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--husi-navy);
+  cursor: pointer;
+}
+
+.vista:hover {
+  background: var(--husi-surface);
+}
+
+.vista:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+
+.filas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fila {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(110px, 170px) 1fr 34px;
+  align-items: center;
+  gap: 12px;
+}
+
+.fila__etiqueta {
+  overflow: hidden;
+  font-size: 0.76rem;
+  color: var(--husi-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* El hueco de 2px del color de la superficie separa los segmentos; sin bordes. */
+.fila__barra {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+}
+
+.segmento {
+  min-width: 3px;
+  cursor: default;
+  transition: filter 0.15s ease;
+}
+
+.segmento:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.segmento:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.segmento:only-child {
+  border-radius: 4px;
+}
+
+.segmento--activo {
+  filter: brightness(1.12);
+  box-shadow: 0 0 0 2px var(--husi-navy);
+}
+
+.fila__total {
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--husi-text);
+}
+
+/* Globo: primero la cifra, luego la categoría y el programa. */
+.globo {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: var(--husi-navy);
+  color: #fff;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.globo small {
+  color: var(--husi-on-dark-muted);
+}
+
+.vacio {
+  font-size: 0.78rem;
+  color: var(--husi-muted);
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla--compacta {
+  font-size: 0.78rem;
+}

@@ -42,6 +42,8 @@ class LocalH2IntegrationTests {
       "rotaciones/gestion/catalogos",
       "historial",
       "dashboard",
+      "dashboard/relaciones",
+      "asignaturas/catalogo",
       "catalogos",
     }) {
       var respuesta = get(ruta);

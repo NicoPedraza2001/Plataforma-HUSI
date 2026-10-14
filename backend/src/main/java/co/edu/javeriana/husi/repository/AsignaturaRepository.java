@@ -12,6 +12,12 @@ public interface AsignaturaRepository
   @Query("select e from Asignatura e where e.id=:id")
   Optional<Asignatura> bloquearPorId(Integer id);
 
+  /** Asignaturas no eliminadas con su servicio, para los filtros. */
+  @Query(
+    "select a from Asignatura a join fetch a.servicio s where a.estado<>'Eliminado' and s.estado<>'Eliminado' order by lower(a.nombre),lower(s.nombre),a.id"
+  )
+  java.util.List<Asignatura> catalogo();
+
   boolean existsByServicioIdAndNombreIgnoreCaseAndIdNot(
     Integer servicioId,
     String nombre,

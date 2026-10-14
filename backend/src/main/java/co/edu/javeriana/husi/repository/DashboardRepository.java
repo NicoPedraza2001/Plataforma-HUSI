@@ -1,215 +1,361 @@
 package co.edu.javeriana.husi.repository;
 
-import co.edu.javeriana.husi.repository.query.ListadoSql;
+import static co.edu.javeriana.husi.repository.query.DashboardSql.*;
+
+import co.edu.javeriana.husi.dto.request.DashboardFiltros;
+import co.edu.javeriana.husi.dto.response.DashboardResponse.ResidenteRevisar;
+import co.edu.javeriana.husi.dto.response.DashboardResponse.SituacionPrograma;
+import co.edu.javeriana.husi.dto.response.RelacionFiltrosResponse;
 import co.edu.javeriana.husi.repository.support.ConsultaSql;
+import co.edu.javeriana.husi.repository.support.ParametrosSql;
+import java.time.LocalDate;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Lecturas del dashboard. Solo consulta y convierte cada fila a un tipo; los cálculos y textos
+ * del panel están en el servicio. Una rotación pertenece al periodo en que inicia, igual que en
+ * el resto de la plataforma.
+ */
 @Repository
 @RequiredArgsConstructor
 public class DashboardRepository {
 
+  public record Totales(long rotaciones, long asignaciones, long total) {}
+
+  public record Conteo(String etiqueta, long valor) {}
+
+  public record Rango(LocalDate desde, LocalDate hasta) {}
+
+  /** Parte de una asignación que cae dentro de la ventana del mapa de ocupación. */
+  public record Tramo(
+    String servicio,
+    int cupo,
+    LocalDate desde,
+    LocalDate hasta
+  ) {}
+
+  /** Dos rotaciones asignadas del mismo residente y los días que comparten. */
+  public record ParCruzado(
+    Integer residenteId,
+    String residente,
+    String programa,
+    String asignatura1,
+    String servicio1,
+    String asignatura2,
+    String servicio2,
+    LocalDate desde,
+    LocalDate hasta
+  ) {}
+
   private final ConsultaSql consultaSql;
 
-  public Map<String, Object> consultar(Map<String, String> filtros) {
-    Map<String, Object> parametros = new HashMap<>();
-    String where = " where estado<>'Cancelado'";
-
-    if (filtros.containsKey("periodo")) {
-      where +=
-        " and extract(year from inicio)::int::text || '-' || case when extract(month from inicio)<=6 then '1' else '2' end = :periodo";
-      parametros.put("periodo", filtros.get("periodo"));
-    }
-    if (filtros.containsKey("servicio")) {
-      where += " and servicio=:servicio";
-      parametros.put("servicio", filtros.get("servicio"));
-    }
-    // El reparto por universidad ignora el filtro de universidad: siempre muestra todas.
-    String whereReparto = where;
-    Map<String, Object> parametrosReparto = new HashMap<>(parametros);
-    if (filtros.containsKey("universidad")) {
-      where += " and universidad=:universidad";
-      parametros.put("universidad", filtros.get("universidad"));
-    }
-    String base = " from (" + ListadoSql.ROTACIONES + ") datos";
-    var totales = consultaSql
-      .consultar(
-        "select count(distinct (\"asignaturaId\",inicio,fin)) filter(where inicio<=(current_timestamp at time zone 'America/Bogota')::date and fin>=(current_timestamp at time zone 'America/Bogota')::date) as activas,count(distinct (\"asignaturaId\",inicio,fin)) filter(where inicio>(current_timestamp at time zone 'America/Bogota')::date and inicio<=(current_timestamp at time zone 'America/Bogota')::date+30) as proximas,count(distinct \"residenteId\") filter(where estado='Asignado' and inicio<=(current_timestamp at time zone 'America/Bogota')::date and fin>=(current_timestamp at time zone 'America/Bogota')::date) as residentes,count(*) as total" +
-          base +
-          where,
-        parametros
-      )
-      .getFirst();
-    var porServicio = consultaSql.consultar(
-      "select servicio as etiqueta,count(distinct (\"asignaturaId\",inicio,fin)) as valor" +
-        base +
-        where +
-        " group by servicio order by servicio",
+  public Totales totales(DashboardFiltros filtros) {
+    var parametros = new ParametrosSql();
+    var fila = consultar(
+      TOTALES.formatted(deRotaciones(filtros, parametros, true)),
       parametros
-    );
-    long maximoPorServicio = porServicio
-      .stream()
-      .mapToLong(fila -> ((Number) fila.get("valor")).longValue())
-      .max()
-      .orElse(1);
-    porServicio.forEach(fila -> fila.put("maximo", maximoPorServicio));
-    var reparto = consultaSql.consultar(
-      "select universidad as etiqueta,count(distinct \"residenteId\") as valor" +
-        base +
-        whereReparto +
-        " group by universidad order by valor desc,universidad",
-      parametrosReparto
-    );
-    double totalResidentes = reparto
-      .stream()
-      .mapToDouble(fila -> ((Number) fila.get("valor")).doubleValue())
-      .sum();
-    // Se muestran las 3 universidades principales y el resto se agrupa en «Otras».
-    List<Map<String, Object>> distribucion = new ArrayList<>();
-    double porcentajeOtras = 0;
-    for (int i = 0; i < reparto.size(); i++) {
-      var fila = reparto.get(i);
-      double porcentaje =
-        totalResidentes == 0
-          ? 0
-          : (((Number) fila.get("valor")).doubleValue() * 100) / totalResidentes;
-      if (i < 3 || reparto.size() <= 4) distribucion.add(
-        Map.of(
-          "etiqueta",
-          fila.get("etiqueta"),
-          "porcentaje",
-          Math.round(porcentaje * 10) / 10.0
-        )
-      );
-      else porcentajeOtras += porcentaje;
-    }
-    if (porcentajeOtras > 0) distribucion.add(
-      Map.of(
-        "etiqueta",
-        "Otras",
-        "porcentaje",
-        Math.round(porcentajeOtras * 10) / 10.0
-      )
-    );
-    var tendencia = consultaSql.consultar(
-      "select to_char(inicio,'YYYY-MM') as etiqueta,count(distinct (\"asignaturaId\",inicio,fin)) as valor" +
-        base +
-        where +
-        " group by to_char(inicio,'YYYY-MM') order by etiqueta",
-      parametros
-    );
-    // Capacidad y ocupación actuales del servicio; no se divide la capacidad por universidad.
-    Map<String, Object> parametrosOcupacion = new HashMap<>();
-    String filtroServicio = "";
-    if (filtros.containsKey("servicio")) {
-      filtroServicio = " and s.nombre=:servicio";
-      parametrosOcupacion.put("servicio", filtros.get("servicio"));
-    }
-    var ocupacion = consultaSql.consultar(
-      "select s.nombre as etiqueta,count(distinct rr.id_residente) as valor,s.cupo_simultaneo as maximo from servicio s left join asignatura a using(id_servicio) left join rotacion_residente rr on rr.id_asignatura=a.id_asignatura and rr.estado='Asignado' and rr.fecha_inicio<=(current_timestamp at time zone 'America/Bogota')::date and rr.fecha_fin>=(current_timestamp at time zone 'America/Bogota')::date where s.estado='Activo'" +
-        filtroServicio +
-        " group by s.id_servicio,s.nombre,s.cupo_simultaneo order by s.nombre",
-      parametrosOcupacion
-    );
-    double cuposUsados = ocupacion
-      .stream()
-      .mapToDouble(fila -> ((Number) fila.get("valor")).doubleValue())
-      .sum();
-    double cuposTotales = ocupacion
-      .stream()
-      .mapToDouble(fila -> ((Number) fila.get("maximo")).doubleValue())
-      .sum();
-    List<Map<String, Object>> indicadores = List.of(
-      indicador(
-        "activas",
-        "Rotaciones activas",
-        totales.get("activas"),
-        "Hoy, dentro del corte seleccionado",
-        "teal"
-      ),
-      indicador(
-        "proximas",
-        "Próximas rotaciones",
-        totales.get("proximas"),
-        "Inician en los siguientes 30 días",
-        "naranja"
-      ),
-      indicador(
-        "residentes",
-        "Residentes con rotación",
-        totales.get("residentes"),
-        "Asignados hoy, dentro del corte",
-        "azul"
-      ),
-      indicador(
-        "ocupacion",
-        "Ocupación actual",
-        cuposTotales == 0
-          ? "Sin capacidad"
-          : Math.round((cuposUsados * 100) / cuposTotales) + "%",
-        "Servicios activos; todas las universidades",
-        "verde"
-      )
-    );
-    long asignacionesEnEspera = (
-      (Number) consultaSql.escalar(
-        "select count(*) from rotacion_residente where estado='Esperando cupo' and fecha_fin>=(current_timestamp at time zone 'America/Bogota')::date",
-        Map.of()
-      )
-    ).longValue();
-    List<Map<String, Object>> alertas = new ArrayList<>();
-    if (asignacionesEnEspera > 0) alertas.add(
-      Map.of(
-        "id",
-        "espera",
-        "nivel",
-        "alerta",
-        "etiqueta",
-        "Asignaciones en espera",
-        "detalle",
-        "Rotaciones vigentes o futuras",
-        "cantidad",
-        asignacionesEnEspera
-      )
-    );
-    return Map.of(
-      "indicadores",
-      indicadores,
-      "rotacionesPorServicio",
-      porServicio,
-      "distribucionUniversidad",
-      distribucion,
-      "tendenciaInicios",
-      tendencia,
-      "ocupacionPorServicio",
-      ocupacion,
-      "alertas",
-      alertas,
-      "totalRegistros",
-      totales.get("total")
+    ).getFirst();
+    return new Totales(
+      numero(fila, "rotaciones"),
+      numero(fila, "asignaciones"),
+      numero(fila, "total")
     );
   }
 
-  private Map<String, Object> indicador(
-    String id,
-    String etiqueta,
-    Object valor,
-    String detalle,
-    String tono
+  public List<Conteo> rotacionesPorServicio(DashboardFiltros filtros) {
+    return conteos(ROTACIONES_POR_SERVICIO, filtros, true);
+  }
+
+  /** Ignora el filtro de universidad: el reparto siempre compara todas. */
+  public List<Conteo> residentesPorUniversidad(DashboardFiltros filtros) {
+    return conteos(RESIDENTES_POR_UNIVERSIDAD, filtros, false);
+  }
+
+  public List<Conteo> iniciosPorMes(DashboardFiltros filtros) {
+    return conteos(INICIOS_POR_MES, filtros, true);
+  }
+
+  /**
+   * Solo cuenta residentes del periodo: los que tienen alguna rotación no cancelada que inicia
+   * en él. No responde al servicio ni a la asignatura, porque mide al residente.
+   */
+  public List<SituacionPrograma> situacionPorPrograma(
+    DashboardFiltros filtros
   ) {
-    return Map.of(
-      "id",
-      id,
-      "etiqueta",
-      etiqueta,
-      "valor",
-      valor.toString(),
-      "detalle",
-      detalle,
-      "tono",
-      tono
+    var parametros = new ParametrosSql();
+    String sql = SITUACION_POR_PROGRAMA.formatted(
+      periodo("rr.fecha_inicio", filtros, parametros),
+      delResidente(filtros, parametros)
     );
+    return consultar(sql, parametros)
+      .stream()
+      .map(fila ->
+        new SituacionPrograma(
+          texto(fila, "etiqueta"),
+          numero(fila, "conRotacion"),
+          numero(fila, "enEspera")
+        )
+      )
+      .toList();
+  }
+
+  /** Número de residentes del periodo según cuántas rotaciones tienen en el corte. */
+  public Map<Integer, Long> residentesPorCantidadDeRotaciones(
+    DashboardFiltros filtros
+  ) {
+    var parametros = new ParametrosSql();
+    String sql = CARGA_POR_RESIDENTE.formatted(
+      periodo("rr.fecha_inicio", filtros, parametros) +
+        deLaRotacion("s.nombre", "rr.id_asignatura", filtros, parametros),
+      periodo("x.fecha_inicio", filtros, parametros),
+      delResidente(filtros, parametros)
+    );
+    Map<Integer, Long> residentes = new HashMap<>();
+    consultar(sql, parametros).forEach(fila ->
+      residentes.put(
+        (int) numero(fila, "rotaciones"),
+        numero(fila, "residentes")
+      )
+    );
+    return residentes;
+  }
+
+  /** Primer inicio y último fin entre las asignaciones; vacío si no hay ninguna. */
+  public Optional<Rango> rangoAsignaciones() {
+    var fila = consultar(RANGO_ASIGNACIONES, new ParametrosSql()).getFirst();
+    return fila.get("hasta") == null
+      ? Optional.empty()
+      : Optional.of(new Rango(fecha(fila, "desde"), fecha(fila, "hasta")));
+  }
+
+  /**
+   * Tramos de asignación entre {@code desde} y {@code hasta}. Con una asignatura se toma el
+   * servicio al que pertenece: el cupo es del servicio, no de la asignatura.
+   */
+  public List<Tramo> tramosOcupacion(
+    DashboardFiltros filtros,
+    LocalDate desde,
+    LocalDate hasta
+  ) {
+    var parametros = new ParametrosSql()
+      .con("desde", desde)
+      .con("hasta", hasta);
+    String sql = TRAMOS_OCUPACION.formatted(
+      parametros.y("s.nombre = :servicio", "servicio", filtros.servicio()) +
+        parametros.y(
+          "s.id_servicio = (select id_servicio from asignatura where id_asignatura = :asignaturaId)",
+          "asignaturaId",
+          filtros.asignaturaId()
+        )
+    );
+    return consultar(sql, parametros)
+      .stream()
+      .map(fila ->
+        new Tramo(
+          texto(fila, "servicio"),
+          (int) numero(fila, "cupo"),
+          fecha(fila, "desde"),
+          fecha(fila, "hasta")
+        )
+      )
+      .toList();
+  }
+
+  /**
+   * Pares de rotaciones que se cruzan. El periodo es el del primer día del cruce, y basta con
+   * que una de las dos rotaciones sea del servicio o la asignatura elegidos.
+   */
+  public List<ParCruzado> paresCruzados(DashboardFiltros filtros) {
+    var parametros = new ParametrosSql();
+    String sql = PARES_CRUZADOS.formatted(
+      periodo("greatest(a.fecha_inicio, b.fecha_inicio)", filtros, parametros) +
+        delResidente(filtros, parametros) +
+        parametros.y(
+          "(sa.nombre = :servicio or sb.nombre = :servicio)",
+          "servicio",
+          filtros.servicio()
+        ) +
+        parametros.y(
+          "(a.id_asignatura = :asignaturaId or b.id_asignatura = :asignaturaId)",
+          "asignaturaId",
+          filtros.asignaturaId()
+        )
+    );
+    return consultar(sql, parametros)
+      .stream()
+      .map(fila ->
+        new ParCruzado(
+          (int) numero(fila, "residenteId"),
+          texto(fila, "residente"),
+          texto(fila, "programa"),
+          texto(fila, "asignatura1"),
+          texto(fila, "servicio1"),
+          texto(fila, "asignatura2"),
+          texto(fila, "servicio2"),
+          fecha(fila, "desde"),
+          fecha(fila, "hasta")
+        )
+      )
+      .toList();
+  }
+
+  public List<ResidenteRevisar> residentesEnEspera(DashboardFiltros filtros) {
+    var parametros = new ParametrosSql();
+    String sql = RESIDENTES_EN_ESPERA.formatted(
+      periodo("rr.fecha_inicio", filtros, parametros) +
+        delResidente(filtros, parametros) +
+        deLaRotacion("s.nombre", "rr.id_asignatura", filtros, parametros)
+    );
+    return consultar(sql, parametros)
+      .stream()
+      .map(fila ->
+        new ResidenteRevisar(
+          (int) numero(fila, "residenteId"),
+          texto(fila, "residente"),
+          texto(fila, "programa"),
+          texto(fila, "motivo"),
+          texto(fila, "detalle")
+        )
+      )
+      .toList();
+  }
+
+  public long serviciosSinCoordinador() {
+    return (
+      (Number) consultaSql.escalar(SERVICIOS_SIN_COORDINADOR, Map.of())
+    ).longValue();
+  }
+
+  public List<RelacionFiltrosResponse> relaciones() {
+    return consultar(RELACIONES_FILTROS, new ParametrosSql())
+      .stream()
+      .map(fila ->
+        new RelacionFiltrosResponse(
+          texto(fila, "programa"),
+          texto(fila, "servicio"),
+          (int) numero(fila, "asignaturaId")
+        )
+      )
+      .toList();
+  }
+
+  // ---------- Condiciones compartidas ----------
+
+  /** Desde la proyección de rotaciones, con los filtros del corte. */
+  private String deRotaciones(
+    DashboardFiltros filtros,
+    ParametrosSql parametros,
+    boolean conUniversidad
+  ) {
+    return DESDE_ROTACIONES.formatted(
+      periodo("inicio", filtros, parametros) +
+        parametros.y("servicio = :servicio", "servicio", filtros.servicio()) +
+        parametros.y("programa = :programa", "programa", filtros.programa()) +
+        parametros.y(
+          "\"asignaturaId\" = :asignaturaId",
+          "asignaturaId",
+          filtros.asignaturaId()
+        ) +
+        (conUniversidad
+          ? parametros.y(
+              "universidad = :universidad",
+              "universidad",
+              filtros.universidad()
+            )
+          : "")
+    );
+  }
+
+  private String periodo(
+    String columna,
+    DashboardFiltros filtros,
+    ParametrosSql parametros
+  ) {
+    return parametros.y(
+      periodoDe(columna) + " = :periodo",
+      "periodo",
+      filtros.periodo()
+    );
+  }
+
+  /** Universidad y programa del residente; las consultas los unen como «u» y «p». */
+  private String delResidente(
+    DashboardFiltros filtros,
+    ParametrosSql parametros
+  ) {
+    return (
+      parametros.y(
+        "u.nombre_universidad = :universidad",
+        "universidad",
+        filtros.universidad()
+      ) +
+      parametros.y(
+        "p.nombre_programa = :programa",
+        "programa",
+        filtros.programa()
+      )
+    );
+  }
+
+  /** Servicio y asignatura de la rotación, con las columnas de cada consulta. */
+  private String deLaRotacion(
+    String columnaServicio,
+    String columnaAsignatura,
+    DashboardFiltros filtros,
+    ParametrosSql parametros
+  ) {
+    return (
+      parametros.y(
+        columnaServicio + " = :servicio",
+        "servicio",
+        filtros.servicio()
+      ) +
+      parametros.y(
+        columnaAsignatura + " = :asignaturaId",
+        "asignaturaId",
+        filtros.asignaturaId()
+      )
+    );
+  }
+
+  // ---------- Lectura de filas ----------
+
+  private List<Conteo> conteos(
+    String plantilla,
+    DashboardFiltros filtros,
+    boolean conUniversidad
+  ) {
+    var parametros = new ParametrosSql();
+    String sql = plantilla.formatted(
+      deRotaciones(filtros, parametros, conUniversidad)
+    );
+    return consultar(sql, parametros)
+      .stream()
+      .map(fila -> new Conteo(texto(fila, "etiqueta"), numero(fila, "valor")))
+      .toList();
+  }
+
+  private List<Map<String, Object>> consultar(
+    String sql,
+    ParametrosSql parametros
+  ) {
+    return consultaSql.consultar(sql, parametros.valores());
+  }
+
+  private static String texto(Map<String, Object> fila, String columna) {
+    Object valor = fila.get(columna);
+    return valor == null ? null : valor.toString();
+  }
+
+  /** Los conteos llegan como Long, BigInteger o Integer según el motor. */
+  private static long numero(Map<String, Object> fila, String columna) {
+    return ((Number) fila.get(columna)).longValue();
+  }
+
+  /** Las fechas llegan como texto o como LocalDate según la consulta y el motor. */
+  private static LocalDate fecha(Map<String, Object> fila, String columna) {
+    return LocalDate.parse(String.valueOf(fila.get(columna)));
   }
 }

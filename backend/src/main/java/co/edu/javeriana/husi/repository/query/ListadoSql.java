@@ -9,7 +9,8 @@ public final class ListadoSql {
     "extract(year from fecha_inicio)::int::text || '-' || case when extract(month from fecha_inicio)<=6 then '1' else '2' end";
   public static final String ROTACIONES = """
   select concat(rr.id_residente, '-', rr.id_asignatura, '-', rr.fecha_inicio, '-', rr.fecha_fin) as id,
-  res.nombre_completo as residente, u.nombre_universidad as universidad, s.nombre as servicio,
+  res.nombre_completo as residente, u.nombre_universidad as universidad, p.nombre_programa as programa,
+  s.nombre as servicio,
   a.nombre_asignatura as asignatura, rr.fecha_inicio as inicio, rr.fecha_fin as fin, rr.estado,
   '—' as doctor, rr.id_residente as "residenteId", rr.id_asignatura as "asignaturaId"
   from rotacion_residente rr join residente res using(id_residente)
