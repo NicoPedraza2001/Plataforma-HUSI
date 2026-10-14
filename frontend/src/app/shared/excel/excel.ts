@@ -71,6 +71,16 @@ export async function leerExcel(archivo: File, maxFilas = 1100): Promise<HojaExc
   });
 }
 
+/** Hoja de un libro descargable: encabezados en la fila 1 y luego las filas. */
+export interface HojaDescarga {
+  /** Excel admite hasta 31 caracteres y no acepta \ / ? * : [ ]. */
+  nombre: string;
+  columnas: string[];
+  filas: (string | number)[][];
+  /** Ancho fijo de todas las columnas; sin él, cada columna se ajusta a su texto más largo. */
+  ancho?: number;
+}
+
 /** Genera un .xlsx de una hoja (encabezados en negrita) y lo descarga. */
 export async function descargarLibro(
   nombreArchivo: string,
@@ -78,14 +88,24 @@ export async function descargarLibro(
   columnas: string[],
   filas: (string | number)[][],
 ): Promise<void> {
+  await descargarHojas(nombreArchivo, [{ nombre: nombreHoja, columnas, filas, ancho: 35 }]);
+}
+
+/** Genera un .xlsx con varias hojas (encabezados en negrita) y lo descarga. */
+export async function descargarHojas(nombreArchivo: string, hojas: HojaDescarga[]): Promise<void> {
   const { Workbook } = await import('exceljs');
   const libro: Workbook = new Workbook();
-  const hoja = libro.addWorksheet(nombreHoja);
-  hoja.addRow(columnas);
-  filas.forEach((fila) => hoja.addRow(fila));
-  hoja.getRow(1).font = { bold: true };
-  hoja.columns.forEach((columna) => {
-    columna.width = 35;
+  hojas.forEach(({ nombre, columnas, filas, ancho }) => {
+    const hoja = libro.addWorksheet(nombre);
+    hoja.addRow(columnas);
+    filas.forEach((fila) => hoja.addRow(fila));
+    hoja.getRow(1).font = { bold: true };
+    hoja.columns.forEach((columna, indice) => {
+      const largo = Math.max(
+        ...[columnas, ...filas].map((fila) => String(fila[indice] ?? '').length),
+      );
+      columna.width = ancho ?? Math.min(60, Math.max(10, largo + 2));
+    });
   });
   const buffer = await libro.xlsx.writeBuffer();
   const url = URL.createObjectURL(

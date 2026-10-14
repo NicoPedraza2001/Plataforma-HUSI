@@ -1,0 +1,94 @@
+/* La tabla, los distintivos y los botones vienen de src/styles/admin.css. */
+:host {
+  display: block;
+}
+
+/* Filtro por motivo a la izquierda y exportación a la derecha, en una sola fila. */
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 6px 12px;
+  border: 1px solid var(--husi-border);
+  border-radius: 999px;
+  background: var(--husi-bg);
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--husi-text);
+  cursor: pointer;
+}
+
+.chip strong {
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip:hover {
+  background: var(--husi-surface);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--husi-navy);
+  background: var(--husi-navy);
+  color: #fff;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+
+:host .table-wrap {
+  margin-top: 16px;
+}
+
+/* El motivo se lee en una sola línea aunque la columna sea estrecha. */
+.badge {
+  white-space: nowrap;
+}
+
+.col-detalle {
+  font-size: 0.78rem;
+  text-align: left;
+  color: var(--husi-muted);
+}
+
+/* Un cruce por línea: se lee qué asignaturas chocan y en qué días. */
+.detalle__linea {
+  display: block;
+}
+
+.detalle__linea + .detalle__linea {
+  margin-top: 4px;
+}
+
+.detalle__mas {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--husi-navy);
+  cursor: pointer;
+}
+
+.detalle__mas:hover {
+  text-decoration: underline;
+}
+
+.detalle__mas:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}

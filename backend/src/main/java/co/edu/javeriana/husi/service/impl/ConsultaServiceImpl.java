@@ -31,7 +31,11 @@ public class ConsultaServiceImpl implements ConsultaService {
       1,
       1000000
     );
-    int tamano = leerEnteroEnRango(parametros.getOrDefault("tamano", "10"), 1, 100);
+    int tamano = leerEnteroEnRango(
+      parametros.getOrDefault("tamano", "10"),
+      1,
+      100
+    );
     Map<String, String> filtros = new LinkedHashMap<>();
     parametros.forEach((nombre, valor) -> {
       if (
@@ -62,7 +66,9 @@ public class ConsultaServiceImpl implements ConsultaService {
           "servicio",
           "estado",
           "periodo",
-          "proximas"
+          "proximas",
+          "programa",
+          "asignaturaId"
         );
         default -> throw error("Listado no disponible.");
       }
@@ -81,16 +87,20 @@ public class ConsultaServiceImpl implements ConsultaService {
       );
       if (!limpio.isEmpty()) filtros.put(nombre, limpio);
     });
-    if (filtros.containsKey("universidadId")) leerEnteroEnRango(
-      filtros.get("universidadId"),
-      1,
-      Integer.MAX_VALUE
-    );
-    if (filtros.containsKey("servicioId")) leerEnteroEnRango(
-      filtros.get("servicioId"),
-      1,
-      Integer.MAX_VALUE
-    );
+    // Los filtros por id deben ser enteros positivos; el mensaje nombra el filtro, no la página.
+    for (String filtroId : List.of(
+      "universidadId",
+      "asignaturaId",
+      "servicioId"
+    )) {
+      if (!filtros.containsKey(filtroId)) continue;
+      try {
+        if (Integer.parseInt(filtros.get(filtroId)) >= 1) continue;
+      } catch (NumberFormatException e) {}
+      throw error(
+        "El filtro " + filtroId + " debe ser un número entero positivo."
+      );
+    }
     String periodo = filtros.get("periodo");
     if (periodo != null && !periodo.matches("[0-9]{4}-[12]")) throw error(
       "El periodo debe tener formato AAAA-1 o AAAA-2."

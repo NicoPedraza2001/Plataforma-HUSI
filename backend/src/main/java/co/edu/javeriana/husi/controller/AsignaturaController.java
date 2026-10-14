@@ -15,6 +15,11 @@ public class AsignaturaController {
 
   private final AsignaturaService asignaturaService;
 
+  @GetMapping("/catalogo")
+  public java.util.List<AsignaturaCatalogoResponse> catalogo() {
+    return asignaturaService.catalogo();
+  }
+
   @GetMapping("/{id}")
   public AsignaturaResponse consultar(@PathVariable Integer id) {
     return asignaturaService.consultar(id);

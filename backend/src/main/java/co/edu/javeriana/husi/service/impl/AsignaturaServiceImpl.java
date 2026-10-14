@@ -3,15 +3,15 @@ package co.edu.javeriana.husi.service.impl;
 import co.edu.javeriana.husi.dto.request.AsignaturaRequest;
 import co.edu.javeriana.husi.dto.response.*;
 import co.edu.javeriana.husi.exception.NegocioException;
+import co.edu.javeriana.husi.mapper.AsignaturaMapper;
 import co.edu.javeriana.husi.mapper.FotografiaAuditoriaMapper;
 import co.edu.javeriana.husi.mapper.FotografiaRegistro;
-import co.edu.javeriana.husi.mapper.AsignaturaMapper;
 import co.edu.javeriana.husi.model.entity.Asignatura;
 import co.edu.javeriana.husi.model.enums.AccionAuditoria;
 import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.*;
-import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.AsignaturaService;
+import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -95,6 +95,20 @@ public class AsignaturaServiceImpl implements AsignaturaService {
     );
     asignatura.setNombre(request.nombre().strip());
     asignatura.setServicio(servicio);
+  }
+
+  public java.util.List<AsignaturaCatalogoResponse> catalogo() {
+    return asignaturaRepository
+      .catalogo()
+      .stream()
+      .map(asignatura ->
+        new AsignaturaCatalogoResponse(
+          asignatura.getId(),
+          asignatura.getNombre(),
+          asignatura.getServicio().getNombre()
+        )
+      )
+      .toList();
   }
 
   public AsignaturaResponse consultar(Integer id) {

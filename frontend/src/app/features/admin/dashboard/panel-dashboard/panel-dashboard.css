@@ -49,6 +49,41 @@
   border-left-color: var(--grafico-4);
 }
 
+/* Solo el indicador que pide acción toma el color de estado; la etiqueta ya dice qué es. */
+.kpi--rojo {
+  border-left-color: var(--estado-critico);
+}
+
+.kpi--rojo .kpi__valor {
+  color: var(--husi-red-dark);
+}
+
+/* Mientras llega la respuesta de un filtro, lo anterior queda atenuado: sin parpadeos ni saltos. */
+.contenido {
+  transition: opacity 0.2s ease;
+}
+
+.contenido--actualizando {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Aviso breve mientras llega la respuesta; ocupa poco para no empujar el contenido. */
+.actualizando {
+  margin: 12px 0 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--husi-navy);
+}
+
+/* Acción secundaria de la fila de filtros: el botón verde queda para «Descargar reporte». */
+:host .filtros .limpiar {
+  align-self: flex-end;
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
 .kpi__etiqueta {
   font-size: 0.76rem;
   font-weight: 600;
@@ -99,6 +134,11 @@
   font-size: 1.02rem;
   font-weight: 700;
   color: var(--husi-navy);
+}
+
+/* Paneles sin nota: el aire bajo el título lo pone el propio título. */
+.panel__titulo + :not(.panel__nota) {
+  margin-top: 16px;
 }
 
 .panel__nota {
@@ -164,6 +204,55 @@
   color: var(--husi-navy);
 }
 
+/* Los avisos con destino son botones: misma rejilla, con respuesta al puntero y al foco. */
+/* Mismo relleno con o sin botón para que todos los avisos queden alineados. */
+.alertas .alerta {
+  padding: 6px 8px;
+}
+
+.alerta--boton {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.alerta--boton:hover {
+  background: var(--husi-surface);
+}
+
+.alerta--boton:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+}
+
+/* Botón secundario «Ver los N servicios». */
+.chip {
+  padding: 6px 12px;
+  border: 1px solid var(--husi-border);
+  border-radius: 999px;
+  background: var(--husi-bg);
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--husi-text);
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--husi-surface);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+
+.ver-mas {
+  margin-top: 16px;
+}
+
 /* ===================== TABLA ===================== */
 .panel--tabla {
   margin-top: 16px;
@@ -192,4 +281,11 @@
   .filtro {
     flex: 1 1 160px;
   }
+}
+
+/* Los gráficos son elementos propios: en bloque para que el aire bajo el título se aplique. */
+app-grafico-barras,
+app-grafico-tendencia,
+app-mapa-ocupacion {
+  display: block;
 }

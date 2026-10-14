@@ -1,0 +1,86 @@
+<div class="cabecera">
+  <ul class="leyenda">
+    @for (total of totales(); track total.clave; let indice = $index) {
+      <li class="leyenda__item">
+        <span class="muestra" [class]="'muestra--' + (indice + 1)" aria-hidden="true"></span>
+        {{ total.etiqueta }}
+        <strong>{{ total.valor }}</strong>
+      </li>
+    }
+  </ul>
+  <button
+    type="button"
+    class="vista"
+    [attr.aria-pressed]="vistaTabla()"
+    (click)="vistaTabla.set(!vistaTabla())"
+  >
+    {{ vistaTabla() ? 'Ver gráfico' : 'Ver tabla' }}
+  </button>
+</div>
+
+@if (vistaTabla()) {
+  <div class="table-wrap">
+    <table class="tabla tabla--compacta">
+      <thead>
+        <tr>
+          <th scope="col">Programa</th>
+          @for (categoria of categorias; track categoria.clave) {
+            <th scope="col" class="num">{{ categoria.etiqueta }}</th>
+          }
+          <th scope="col" class="num">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of filas(); track fila.etiqueta) {
+          <tr>
+            <td>{{ fila.etiqueta }}</td>
+            <td class="num">{{ fila.conRotacion }}</td>
+            <td class="num">{{ fila.enEspera }}</td>
+            <td class="num">{{ fila.total }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="tabla__vacia" colspan="4">No hay residentes en este periodo</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <ul class="filas">
+    @for (fila of filas(); track fila.etiqueta; let indiceFila = $index) {
+      <li class="fila">
+        <span class="fila__etiqueta" [title]="fila.etiqueta">{{ fila.corta }}</span>
+
+        <span class="fila__barra" role="img" [attr.aria-label]="resumen(fila)">
+          @for (segmento of fila.segmentos; track segmento.clave) {
+            <span
+              class="segmento"
+              [class]="'segmento--' + (segmento.indice + 1)"
+              [class.segmento--activo]="
+                activo()?.fila === indiceFila && activo()?.clave === segmento.clave
+              "
+              [style.flex-grow]="segmento.porcentaje"
+              (pointerenter)="activo.set({ fila: indiceFila, clave: segmento.clave })"
+              (pointerleave)="activo.set(null)"
+            ></span>
+          }
+        </span>
+
+        <span class="fila__total">{{ fila.total }}</span>
+
+        @if (detalle(); as globo) {
+          @if (globo.fila === indiceFila) {
+            <span class="globo" role="status">
+              <strong>{{ globo.valor }} · {{ globo.porcentaje }}%</strong>
+              {{ globo.etiqueta }}
+              <small>{{ globo.programa }}</small>
+            </span>
+          }
+        }
+      </li>
+    } @empty {
+      <li class="vacio">No hay residentes en este periodo.</li>
+    }
+  </ul>
+}

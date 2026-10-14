@@ -22,6 +22,12 @@ describe('AsignaturaService', () => {
     expect(solicitud.request.params.get('pagina')).toBe('2');
     solicitud.flush({ contenido: [], totalElementos: 0, totalPaginas: 1, pagina: 1, tamano: 10 });
   });
+  it('pide el catálogo de asignaturas con su servicio', () => {
+    servicio.catalogo().subscribe();
+    const solicitud = http.expectOne('/api/asignaturas/catalogo');
+    expect(solicitud.request.method).toBe('GET');
+    solicitud.flush([{ id: 1, nombre: 'Cadera', servicio: 'Alto Riesgo' }]);
+  });
   it('usa los endpoints de escritura y consulta', () => {
     const datos = { nombre: 'Materia', servicioId: 1 };
     servicio.crear(datos).subscribe();

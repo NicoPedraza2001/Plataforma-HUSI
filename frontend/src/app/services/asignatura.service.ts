@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Asignatura, AsignaturaRequest } from '../models/asignatura.model';
+import { Asignatura, AsignaturaCatalogo, AsignaturaRequest } from '../models/asignatura.model';
 import { Pagina, Parametros } from '../models/pagina.model';
 import { API_URL } from './api.config';
 
@@ -12,6 +12,11 @@ export class AsignaturaService {
   /** GET /api/asignaturas */
   listar(params: Parametros): Observable<Pagina<Asignatura>> {
     return this.http.get<Pagina<Asignatura>>(`${API_URL}/asignaturas`, { params });
+  }
+
+  /** GET /api/asignaturas/catalogo */
+  catalogo(): Observable<AsignaturaCatalogo[]> {
+    return this.http.get<AsignaturaCatalogo[]>(`${API_URL}/asignaturas/catalogo`);
   }
 
   /** GET /api/asignaturas/{id} */

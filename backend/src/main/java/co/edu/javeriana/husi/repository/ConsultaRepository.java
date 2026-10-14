@@ -42,6 +42,9 @@ public class ConsultaRepository {
     filtros.forEach((clave, valor) -> {
       switch (clave) {
         case "servicioId" -> where.append(" and \"servicioId\"=:servicioId");
+        case "asignaturaId" -> where.append(
+          " and \"asignaturaId\"=:asignaturaId"
+        );
         case "universidadId" -> where.append(
           " and \"universidadId\"=:universidadId"
         );
@@ -71,7 +74,9 @@ public class ConsultaRepository {
       }
       if (!clave.equals("proximas")) parametros.put(
         clave,
-        clave.equals("universidadId") || clave.equals("servicioId")
+        clave.equals("universidadId") ||
+          clave.equals("servicioId") ||
+          clave.equals("asignaturaId")
           ? Integer.valueOf(valor)
           : clave.equals("desde") || clave.equals("hasta")
             ? java.time.LocalDate.parse(valor)
