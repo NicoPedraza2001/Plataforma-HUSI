@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,8 +31,7 @@ public class UsuarioServiceImpl implements UsuarioService {
   private final UsuarioMapper usuarioMapper;
   private final HistorialAuditoriaService historialAuditoria;
   private final FotografiaAuditoriaMapper fotografias;
-  private final BCryptPasswordEncoder codificadorContrasena =
-    new BCryptPasswordEncoder();
+  private final PasswordEncoder codificadorContrasena;
 
   private Usuario buscarUsuarioBloqueado(Integer id) {
     return usuarioRepository

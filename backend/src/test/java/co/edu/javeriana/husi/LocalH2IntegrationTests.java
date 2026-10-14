@@ -2,29 +2,33 @@ package co.edu.javeriana.husi;
 
 import static org.assertj.core.api.Assertions.*;
 
-import java.net.*;
 import java.net.http.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  properties = "husi.seguridad.administrador-inicial.contrasena=" +
+  ClienteApiDePrueba.CONTRASENA_ADMINISTRADOR
+)
 @ActiveProfiles("local")
 class LocalH2IntegrationTests {
 
   @LocalServerPort
   int port;
 
+  private ClienteApiDePrueba administrador;
+
+  /** Todas las llamadas de esta clase se hacen con la sesión del administrador. */
+  private ClienteApiDePrueba administrador() throws Exception {
+    if (administrador == null) administrador = ClienteApiDePrueba.conSesionDeAdministrador(port);
+    return administrador;
+  }
+
   private HttpResponse<String> get(String ruta) throws Exception {
-    return HttpClient.newHttpClient().send(
-      HttpRequest.newBuilder(
-        URI.create("http://localhost:" + port + "/api/" + ruta)
-      )
-        .GET()
-        .build(),
-      HttpResponse.BodyHandlers.ofString()
-    );
+    return administrador().get(ruta);
   }
 
   @Test
@@ -53,15 +57,7 @@ class LocalH2IntegrationTests {
 
   private HttpResponse<String> enviar(String metodo, String ruta, String cuerpo)
     throws Exception {
-    return HttpClient.newHttpClient().send(
-      HttpRequest.newBuilder(
-        URI.create("http://localhost:" + port + "/api/" + ruta)
-      )
-        .header("Content-Type", "application/json")
-        .method(metodo, HttpRequest.BodyPublishers.ofString(cuerpo))
-        .build(),
-      HttpResponse.BodyHandlers.ofString()
-    );
+    return administrador().enviar(metodo, ruta, cuerpo);
   }
 
   private int crear(String ruta, String cuerpo) throws Exception {

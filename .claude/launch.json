@@ -4,13 +4,36 @@
     {
       "name": "husi-frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "frontend", "run", "start", "--", "--port", "4200"],
+      "runtimeArgs": [
+        "--prefix",
+        "frontend",
+        "run",
+        "start",
+        "--",
+        "--port",
+        "4200"
+      ],
       "port": 4200
     },
     {
       "name": "husi-backend",
       "runtimeExecutable": "backend/mvnw.cmd",
-      "runtimeArgs": ["-f", "backend/pom.xml", "spring-boot:run"],
+      "runtimeArgs": [
+        "-f",
+        "backend/pom.xml",
+        "spring-boot:run"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "husi-backend-local",
+      "runtimeExecutable": "backend/mvnw.cmd",
+      "runtimeArgs": [
+        "-f",
+        "backend/pom.xml",
+        "spring-boot:run",
+        "-Dspring-boot.run.profiles=local,personal"
+      ],
       "port": 8080
     }
   ]

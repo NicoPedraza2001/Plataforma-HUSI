@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { SesionActual } from '../../../services/sesion-actual';
 
 /** Enlace suelto de la barra lateral. */
 interface AdminNavItem {
@@ -21,6 +22,18 @@ interface AdminNavGroup {
   styleUrl: './admin-layout.css',
 })
 export class AdminLayout {
+  // Dependencias
+  private readonly sesionActual = inject(SesionActual);
+  private readonly router = inject(Router);
+
+  protected readonly perfil = this.sesionActual.perfil;
+
+  protected async cerrarSesion(): Promise<void> {
+    // Si el backend no responde, igual se sale: la sesión expira sola en el servidor.
+    await this.sesionActual.cerrar().catch(() => undefined);
+    await this.router.navigateByUrl('/login');
+  }
+
   /**
    * Menú único del panel: concentra todas las redirecciones del administrador.
    * Las rutas que todavía no están registradas en app.routes.ts se irán

@@ -8,11 +8,14 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @Transactional
+// Los cambios se firman en el historial con el usuario en sesión.
+@WithUserDetails("admin@husi.com")
 class UniversidadIntegrationTests {
 
   @Autowired

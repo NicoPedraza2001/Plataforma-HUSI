@@ -12,9 +12,11 @@ import { ListadoServicios } from './features/admin/servicios/listado-servicios/l
 import { ListadoUniversidades } from './features/admin/universidades/listado-universidades/listado-universidades';
 import { ListadoUsuarios } from './features/admin/usuarios/listado-usuarios/listado-usuarios';
 import { Login } from './features/auth/login/login';
+import { ROL_ADMINISTRADOR } from './models/sesion.model';
 import { Landing } from './features/public/landing/pages/landing/landing';
 import { AdminLayout } from './layout/admin/admin-layout/admin-layout';
 import { PublicLayout } from './layout/public/public-layout/public-layout';
+import { requiereRol } from './services/sesion.guard';
 
 export const routes: Routes = [
   {
@@ -36,6 +38,8 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: AdminLayout,
+    // Todo el panel exige sesión con rol Administrador (el backend lo vuelve a comprobar).
+    canActivate: [requiereRol(ROL_ADMINISTRADOR)],
     children: [
       { path: '', redirectTo: 'residentes', pathMatch: 'full' },
       { path: 'rotaciones', component: ListadoRotaciones },

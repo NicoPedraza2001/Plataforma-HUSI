@@ -6,9 +6,23 @@ todos los computadores del equipo.
 
 ## Levantar
 
+La primera vez, crea el archivo `.env` (ignorado por git) con la contraseña del
+administrador `admin@husi.com`:
+
 ```bash
-docker compose up -d
+copy .env.example .env      # luego edita .env y escribe HUSI_ADMIN_CONTRASENA_INICIAL
 ```
+
+```bash
+docker compose up -d --build
+```
+
+- `--build` reconstruye la imagen del backend con el código actual; sin él, Docker
+  reutiliza la imagen anterior.
+- Al arrancar, el backend guarda el hash BCrypt de esa contraseña. Solo pasa la primera
+  vez: si el admin ya tiene contraseña, la variable se ignora (se cambia en Usuarios).
+- El frontend se sigue levantando con `npm start` desde `frontend` (su proxy envía
+  `/api` al backend del contenedor en `localhost:8080`).
 
 - PostgreSQL: `localhost:5432` — base `husi`, usuario `husi`, contraseña `husi_dev`.
 - pgAdmin: <http://localhost:5050> — `admin@husi.com` / `admin_dev`. El servidor

@@ -46,6 +46,19 @@ server:
   servlet:
     # Todos los endpoints quedan bajo /api  ->  http://localhost:8080/api/usuarios
     context-path: /api
+    session:
+      # La sesion se cierra sola tras 30 minutos sin peticiones.
+      timeout: 30m
+      cookie:
+        name: HUSI_SESION
+        # JavaScript no puede leer la cookie (protege contra robo por XSS).
+        http-only: true
+        # El navegador no la envia en peticiones iniciadas desde otros sitios (CSRF).
+        same-site: strict
+        # Solo viaja por HTTPS. En dev se apaga porque localhost usa HTTP.
+        secure: true
+      # El id de sesion nunca viaja en la URL (;jsessionid=...).
+      tracking-modes: cookie
 
 # Documentacion interactiva: http://localhost:8080/api/swagger-ui.html
 springdoc:
@@ -57,10 +70,19 @@ springdoc:
 # Propiedades propias de la plataforma
 # ============================================================
 husi:
-  auditoria:
-    # Mientras no exista inicio de sesion, los cambios del historial se firman
-    # con este usuario (ver security/UsuarioEnSesion.java).
-    correo-usuario-sin-sesion: admin@husi.com
+  seguridad:
+    # Swagger UI sin iniciar sesion. Solo en dev; en prod la documentacion pide sesion.
+    documentacion-publica: false
+    inicio-sesion:
+      # Tras 5 contrasenas incorrectas seguidas, el correo queda bloqueado 15 minutos.
+      intentos-maximos: 5
+      minutos-bloqueo: 15
+    administrador-inicial:
+      correo: admin@husi.com
+      # Contrasena del primer inicio de sesion del administrador. Nunca se escribe
+      # aqui: se lee de la variable de entorno HUSI_ADMIN_CONTRASENA_INICIAL
+      # (ver security/InicializadorContrasenaAdministrador.java).
+      contrasena: ${HUSI_ADMIN_CONTRASENA_INICIAL:}
   cors:
     # Origen del frontend Angular en desarrollo. Lo consume la futura
     # clase config/CorsConfig.java

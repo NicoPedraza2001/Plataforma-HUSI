@@ -28,7 +28,14 @@
     <dependencies>
         <!-- Perfil local sin Docker; API Trigger para equivalencia de cupos. -->
         <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId></dependency>
-        <dependency><groupId>org.springframework.security</groupId><artifactId>spring-security-crypto</artifactId></dependency>
+
+        <!-- ================= Seguridad ================= -->
+        <!-- Inicio de sesion, roles, CSRF y hash BCrypt de contrasenas
+             (ver security/ConfiguracionSeguridad.java). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
 
         <!-- ================= Capa web (controllers REST) ================= -->
         <dependency>
@@ -85,20 +92,16 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- @WithUserDetails: ejecuta los tests de servicios con un usuario autenticado. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- ================= Pendientes por caso de uso =================
              Se activan cuando se llegue al caso de uso correspondiente,
              para no bloquear los endpoints antes de tiempo.
-
-             CU de autenticacion (login con JWT y roles):
-             <dependency>
-                 <groupId>org.springframework.boot</groupId>
-                 <artifactId>spring-boot-starter-security</artifactId>
-             </dependency>
-             <dependency>
-                 <groupId>io.jsonwebtoken</groupId>
-                 <artifactId>jjwt-api</artifactId>
-                 <version>0.13.0</version>
-             </dependency>
 
              CU de carga masiva desde Excel:
              <dependency>

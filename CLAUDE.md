@@ -65,6 +65,7 @@ La estructura es un espejo del backend para encontrar cada pieza en ambos lados:
 | `models/universidad.model.ts` → `Universidad`, `UniversidadDetalle` | `dto/response/UniversidadCatalogoResponse`, `dto/response/UniversidadResponse` |
 | `models/importacion-programas.model.ts` | `dto/*/ImportacionProgramas*` |
 | `models/api-error.model.ts` → `ApiError` + `services/api-error.ts` | `exception/ApiExceptionHandler` |
+| `services/sesion.service.ts` → `SesionService` (+ `sesion-actual.ts`, `sesion.guard.ts`) | `controller/SesionController` (`/api/sesion`) + `security/` |
 
 Al conectar un módulo nuevo (p. ej. servicios, residentes):
 
@@ -81,6 +82,10 @@ Al conectar un módulo nuevo (p. ej. servicios, residentes):
 
 `/api` lo redirige `proxy.conf.json` a `localhost:8080` en desarrollo (el backend usa
 `context-path: /api`).
+
+Toda la API exige sesión (cookie HttpOnly `HUSI_SESION` + token CSRF); `/admin` lo protege
+`requiereRol(ROL_ADMINISTRADOR)`. Nunca guardar tokens ni contraseñas en `localStorage`.
+Detalle en docs/organizacion-codigo.md, «Inicio de sesión y seguridad».
 
 ## Convenciones de componentes
 

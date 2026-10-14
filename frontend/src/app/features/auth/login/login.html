@@ -43,7 +43,7 @@
       >
         <h1 class="login__title">Inicia Sesión</h1>
 
-        <div class="field" [class.field--error]="esCampoInvalido('usuario')">
+        <div class="field" [class.field--error]="esCampoInvalido('correo')">
           <span class="field__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <circle cx="12" cy="8" r="4" fill="currentColor" />
@@ -57,11 +57,13 @@
             </svg>
           </span>
           <input
-            id="usuario"
-            type="text"
-            formControlName="usuario"
-            placeholder="Usuario"
+            id="correo"
+            type="email"
+            formControlName="correo"
+            placeholder="Correo"
+            aria-label="Correo"
             autocomplete="username"
+            maxlength="150"
           />
         </div>
 
@@ -83,19 +85,27 @@
             type="password"
             formControlName="contrasena"
             placeholder="Contraseña"
+            aria-label="Contraseña"
             autocomplete="current-password"
+            maxlength="72"
           />
         </div>
 
         @if (mostrarErrores()) {
-          <p class="login__hint" role="alert">Ingresa tu usuario y tu contraseña para continuar.</p>
+          <p class="login__hint" role="alert">
+            Ingresa un correo válido y tu contraseña para continuar.
+          </p>
+        } @else if (error()) {
+          <p class="login__hint" role="alert">{{ error() }}</p>
         }
 
         <a class="login__link" href="#" (click)="$event.preventDefault()">
           ¿Olvidaste la contraseña?
         </a>
 
-        <button class="login__submit" type="submit">Inicia Sesión</button>
+        <button class="login__submit" type="submit" [disabled]="enviando()">
+          {{ enviando() ? 'Verificando…' : 'Inicia Sesión' }}
+        </button>
       </form>
     </div>
   </div>

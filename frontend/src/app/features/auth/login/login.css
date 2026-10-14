@@ -179,9 +179,14 @@
     transform 0.2s ease;
 }
 
-.login__submit:hover {
+.login__submit:hover:not(:disabled) {
   background: var(--husi-blue);
   transform: translateY(-1px);
+}
+
+.login__submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
 }
 
 /* ---------- Responsive ---------- */

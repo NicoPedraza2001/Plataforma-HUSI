@@ -25,7 +25,14 @@ vez. Por eso Hibernate corre con `ddl-auto: validate` y nunca modifica tablas.
    docker compose up -d postgres
    ```
 
-2. Backend (no hace falta instalar Maven, el wrapper lo resuelve):
+2. Backend (no hace falta instalar Maven, el wrapper lo resuelve). La primera
+   vez, define la contrasena del administrador `admin@husi.com` (no se guarda
+   en el repositorio; el backend guarda su hash BCrypt al arrancar):
+
+   ```
+   $env:HUSI_ADMIN_CONTRASENA_INICIAL = "<minimo 8 caracteres>"   # PowerShell
+   ```
+
 
    ```
    cd backend
@@ -64,7 +71,7 @@ HTTP  ->  controller  ->  service (interfaz)  ->  service.impl  ->  repository  
 | `dto/response`   | Datos que salen al frontend. Nunca se expone una entidad JPA.                 |
 | `mapper`         | Conversion entidad <-> DTO.                                                   |
 | `exception`      | Excepciones propias y el manejador global `@RestControllerAdvice`.            |
-| `security`       | Spring Security y JWT. Se completa en el caso de uso de autenticacion.        |
+| `security`       | Spring Security: sesion en el servidor, roles, CSRF y BCrypt.                |
 | `util`           | Utilidades sin estado.                                                        |
 
 ## Como agregar un caso de uso

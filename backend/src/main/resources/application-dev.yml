@@ -19,6 +19,15 @@ logging:
   level:
     co.edu.javeriana.husi: DEBUG
 
+server:
+  servlet:
+    session:
+      cookie:
+        # localhost no usa HTTPS; en prod la cookie exige HTTPS (application.yml).
+        secure: false
+
 husi:
+  seguridad:
+    documentacion-publica: true
   cors:
     allowed-origins: http://localhost:4200,http://127.0.0.1:4200,http://localhost:4201,http://127.0.0.1:4201

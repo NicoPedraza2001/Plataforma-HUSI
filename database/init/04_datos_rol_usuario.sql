@@ -5,9 +5,10 @@
 -- PostgreSQL por primera vez (docker-entrypoint-initdb.d).
 -- ============================================================
 
--- PENDIENTE: la contrasena del administrador es un marcador de posicion.
--- Reemplazarla por un hash real generado con BCryptPasswordEncoder antes
--- de probar el login.
+-- La contrasena del administrador es un marcador de posicion a proposito:
+-- ninguna contrasena ni hash real se guarda en el repositorio. Al arrancar,
+-- el backend (security/InicializadorContrasenaAdministrador.java) guarda el
+-- hash BCrypt de la variable de entorno HUSI_ADMIN_CONTRASENA_INICIAL.
 
 INSERT INTO rol (nombre_rol) VALUES
     ('Administrador'),

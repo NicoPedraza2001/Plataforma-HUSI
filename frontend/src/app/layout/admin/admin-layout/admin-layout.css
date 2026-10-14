@@ -206,9 +206,58 @@
 }
 
 /* ===================== PIE DE LA BARRA ===================== */
-.sidebar__footer {
-  /* Empuja el logo al fondo del riel y aprovecha el espacio libre. */
+/* Usuario en sesión y botón de salida. Empuja el bloque y el logo al fondo del riel. */
+.sidebar__sesion {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  text-align: center;
+  color: #fff;
+}
+
+.sidebar__usuario {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.sidebar__usuario-nombre {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.sidebar__usuario-rol {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.sidebar__salir {
+  padding: 7px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar__salir:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.sidebar__salir:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+
+.sidebar__footer {
   display: flex;
   justify-content: center;
   padding: 22px 24px 0;
@@ -270,6 +319,13 @@
 
   /* En horizontal el riel no tiene espacio sobrante que rellenar: el logo
      se recoge junto a la marca en lugar de colgar al final. */
+  .sidebar__sesion {
+    margin-top: 0;
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+
   .sidebar__footer {
     margin-top: 0;
     padding: 0 24px;

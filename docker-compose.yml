@@ -65,6 +65,11 @@ services:
     environment:
       # Perfil dev, pero apuntando al contenedor de Postgres en vez de localhost.
       SPRING_DATASOURCE_URL: jdbc:postgresql://husi-postgres:5432/husi
+      # Contrasena del primer inicio de sesion de admin@husi.com. Se lee del
+      # archivo .env (ignorado por git; ver .env.example) o de la variable de
+      # entorno de la terminal. Solo se usa mientras el admin no tenga
+      # contrasena; despues se cambia desde la pantalla de Usuarios.
+      HUSI_ADMIN_CONTRASENA_INICIAL: ${HUSI_ADMIN_CONTRASENA_INICIAL:-}
 
     ports:
       - "8080:8080"

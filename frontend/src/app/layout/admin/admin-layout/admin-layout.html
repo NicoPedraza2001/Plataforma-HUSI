@@ -34,6 +34,16 @@
     }
   </nav>
 
+  <div class="sidebar__sesion">
+    @if (perfil(); as usuario) {
+      <p class="sidebar__usuario">
+        <span class="sidebar__usuario-nombre">{{ usuario.nombres }} {{ usuario.apellidos }}</span>
+        <span class="sidebar__usuario-rol">{{ usuario.rol }}</span>
+      </p>
+    }
+    <button class="sidebar__salir" type="button" (click)="cerrarSesion()">Cerrar sesión</button>
+  </div>
+
   <div class="sidebar__footer">
     <img
       class="sidebar__logo"

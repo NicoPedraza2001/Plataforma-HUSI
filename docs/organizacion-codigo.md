@@ -57,8 +57,18 @@ Cada cambio que hace un administrador queda en `historial_auditoria` con quién 
 
 - Cada servicio toma la fotografía con `FotografiaAuditoriaMapper` **antes** de modificar la entidad y llama a `HistorialAuditoriaService.registrar(...)` después de guardar, dentro de la misma transacción: si el cambio se revierte, su registro también. Guardar un formulario sin cambios no deja movimiento. La contraseña de un usuario nunca se guarda; solo consta «Se cambió».
 - **Importaciones**: una importación ocupa una sola fila (`lote_importacion`) con el resumen («Residentes creados: 120», «Filas omitidas: 3»…), no una por registro. La importación de programas y la confirmación de la carga inicial lo hacen con `ejecutarComoImportacion`. El asistente de Excel crea registros con las rutas individuales, así que `LoteImportacion` + `loteImportacionInterceptor` envían `X-Lote-Importacion` (y el nombre del archivo) mientras está abierto, y `LoteImportacionFiltro` los agrupa en la misma fila. Si el asistente se abandona antes de confirmar, la fila queda con estado «En curso».
-- **Usuario responsable**: mientras no exista inicio de sesión, firma `husi.auditoria.correo-usuario-sin-sesion` (`admin@husi.com`). Al integrar Spring Security solo cambia `security/UsuarioEnSesion`.
+- **Usuario responsable**: firma el usuario de la sesión iniciada (`security/UsuarioEnSesion`).
 - Bases PostgreSQL creadas antes de este cambio deben ejecutar `database/migrations/20261010_historial_auditoria_detalle.sql`; sin esas columnas Hibernate (`ddl-auto: validate`) no arranca.
+
+## Inicio de sesión y seguridad
+
+- **Backend** (`security/`): `ConfiguracionSeguridad` define las reglas. `POST /sesion/iniciar` es la única ruta abierta; `/sesion/**` exige sesión y el resto de la API, rol Administrador. Para abrir rutas al coordinador, agregarlas ahí.
+- **Sesión en el servidor**: al iniciar sesión, `SesionServiceImpl` crea una sesión nueva (id distinto, contra fijación de sesión) y el navegador solo recibe la cookie `HUSI_SESION` (HttpOnly, SameSite=Strict, Secure fuera de dev, 30 min de inactividad). El frontend nunca ve un token ni la contraseña después de enviarla.
+- **CSRF**: la cookie `XSRF-TOKEN` (ruta `/`) se copia en la cabecera `X-XSRF-TOKEN`; Angular lo hace solo en POST/PUT/PATCH/DELETE.
+- **Contraseñas**: BCrypt costo 12 (`PasswordEncoder` único, también lo usa `UsuarioServiceImpl`). Mismo mensaje para correo inexistente, contraseña errada o usuario inactivo. `LimiteIntentosInicioSesion` bloquea un correo 15 min tras 5 fallos.
+- **Administrador inicial**: los scripts guardan un marcador en vez de un hash. Al arrancar, `InicializadorContrasenaAdministrador` guarda el hash de la variable de entorno `HUSI_ADMIN_CONTRASENA_INICIAL` si `admin@husi.com` aún no tiene contraseña; nunca sobrescribe una existente.
+- **Frontend**: `services/sesion-actual.ts` guarda el perfil en un signal; `services/sesion.guard.ts` (`requiereRol`) protege `/admin`; `services/sesion-expirada.interceptor.ts` lleva al login ante un 401. El panel de cada rol está en `PANEL_POR_ROL` (el coordinador todavía no tiene).
+- **Tests**: los de servicios usan `@WithUserDetails("admin@husi.com")`; los que llaman por HTTP usan `ClienteApiDePrueba`, que inicia sesión y envía el token CSRF. `SesionH2IntegrationTests` cubre 401/403, CSRF, bloqueo y cierre de sesión.
 
 ## Dónde agregar cambios
 
@@ -68,7 +78,7 @@ Una pantalla nueva pertenece a su módulo en `features`; un formulario específi
 
 Desde `frontend`: `npm start -- --port 4200`, `npm run build`, `npm test -- --watch=false` y `npm run format:check`.
 
-Desde `backend`: `./mvnw.cmd spring-boot:run` y `./mvnw.cmd test`. Las pruebas de integración requieren PostgreSQL disponible con la configuración local del proyecto.
+Desde `backend`: `./mvnw.cmd spring-boot:run` y `./mvnw.cmd test`. Para iniciar sesión en local, definir antes `HUSI_ADMIN_CONTRASENA_INICIAL` (o `husi.seguridad.administrador-inicial.contrasena` en `application-personal.yml`, ignorado por git, con el perfil `local,personal`). Las pruebas de integración requieren PostgreSQL disponible con la configuración local del proyecto.
 
 Las pruebas de los CRUD de residentes y usuarios se describen en residentes-usuarios.md.
 

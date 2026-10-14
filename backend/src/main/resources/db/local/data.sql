@@ -1,6 +1,6 @@
 -- Datos ficticios exclusivos de H2 para recorrer los módulos.
 INSERT INTO rol(nombre_rol) VALUES ('Administrador'),('Coordinador');
--- Firma el historial de cambios mientras no exista inicio de sesión (husi.auditoria.correo-usuario-sin-sesion).
+-- Administrador inicial. Sin hash real: al arrancar, InicializadorContrasenaAdministrador le asigna HUSI_ADMIN_CONTRASENA_INICIAL.
 INSERT INTO usuario(id_rol,nombre,apellido,correo,contrasena) VALUES (1,'Administrador','Sistema','admin@husi.com','$2a$10$REEMPLAZAR_POR_HASH_BCRYPT_REAL');
 INSERT INTO universidad(nombre_universidad,pais) VALUES ('Universidad de demostración','Colombia');
 INSERT INTO programa(id_universidad,nombre_programa) VALUES (1,'Convenio Nacional');
