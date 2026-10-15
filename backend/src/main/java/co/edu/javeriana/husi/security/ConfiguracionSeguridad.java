@@ -29,9 +29,9 @@ import org.springframework.security.web.csrf.CsrfFilter;
  *       que JavaScript no puede leer. No se entrega ningún token al frontend.
  *   <li><b>CSRF</b>: las peticiones que modifican datos deben llevar la cabecera
  *       {@code X-XSRF-TOKEN} con el valor de la cookie {@code XSRF-TOKEN}; Angular lo hace solo.
- *   <li><b>Roles</b>: {@code /sesion/**} es para cualquier usuario autenticado; el resto de la
- *       API, por ahora, solo para {@link RolUsuario#ADMINISTRADOR}. Al construir el panel del
- *       coordinador, abrir aquí las rutas que necesite.
+ *   <li><b>Roles</b>: {@code /sesion/**} es para cualquier usuario autenticado;
+ *       {@code /coordinador/**}, solo para {@link RolUsuario#COORDINADOR} (su panel); el resto de
+ *       la API, solo para {@link RolUsuario#ADMINISTRADOR}.
  * </ul>
  */
 @Configuration
@@ -71,6 +71,7 @@ public class ConfiguracionSeguridad {
           .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
           .permitAll();
         rutas.requestMatchers("/sesion/**").authenticated();
+        rutas.requestMatchers("/coordinador/**").hasRole(RolUsuario.COORDINADOR.name());
         rutas.anyRequest().hasRole(RolUsuario.ADMINISTRADOR.name());
       });
     return http.build();

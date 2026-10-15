@@ -5,6 +5,8 @@ import static co.edu.javeriana.husi.ClienteApiDePrueba.CORREO_ADMINISTRADOR;
 import static org.assertj.core.api.Assertions.*;
 
 import co.edu.javeriana.husi.ClienteApiDePrueba;
+import co.edu.javeriana.husi.util.Calendario;
+import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,15 +40,22 @@ class SesionH2IntegrationTests {
    * del administrador y devuelve su correo.
    */
   private String crearCoordinador() throws Exception {
-    var administrador = ClienteApiDePrueba.conSesionDeAdministrador(puerto);
-    var servicio = administrador.enviar(
+    return crearCoordinadorDelServicio(crearServicio("Servicio " + UUID.randomUUID()));
+  }
+
+  /** Crea un servicio activo con cupo para tres residentes simultáneos y devuelve su id. */
+  private String crearServicio(String nombre) throws Exception {
+    var servicio = ClienteApiDePrueba.conSesionDeAdministrador(puerto).enviar(
       "POST",
       "servicios",
-      "{\"nombre\":\"Servicio " + UUID.randomUUID() + "\",\"cupoSimultaneo\":1,\"cupoMaximoInstalado\":1}"
+      "{\"nombre\":\"" + nombre + "\",\"cupoSimultaneo\":3,\"cupoMaximoInstalado\":3}"
     );
     assertThat(servicio.statusCode()).as(servicio.body()).isEqualTo(201);
-    String idServicio = servicio.body().replaceAll("^\\{\"id\":(\\d+).*", "$1");
+    return servicio.body().replaceAll("^\\{\"id\":(\\d+).*", "$1");
+  }
 
+  private String crearCoordinadorDelServicio(String idServicio) throws Exception {
+    var administrador = ClienteApiDePrueba.conSesionDeAdministrador(puerto);
     String correo = "coordinador-" + UUID.randomUUID() + "@example.test";
     var respuesta = administrador.enviar(
       "POST",
@@ -249,5 +258,75 @@ class SesionH2IntegrationTests {
         "%" + correoNuevo + "%"
       )
     ).isEqualTo(1);
+  }
+
+  @Test
+  void elCoordinadorVeSoloLosResidentesQueRotanHoyEnSuServicio() throws Exception {
+    String nombreServicio = "Servicio " + UUID.randomUUID();
+    String idServicio = crearServicio(nombreServicio);
+    String correo = crearCoordinadorDelServicio(idServicio);
+    LocalDate hoy = Calendario.hoy();
+    int asignatura = crearAsignatura(Integer.parseInt(idServicio));
+    int asignaturaDeOtroServicio = crearAsignatura(
+      Integer.parseInt(crearServicio("Servicio " + UUID.randomUUID()))
+    );
+
+    asignar("Residente En Curso", asignatura, hoy.minusDays(5), hoy.plusDays(5));
+    asignar("Residente Finalizado", asignatura, hoy.minusDays(30), hoy.minusDays(1));
+    asignar("Residente Futuro", asignatura, hoy.plusDays(1), hoy.plusDays(20));
+    asignar("Residente De Otro Servicio", asignaturaDeOtroServicio, hoy, hoy.plusDays(5));
+
+    var coordinador = new ClienteApiDePrueba(puerto);
+    coordinador.iniciarSesion(correo, CONTRASENA_COORDINADOR);
+    var respuesta = coordinador.get("coordinador/residentes");
+
+    assertThat(respuesta.statusCode()).as(respuesta.body()).isEqualTo(200);
+    assertThat(respuesta.body())
+      .contains("\"servicio\":\"" + nombreServicio + "\"")
+      .contains("Residente En Curso")
+      .contains("Universidad de demostración")
+      .doesNotContain("Residente Finalizado")
+      .doesNotContain("Residente Futuro")
+      .doesNotContain("Residente De Otro Servicio");
+    assertThat(
+      ClienteApiDePrueba.conSesionDeAdministrador(puerto).get("coordinador/residentes").statusCode()
+    ).isEqualTo(403);
+  }
+
+  private int crearAsignatura(int idServicio) {
+    String nombre = "Asignatura " + UUID.randomUUID();
+    jdbc.update(
+      "insert into asignatura(id_servicio,nombre_asignatura) values (?,?)",
+      idServicio,
+      nombre
+    );
+    return jdbc.queryForObject(
+      "select id_asignatura from asignatura where nombre_asignatura=?",
+      Integer.class,
+      nombre
+    );
+  }
+
+  /** Crea la rotación y un residente asignado a ella (el trigger le descuenta el cupo). */
+  private void asignar(String nombre, int asignatura, LocalDate inicio, LocalDate fin) {
+    jdbc.update(
+      "insert into rotacion(id_asignatura,fecha_inicio,fecha_fin) values (?,?,?)",
+      asignatura,
+      inicio,
+      fin
+    );
+    String documento = UUID.randomUUID().toString().substring(0, 20);
+    jdbc.update(
+      "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values (1,1,?,?)",
+      nombre,
+      documento
+    );
+    jdbc.update(
+      "insert into rotacion_residente(id_residente,id_asignatura,fecha_inicio,fecha_fin) values ((select id_residente from residente where numero_documento=?),?,?,?)",
+      documento,
+      asignatura,
+      inicio,
+      fin
+    );
   }
 }

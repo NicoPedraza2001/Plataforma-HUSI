@@ -99,13 +99,21 @@ describe('Login', () => {
     expect(sesionActual.iniciar).not.toHaveBeenCalled();
   });
 
-  it('un perfil sin panel construido cierra la sesión y lo informa', async () => {
+  it('el coordinador entra a su panel', async () => {
     sesionActual.iniciar.mockResolvedValue({ ...ADMINISTRADOR, rol: 'Coordinador' });
     escribir('coordinador@husi.com', 'secreta-123');
     await enviar();
 
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/coordinador');
+  });
+
+  it('un perfil sin panel construido cierra la sesión y lo informa', async () => {
+    sesionActual.iniciar.mockResolvedValue({ ...ADMINISTRADOR, rol: 'Auditor' });
+    escribir('auditor@husi.com', 'secreta-123');
+    await enviar();
+
     expect(sesionActual.cerrar).toHaveBeenCalled();
     expect(router.navigateByUrl).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain('Coordinador aún no está disponible');
+    expect(fixture.nativeElement.textContent).toContain('Auditor aún no está disponible');
   });
 });

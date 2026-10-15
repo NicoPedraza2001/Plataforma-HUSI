@@ -1,0 +1,436 @@
+:host {
+  display: block;
+  padding: 26px 34px 44px;
+}
+
+/* ===================== ENCABEZADO ===================== */
+.btn--refrescar {
+  padding: 10px 18px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  background: var(--husi-bg);
+  color: var(--husi-navy);
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--refrescar:hover:not(:disabled) {
+  border-color: var(--husi-teal-dark);
+  background: var(--husi-surface);
+}
+
+.btn--refrescar:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+
+.btn--refrescar svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.girando {
+  animation: girar 0.9s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===================== PERFIL ===================== */
+/* Mismo degradado de la barra lateral, más suave: une la tarjeta con el riel. */
+.perfil {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 24px;
+  padding: 24px 28px;
+  border-radius: var(--radius-md);
+  color: #fff;
+  background:
+    radial-gradient(90% 140% at 100% 0%, rgba(74, 211, 200, 0.28) 0%, rgba(74, 211, 200, 0) 55%),
+    linear-gradient(120deg, var(--husi-navy-deep) 0%, var(--husi-navy) 55%, var(--husi-blue) 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.perfil__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 76px;
+  height: 76px;
+  border: 3px solid var(--husi-teal);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  font-family: var(--font-serif);
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.perfil__datos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.perfil__nombre {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.perfil__servicio {
+  font-size: 0.92rem;
+  color: var(--husi-on-dark);
+}
+
+.perfil__servicio strong {
+  color: var(--husi-teal);
+}
+
+.perfil__correo {
+  font-size: 0.82rem;
+  color: var(--husi-on-dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.perfil__corte {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-left: auto;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  text-align: right;
+}
+
+.perfil__corte-etiqueta {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--husi-on-dark-muted);
+}
+
+.perfil__corte-fecha {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+/* La fecha sale en minúscula de Intl ("martes, 14 de octubre…"). */
+.perfil__corte-fecha::first-letter {
+  text-transform: uppercase;
+}
+
+/* ===================== MENSAJES ===================== */
+.mensaje {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+
+.error {
+  color: var(--husi-red-dark);
+}
+
+/* ===================== INDICADORES ===================== */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.kpi {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 20px 18px 24px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-md);
+  background: var(--husi-bg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* Franja de color a la izquierda: identifica el indicador sin teñir la tarjeta entera. */
+.kpi::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--husi-blue);
+}
+
+.kpi--principal {
+  background: var(--husi-surface);
+}
+
+.kpi--principal::before {
+  background: var(--husi-teal-dark);
+}
+
+.kpi--alerta::before {
+  background: var(--estado-alerta);
+}
+
+.kpi--en-calma::before {
+  background: var(--husi-border);
+}
+
+.kpi__etiqueta {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--husi-muted);
+}
+
+.kpi__valor {
+  font-family: var(--font-serif);
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--husi-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi--alerta:not(.kpi--en-calma) .kpi__valor {
+  color: var(--estado-alerta);
+}
+
+.kpi__nota {
+  font-size: 0.76rem;
+  color: var(--husi-muted);
+}
+
+/* ===================== LISTADO ===================== */
+.card__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+}
+
+.card__titulo {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--husi-navy);
+}
+
+.card__cabecera .search {
+  flex: 0 1 420px;
+}
+
+.ayuda {
+  margin-top: 12px;
+  font-size: 0.82rem;
+  color: var(--husi-muted);
+}
+
+.table-wrap {
+  margin-top: 14px;
+}
+
+.tabla tbody td {
+  vertical-align: middle;
+}
+
+.celda-doble {
+  min-width: 170px;
+  text-align: left !important;
+}
+
+.tabla thead th:nth-child(2),
+.tabla thead th:nth-child(3) {
+  text-align: left;
+}
+
+.celda-doble__principal,
+.celda-doble__secundario {
+  display: block;
+}
+
+.celda-doble__principal {
+  font-weight: 600;
+  color: var(--husi-navy);
+}
+
+.celda-doble__secundario {
+  margin-top: 2px;
+  font-size: 0.76rem;
+  color: var(--husi-muted);
+}
+
+.celda-fecha {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-avance {
+  width: 170px;
+}
+
+/* ===================== AVANCE DE LA ROTACIÓN ===================== */
+.avance {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 130px;
+}
+
+.avance__barra {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--husi-border);
+  overflow: hidden;
+}
+
+.avance__relleno {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--husi-teal) 0%, var(--husi-teal-dark) 100%);
+  transition: width 0.4s ease;
+}
+
+.avance__texto {
+  font-size: 0.74rem;
+  color: var(--husi-muted);
+  white-space: nowrap;
+}
+
+.avance--pronto .avance__relleno {
+  background: var(--estado-alerta);
+}
+
+.avance--pronto .avance__texto {
+  font-weight: 600;
+  color: var(--estado-alerta);
+}
+
+/* ===================== ESTADOS VACÍO Y CARGA ===================== */
+.vacio {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 420px;
+  margin-inline: auto;
+  line-height: 1.5;
+}
+
+.vacio strong {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  color: var(--husi-navy);
+}
+
+.esqueleto td {
+  padding-block: 14px !important;
+}
+
+.esqueleto span {
+  display: block;
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--husi-surface) 0%,
+    var(--husi-border) 50%,
+    var(--husi-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: brillo 1.2s ease-in-out infinite;
+}
+
+@keyframes brillo {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+app-paginacion {
+  display: block;
+  margin-top: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .girando,
+  .esqueleto span {
+    animation: none;
+  }
+
+  .avance__relleno {
+    transition: none;
+  }
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 1100px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 22px 16px;
+  }
+
+  .btn--refrescar {
+    align-self: flex-start;
+  }
+
+  .perfil {
+    flex-wrap: wrap;
+    padding: 20px;
+  }
+
+  .perfil__corte {
+    align-items: flex-start;
+    margin-left: 0;
+    width: 100%;
+    text-align: left;
+  }
+
+  .card__cabecera .search {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .kpis {
+    gap: 10px;
+  }
+
+  .kpi {
+    padding: 14px 14px 14px 18px;
+  }
+
+  .kpi__valor {
+    font-size: 1.7rem;
+  }
+}

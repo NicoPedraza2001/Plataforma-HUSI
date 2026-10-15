@@ -1,0 +1,185 @@
+<header class="page-head">
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Mis residentes</h1>
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <span>Inicio</span><span class="breadcrumb__sep">&gt;</span><span>Mis residentes</span>
+    </nav>
+  </div>
+  <button type="button" class="btn btn--refrescar" [disabled]="cargando()" (click)="cargar()">
+    <svg viewBox="0 0 24 24" aria-hidden="true" [class.girando]="cargando()">
+      <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" />
+    </svg>
+    Actualizar
+  </button>
+</header>
+
+<!-- ===================== PERFIL ===================== -->
+<section class="perfil" aria-label="Coordinador en sesión">
+  <span class="perfil__avatar" aria-hidden="true">{{ iniciales() }}</span>
+  <div class="perfil__datos">
+    @if (perfil(); as usuario) {
+      <h2 class="perfil__nombre">{{ usuario.nombres }} {{ usuario.apellidos }}</h2>
+      <p class="perfil__servicio">
+        Coordinación de <strong>{{ datos()?.servicio ?? '…' }}</strong>
+      </p>
+      <p class="perfil__correo">{{ usuario.correo }}</p>
+    }
+  </div>
+  @if (fechaCorte()) {
+    <p class="perfil__corte">
+      <span class="perfil__corte-etiqueta">Rotaciones en curso al</span>
+      <span class="perfil__corte-fecha">{{ fechaCorte() }}</span>
+    </p>
+  }
+</section>
+
+@if (error()) {
+  <div class="mensaje error" role="alert">
+    <span>{{ error() }}</span>
+    <button class="btn btn--navy" type="button" (click)="cargar()">Reintentar</button>
+  </div>
+}
+
+<!-- ===================== INDICADORES ===================== -->
+<section class="kpis" aria-label="Resumen del servicio" [attr.aria-busy]="cargando()">
+  <article class="kpi kpi--principal">
+    <p class="kpi__etiqueta">Residentes en curso</p>
+    <p class="kpi__valor">{{ datos() ? totalResidentes() : '—' }}</p>
+    <p class="kpi__nota">Rotando hoy en tu servicio</p>
+  </article>
+  <article class="kpi">
+    <p class="kpi__etiqueta">Asignaturas activas</p>
+    <p class="kpi__valor">{{ datos() ? totalAsignaturas() : '—' }}</p>
+    <p class="kpi__nota">Con residentes asignados</p>
+  </article>
+  <article class="kpi">
+    <p class="kpi__etiqueta">Universidades</p>
+    <p class="kpi__valor">{{ datos() ? totalUniversidades() : '—' }}</p>
+    <p class="kpi__nota">De procedencia</p>
+  </article>
+  <article class="kpi kpi--alerta" [class.kpi--en-calma]="totalFinalizanPronto() === 0">
+    <p class="kpi__etiqueta">Finalizan pronto</p>
+    <p class="kpi__valor">{{ datos() ? totalFinalizanPronto() : '—' }}</p>
+    <p class="kpi__nota">En los próximos 7 días</p>
+  </article>
+</section>
+
+<!-- ===================== LISTADO ===================== -->
+<section class="card" [attr.aria-busy]="cargando()">
+  <div class="card__cabecera">
+    <h2 class="card__titulo">Residentes a cargo</h2>
+    <label class="search">
+      <span class="sr-only">Buscar residente</span>
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+        <path
+          d="m20 20-3.5-3.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
+      <input
+        class="search__input"
+        type="search"
+        placeholder="Buscar residente, documento o asignatura…"
+        [value]="terminoBusqueda()"
+        [disabled]="!datos()"
+        (input)="buscar($any($event.target).value)"
+      />
+    </label>
+  </div>
+  <p class="ayuda" aria-live="polite">
+    @if (terminoBusqueda().trim()) {
+      {{ filasFiltradas().length }} de {{ filas().length }} rotaciones en curso
+    } @else {
+      {{ filas().length }} {{ filas().length === 1 ? 'rotación en curso' : 'rotaciones en curso' }}
+    }
+  </p>
+
+  <div class="table-wrap">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col" class="col-no">No</th>
+          <th scope="col">Residente</th>
+          <th scope="col">Universidad</th>
+          <th scope="col">Asignatura</th>
+          <th scope="col">Fecha inicio</th>
+          <th scope="col">Fecha fin</th>
+          <th scope="col" class="col-avance">Avance</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (cargando() && !datos()) {
+          @for (fila of [1, 2, 3, 4]; track fila) {
+            <tr class="esqueleto" aria-hidden="true">
+              <td colspan="7"><span></span></td>
+            </tr>
+          }
+        } @else {
+          @for (
+            fila of filasPagina();
+            track fila.residenteId + '|' + fila.asignatura + '|' + fila.inicio;
+            let i = $index
+          ) {
+            <tr>
+              <td>{{ indicePrimeraFila() + i + 1 }}</td>
+              <td class="celda-doble">
+                <span class="celda-doble__principal">{{ fila.nombre }}</span>
+                <span class="celda-doble__secundario">{{ fila.documento }}</span>
+              </td>
+              <td class="celda-doble">
+                <span class="celda-doble__principal">{{ fila.universidad }}</span>
+                <span class="celda-doble__secundario">{{ fila.programa }}</span>
+              </td>
+              <td>{{ fila.asignatura }}</td>
+              <td class="celda-fecha">{{ fecha(fila.inicio) }}</td>
+              <td class="celda-fecha">{{ fecha(fila.fin) }}</td>
+              <td>
+                <div class="avance" [class.avance--pronto]="fila.finalizaPronto">
+                  <div
+                    class="avance__barra"
+                    role="progressbar"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    [attr.aria-valuenow]="fila.avance"
+                    [attr.aria-label]="'Avance de la rotación de ' + fila.nombre"
+                  >
+                    <span class="avance__relleno" [style.width.%]="fila.avance"></span>
+                  </div>
+                  <span class="avance__texto">{{ textoRestante(fila.diasRestantes) }}</span>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="tabla__vacia">
+                @if (error()) {
+                  No se pudo obtener el listado.
+                } @else if (terminoBusqueda().trim()) {
+                  Ningún residente coincide con «{{ terminoBusqueda().trim() }}».
+                } @else {
+                  <span class="vacio">
+                    <strong>No tienes residentes rotando hoy</strong>
+                    Cuando una rotación de {{ datos()?.servicio ?? 'tu servicio' }} esté en curso,
+                    sus residentes aparecerán aquí.
+                  </span>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPaginas() > 1) {
+    <app-paginacion
+      [paginaActual]="paginaActual()"
+      [totalPaginas]="totalPaginas()"
+      (cambio)="cambiarPagina($event)"
+    />
+  }
+</section>

@@ -66,6 +66,7 @@ La estructura es un espejo del backend para encontrar cada pieza en ambos lados:
 | `models/importacion-programas.model.ts` | `dto/*/ImportacionProgramas*` |
 | `models/api-error.model.ts` → `ApiError` + `services/api-error.ts` | `exception/ApiExceptionHandler` |
 | `services/sesion.service.ts` → `SesionService` (+ `sesion-actual.ts`, `sesion.guard.ts`) | `controller/SesionController` (`/api/sesion`) + `security/` |
+| `services/coordinador.service.ts` → `CoordinadorService` (+ `models/coordinador.model.ts`) | `controller/CoordinadorController` (`/api/coordinador`, solo rol Coordinador) |
 
 Al conectar un módulo nuevo (p. ej. servicios, residentes):
 

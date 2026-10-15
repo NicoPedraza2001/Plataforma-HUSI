@@ -1,0 +1,5 @@
+/* La barra lateral viene de admin-layout.css. Sin el botón de importar, el menú arranca más
+   abajo de la marca para que no quede pegado a ella. */
+.sidebar__nav {
+  margin-top: 12px;
+}

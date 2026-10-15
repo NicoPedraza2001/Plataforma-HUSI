@@ -1,12 +1,18 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { InicioSesionRequest, Perfil, ROL_ADMINISTRADOR } from '../models/sesion.model';
+import {
+  InicioSesionRequest,
+  Perfil,
+  ROL_ADMINISTRADOR,
+  ROL_COORDINADOR,
+} from '../models/sesion.model';
 import { SesionService } from './sesion.service';
 
 /** Pantalla de inicio de cada rol. Un rol sin panel construido todavía no tiene entrada. */
 const PANEL_POR_ROL: Readonly<Record<string, string>> = {
   [ROL_ADMINISTRADOR]: '/admin',
+  [ROL_COORDINADOR]: '/coordinador',
 };
 
 /** Ruta del panel que corresponde al rol, o `null` si ese rol aún no tiene panel. */

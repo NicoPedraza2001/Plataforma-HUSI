@@ -1,0 +1,46 @@
+<!-- ===================== BARRA LATERAL ===================== -->
+<aside class="sidebar">
+  <div class="sidebar__brand">
+    <span class="sidebar__brand-name">HUSI</span>
+    <span class="sidebar__brand-full">Hospital Universitario San Ignacio</span>
+    <span class="sidebar__brand-slogan">Ciencia y tecnología con proyección social</span>
+  </div>
+
+  <nav class="sidebar__nav" aria-label="Navegación del coordinador">
+    <ul class="sidebar__list">
+      @for (item of navItems; track item.link) {
+        <li>
+          <a class="nav-item" [routerLink]="item.link" routerLinkActive="nav-item--active">
+            <span class="nav-item__dot" aria-hidden="true"></span>
+            <span class="nav-item__label">{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <div class="sidebar__sesion">
+    @if (perfil(); as usuario) {
+      <p class="sidebar__usuario">
+        <span class="sidebar__usuario-nombre">{{ usuario.nombres }} {{ usuario.apellidos }}</span>
+        <span class="sidebar__usuario-rol">{{ usuario.rol }}</span>
+      </p>
+    }
+    <button class="sidebar__salir" type="button" (click)="cerrarSesion()">Cerrar sesión</button>
+  </div>
+
+  <div class="sidebar__footer">
+    <img
+      class="sidebar__logo"
+      src="/assets/logo.jpg"
+      alt="Hospital Universitario San Ignacio"
+      width="86"
+      height="86"
+    />
+  </div>
+</aside>
+
+<!-- ===================== CONTENIDO ===================== -->
+<main class="admin-main">
+  <router-outlet />
+</main>

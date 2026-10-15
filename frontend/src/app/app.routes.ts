@@ -11,9 +11,11 @@ import { ListadoServicios } from './features/admin/servicios/listado-servicios/l
 import { ListadoUniversidades } from './features/admin/universidades/listado-universidades/listado-universidades';
 import { ListadoUsuarios } from './features/admin/usuarios/listado-usuarios/listado-usuarios';
 import { Login } from './features/auth/login/login';
-import { ROL_ADMINISTRADOR } from './models/sesion.model';
+import { MisResidentes } from './features/coordinator/residentes/mis-residentes/mis-residentes';
+import { ROL_ADMINISTRADOR, ROL_COORDINADOR } from './models/sesion.model';
 import { Landing } from './features/public/landing/pages/landing/landing';
 import { AdminLayout } from './layout/admin/admin-layout/admin-layout';
+import { CoordinatorLayout } from './layout/coordinator/coordinator-layout/coordinator-layout';
 import { PublicLayout } from './layout/public/public-layout/public-layout';
 import { requiereRol } from './services/sesion.guard';
 
@@ -74,6 +76,18 @@ export const routes: Routes = [
         path: 'ajustes',
         component: Ajustes,
       },
+    ],
+  },
+  {
+    path: 'coordinador',
+    component: CoordinatorLayout,
+    // Panel del coordinador: solo ve los residentes de su servicio (el backend lo filtra por sesión).
+    canActivate: [requiereRol(ROL_COORDINADOR)],
+    children: [
+      { path: '', redirectTo: 'residentes', pathMatch: 'full' },
+      { path: 'residentes', component: MisResidentes },
+      // Ajustes de la cuenta propia: misma pantalla del administrador, solo usa /sesion.
+      { path: 'ajustes', component: Ajustes },
     ],
   },
 ];
