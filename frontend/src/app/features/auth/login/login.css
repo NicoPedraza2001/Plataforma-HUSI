@@ -150,20 +150,9 @@
   margin-bottom: 8px;
 }
 
-.login__link {
-  align-self: flex-end;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--husi-navy);
-  margin-bottom: 18px;
-}
-
-.login__link:hover {
-  text-decoration: underline;
-}
-
 .login__submit {
   align-self: center;
+  margin-top: 12px;
   padding: 10px 26px;
   border: 0;
   border-radius: 999px;

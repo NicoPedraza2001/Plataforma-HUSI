@@ -1,5 +1,5 @@
 <form #form="ngForm" (ngSubmit)="form.valid && cuposValidos() && guardar.emit()">
-  <label for="servicio-nombre">Nombre del servicio</label
+  <label for="servicio-nombre">Nombre del servicio <span aria-hidden="true">*</span></label
   ><input
     id="servicio-nombre"
     name="nombre"
@@ -16,7 +16,7 @@
     [(ngModel)]="datos().descripcion"
     [disabled]="guardando()"
   ></textarea>
-  <label for="servicio-maximo">Cupo máximo instalado</label
+  <label for="servicio-maximo">Cupo máximo instalado <span aria-hidden="true">*</span></label
   ><input
     id="servicio-maximo"
     name="maximo"
@@ -28,7 +28,7 @@
     [(ngModel)]="datos().cupoMaximoInstalado"
     [disabled]="guardando()"
   />
-  <label for="servicio-simultaneo">Cupo simultáneo</label
+  <label for="servicio-simultaneo">Cupo simultáneo <span aria-hidden="true">*</span></label
   ><input
     id="servicio-simultaneo"
     name="simultaneo"

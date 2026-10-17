@@ -1,7 +1,8 @@
 <form #form="ngForm" (ngSubmit)="form.valid && guardar.emit()">
   <fieldset [disabled]="guardando()">
     <label
-      >Nombre de la asignatura<input
+      >Nombre de la asignatura <span aria-hidden="true">*</span
+      ><input
         name="nombre"
         [(ngModel)]="datos().nombre"
         required
@@ -13,7 +14,8 @@
       <p class="mensaje error">Ingresa un nombre de hasta 200 caracteres.</p>
     }
     <label
-      >Servicio<select name="servicioId" [(ngModel)]="datos().servicioId" required>
+      >Servicio <span aria-hidden="true">*</span
+      ><select name="servicioId" [(ngModel)]="datos().servicioId" required>
         <option [ngValue]="null">Selecciona un servicio</option>
         @for (opcion of servicios(); track opcion.id) {
           <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>

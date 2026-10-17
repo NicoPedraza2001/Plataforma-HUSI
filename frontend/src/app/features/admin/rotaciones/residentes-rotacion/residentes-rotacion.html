@@ -50,9 +50,9 @@
           @if (candidatos.cargando()) {
             <p role="status">Buscando residentes…</p>
           } @else if (candidatos.error()) {
-            <p role="alert">
+            <p class="mensaje error" role="alert">
               {{ candidatos.error() }}
-              <button type="button" class="btn btn--outline" (click)="buscar()">Reintentar</button>
+              <button type="button" class="btn btn--navy" (click)="buscar()">Reintentar</button>
             </p>
           } @else if (!candidatos.datos()?.length) {
             <p>No hay residentes disponibles con esa búsqueda.</p>
@@ -83,9 +83,9 @@
       @if (consulta.cargando()) {
         <p role="status">Cargando residentes…</p>
       } @else if (consulta.error()) {
-        <p role="alert">
+        <p class="mensaje error" role="alert">
           {{ consulta.error() }}
-          <button class="btn btn--outline" (click)="cargar()">Reintentar</button>
+          <button class="btn btn--navy" (click)="cargar()">Reintentar</button>
         </p>
       } @else {
         <div class="table-wrap">
@@ -162,9 +162,9 @@
       @if (enEspera.cargando()) {
         <p role="status">Cargando residentes en espera…</p>
       } @else if (enEspera.error()) {
-        <p role="alert">
+        <p class="mensaje error" role="alert">
           {{ enEspera.error() }}
-          <button class="btn btn--outline" (click)="cargarEspera()">Reintentar</button>
+          <button class="btn btn--navy" (click)="cargarEspera()">Reintentar</button>
         </p>
       } @else {
         <div class="table-wrap">

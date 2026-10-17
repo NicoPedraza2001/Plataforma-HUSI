@@ -163,8 +163,13 @@
                 } @else {
                   <span class="vacio">
                     <strong>No tienes residentes rotando hoy</strong>
-                    Cuando una rotación de {{ datos()?.servicio ?? 'tu servicio' }} esté en curso,
-                    sus residentes aparecerán aquí.
+                    @if (proximas()[0]; as siguiente) {
+                      La próxima rotación empieza el {{ fecha(siguiente.inicio) }}. Revisa abajo
+                      quiénes llegan a {{ datos()?.servicio ?? 'tu servicio' }}.
+                    } @else {
+                      Cuando una rotación de {{ datos()?.servicio ?? 'tu servicio' }} esté en curso,
+                      sus residentes aparecerán aquí.
+                    }
                   </span>
                 }
               </td>
@@ -180,6 +185,118 @@
       [paginaActual]="paginaActual()"
       [totalPaginas]="totalPaginas()"
       (cambio)="cambiarPagina($event)"
+    />
+  }
+</section>
+
+<!-- ===================== PRÓXIMAS ROTACIONES ===================== -->
+<section class="card" [attr.aria-busy]="cargando()">
+  <div class="card__cabecera">
+    <h2 class="card__titulo">Próximas rotaciones</h2>
+    <label class="search">
+      <span class="sr-only">Buscar en próximas rotaciones</span>
+      <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+        <path
+          d="m20 20-3.5-3.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
+      <input
+        class="search__input"
+        type="search"
+        placeholder="Buscar residente, documento o asignatura…"
+        [value]="terminoProximas()"
+        [disabled]="!datos()"
+        (input)="buscarProximas($any($event.target).value)"
+      />
+    </label>
+  </div>
+  <p class="ayuda" aria-live="polite">
+    @if (terminoProximas().trim()) {
+      {{ proximasFiltradas().length }} de {{ proximas().length }} rotaciones por empezar
+    } @else {
+      {{ proximas().length }}
+      {{ proximas().length === 1 ? 'rotación por empezar' : 'rotaciones por empezar' }}, ordenadas
+      por fecha de inicio
+    }
+  </p>
+
+  <div class="table-wrap">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col" class="col-no">No</th>
+          <th scope="col">Residente</th>
+          <th scope="col">Universidad</th>
+          <th scope="col">Asignatura</th>
+          <th scope="col">Fecha inicio</th>
+          <th scope="col">Fecha fin</th>
+          <th scope="col" class="col-avance">Llegada</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (cargando() && !datos()) {
+          @for (fila of [1, 2, 3]; track fila) {
+            <tr class="esqueleto" aria-hidden="true">
+              <td colspan="7"><span></span></td>
+            </tr>
+          }
+        } @else {
+          @for (
+            fila of proximasPagina();
+            track fila.residenteId + '|' + fila.asignatura + '|' + fila.inicio;
+            let i = $index
+          ) {
+            <tr>
+              <td>{{ indicePrimeraProxima() + i + 1 }}</td>
+              <td class="celda-doble">
+                <span class="celda-doble__principal">{{ fila.nombre }}</span>
+                <span class="celda-doble__secundario">{{ fila.documento }}</span>
+              </td>
+              <td class="celda-doble">
+                <span class="celda-doble__principal">{{ fila.universidad }}</span>
+                <span class="celda-doble__secundario">{{ fila.programa }}</span>
+              </td>
+              <td>{{ fila.asignatura }}</td>
+              <td class="celda-fecha">{{ fecha(fila.inicio) }}</td>
+              <td class="celda-fecha">{{ fecha(fila.fin) }}</td>
+              <td>
+                <span class="llegada" [class.llegada--pronto]="fila.iniciaPronto">
+                  {{ textoInicio(fila.diasParaInicio) }}
+                </span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="tabla__vacia">
+                @if (error()) {
+                  No se pudo obtener el listado.
+                } @else if (terminoProximas().trim()) {
+                  Ninguna rotación próxima coincide con «{{ terminoProximas().trim() }}».
+                } @else {
+                  <span class="vacio">
+                    <strong>No hay rotaciones programadas</strong>
+                    Cuando se asignen residentes a futuras rotaciones de
+                    {{ datos()?.servicio ?? 'tu servicio' }}, aparecerán aquí.
+                  </span>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPaginasProximas() > 1) {
+    <app-paginacion
+      [paginaActual]="paginaProximas()"
+      [totalPaginas]="totalPaginasProximas()"
+      (cambio)="cambiarPaginaProximas($event)"
     />
   }
 </section>

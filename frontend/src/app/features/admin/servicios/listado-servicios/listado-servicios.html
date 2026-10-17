@@ -20,7 +20,7 @@
   <p class="mensaje" role="status">Cargando datos…</p>
 }
 @if (error()) {
-  <div class="mensaje" role="alert">
+  <div class="mensaje error" role="alert">
     {{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button>
   </div>
 }

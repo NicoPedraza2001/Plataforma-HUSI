@@ -9,18 +9,14 @@
       <span aria-current="page">Historial</span>
     </nav>
   </div>
-
-  <button type="button" class="btn btn--add" disabled title="Función pendiente de implementación">
-    <span class="btn__plus" aria-hidden="true">+</span>
-    Exportar
-  </button>
+  <!-- Botón «Exportar» oculto hasta implementar la exportación (sin endpoint todavía). -->
 </header>
 
 @if (cargando()) {
   <p class="mensaje" role="status">Cargando datos…</p>
 }
 @if (error()) {
-  <div class="mensaje" role="alert">
+  <div class="mensaje error" role="alert">
     {{ error() }} <button class="btn btn--navy" (click)="reintentar()">Reintentar</button>
   </div>
 }

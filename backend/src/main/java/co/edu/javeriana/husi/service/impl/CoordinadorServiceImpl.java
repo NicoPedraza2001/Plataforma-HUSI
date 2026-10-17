@@ -26,11 +26,13 @@ public class CoordinadorServiceImpl implements CoordinadorService {
   @Override
   public ResidentesACargoResponse listarResidentes() {
     Coordinador coordinador = coordinacionActiva();
+    Integer servicioId = coordinador.getServicio().getId();
     LocalDate hoy = Calendario.hoy();
     return new ResidentesACargoResponse(
       coordinador.getServicio().getNombre(),
       hoy,
-      residenteACargoRepository.listarEnCurso(coordinador.getServicio().getId(), hoy)
+      residenteACargoRepository.listarEnCurso(servicioId, hoy),
+      residenteACargoRepository.listarProximas(servicioId, hoy)
     );
   }
 

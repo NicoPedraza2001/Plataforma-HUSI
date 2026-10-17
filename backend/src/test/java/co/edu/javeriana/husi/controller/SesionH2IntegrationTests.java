@@ -261,7 +261,7 @@ class SesionH2IntegrationTests {
   }
 
   @Test
-  void elCoordinadorVeSoloLosResidentesQueRotanHoyEnSuServicio() throws Exception {
+  void elCoordinadorVeLosResidentesQueRotanHoyYLosProximosDeSuServicio() throws Exception {
     String nombreServicio = "Servicio " + UUID.randomUUID();
     String idServicio = crearServicio(nombreServicio);
     String correo = crearCoordinadorDelServicio(idServicio);
@@ -273,6 +273,7 @@ class SesionH2IntegrationTests {
 
     asignar("Residente En Curso", asignatura, hoy.minusDays(5), hoy.plusDays(5));
     asignar("Residente Finalizado", asignatura, hoy.minusDays(30), hoy.minusDays(1));
+    asignar("Residente Lejano", asignatura, hoy.plusDays(30), hoy.plusDays(40));
     asignar("Residente Futuro", asignatura, hoy.plusDays(1), hoy.plusDays(20));
     asignar("Residente De Otro Servicio", asignaturaDeOtroServicio, hoy, hoy.plusDays(5));
 
@@ -281,12 +282,23 @@ class SesionH2IntegrationTests {
     var respuesta = coordinador.get("coordinador/residentes");
 
     assertThat(respuesta.statusCode()).as(respuesta.body()).isEqualTo(200);
-    assertThat(respuesta.body())
+    String cuerpo = respuesta.body();
+    int inicioProximos = cuerpo.indexOf("\"proximos\":");
+    assertThat(inicioProximos).as(cuerpo).isPositive();
+    String enCurso = cuerpo.substring(0, inicioProximos);
+    String proximos = cuerpo.substring(inicioProximos);
+    assertThat(enCurso)
       .contains("\"servicio\":\"" + nombreServicio + "\"")
       .contains("Residente En Curso")
       .contains("Universidad de demostración")
-      .doesNotContain("Residente Finalizado")
       .doesNotContain("Residente Futuro")
+      .doesNotContain("Residente Lejano");
+    assertThat(proximos).contains("Residente Futuro").doesNotContain("Residente En Curso");
+    assertThat(proximos.indexOf("Residente Futuro"))
+      .as("las próximas se ordenan por fecha de inicio")
+      .isLessThan(proximos.indexOf("Residente Lejano"));
+    assertThat(cuerpo)
+      .doesNotContain("Residente Finalizado")
       .doesNotContain("Residente De Otro Servicio");
     assertThat(
       ClienteApiDePrueba.conSesionDeAdministrador(puerto).get("coordinador/residentes").statusCode()

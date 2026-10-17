@@ -22,6 +22,6 @@ describe('CoordinadorService', () => {
     const solicitud = http.expectOne('/api/coordinador/residentes');
     expect(solicitud.request.method).toBe('GET');
     expect(solicitud.request.params.keys()).toEqual([]);
-    solicitud.flush({ servicio: 'Urgencias', fecha: '2026-10-14', residentes: [] });
+    solicitud.flush({ servicio: 'Urgencias', fecha: '2026-10-14', residentes: [], proximos: [] });
   });
 });

@@ -12,6 +12,9 @@ const TAMANO_PAGINA = 10;
 /** Una rotación que termina en estos días o menos se marca como «finaliza pronto». */
 const DIAS_AVISO_FIN = 7;
 
+/** Una rotación que empieza en estos días o menos se resalta como «empieza pronto». */
+const DIAS_AVISO_INICIO = 7;
+
 const MS_POR_DIA = 86_400_000;
 
 /** Residente con lo que la tabla calcula a partir de la fecha de corte del backend. */
@@ -23,6 +26,13 @@ interface FilaResidente extends ResidenteACargo {
   finalizaPronto: boolean;
 }
 
+/** Rotación que todavía no empieza, con los días que faltan para su inicio. */
+interface FilaProxima extends ResidenteACargo {
+  /** Días hasta la fecha de inicio (1 = empieza mañana). */
+  diasParaInicio: number;
+  iniciaPronto: boolean;
+}
+
 /** Fecha ISO `yyyy-MM-dd` como días desde 1970, sin pasar por la zona horaria del navegador. */
 function diaIso(fecha: string): number {
   const [anio, mes, dia] = fecha.split('-').map(Number);
@@ -32,6 +42,17 @@ function diaIso(fecha: string): number {
 /** Sin tildes ni mayúsculas, para que «jose» encuentre a «José». */
 function normalizar(texto: string): string {
   return texto.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es');
+}
+
+/** Filas cuyo residente, documento, universidad, programa o asignatura contienen el término. */
+function filtrar<T extends ResidenteACargo>(filas: T[], termino: string): T[] {
+  const buscado = normalizar(termino.trim());
+  if (!buscado) return filas;
+  return filas.filter((fila) =>
+    normalizar(
+      [fila.nombre, fila.documento, fila.universidad, fila.programa, fila.asignatura].join(' '),
+    ).includes(buscado),
+  );
 }
 
 @Component({
@@ -107,15 +128,7 @@ export class MisResidentes {
     () => this.filas().filter((fila) => fila.finalizaPronto).length,
   );
 
-  protected readonly filasFiltradas = computed(() => {
-    const termino = normalizar(this.terminoBusqueda().trim());
-    if (!termino) return this.filas();
-    return this.filas().filter((fila) =>
-      normalizar(
-        [fila.nombre, fila.documento, fila.universidad, fila.programa, fila.asignatura].join(' '),
-      ).includes(termino),
-    );
-  });
+  protected readonly filasFiltradas = computed(() => filtrar(this.filas(), this.terminoBusqueda()));
 
   protected readonly totalPaginas = computed(() =>
     Math.max(1, Math.ceil(this.filasFiltradas().length / TAMANO_PAGINA)),
@@ -123,6 +136,36 @@ export class MisResidentes {
   protected readonly indicePrimeraFila = computed(() => (this.paginaActual() - 1) * TAMANO_PAGINA);
   protected readonly filasPagina = computed(() =>
     this.filasFiltradas().slice(this.indicePrimeraFila(), this.indicePrimeraFila() + TAMANO_PAGINA),
+  );
+
+  // Próximas rotaciones: las que empiezan después de la fecha de corte.
+  protected readonly terminoProximas = signal('');
+  protected readonly paginaProximas = signal(1);
+
+  protected readonly proximas = computed<FilaProxima[]>(() => {
+    const datos = this.datos();
+    if (!datos) return [];
+    const hoy = diaIso(datos.fecha);
+    return datos.proximos.map((rotacion) => {
+      const diasParaInicio = diaIso(rotacion.inicio) - hoy;
+      return { ...rotacion, diasParaInicio, iniciaPronto: diasParaInicio <= DIAS_AVISO_INICIO };
+    });
+  });
+
+  protected readonly proximasFiltradas = computed(() =>
+    filtrar(this.proximas(), this.terminoProximas()),
+  );
+  protected readonly totalPaginasProximas = computed(() =>
+    Math.max(1, Math.ceil(this.proximasFiltradas().length / TAMANO_PAGINA)),
+  );
+  protected readonly indicePrimeraProxima = computed(
+    () => (this.paginaProximas() - 1) * TAMANO_PAGINA,
+  );
+  protected readonly proximasPagina = computed(() =>
+    this.proximasFiltradas().slice(
+      this.indicePrimeraProxima(),
+      this.indicePrimeraProxima() + TAMANO_PAGINA,
+    ),
   );
 
   constructor() {
@@ -135,6 +178,7 @@ export class MisResidentes {
     try {
       this.datos.set(await firstValueFrom(this.coordinadorService.listarResidentes()));
       this.paginaActual.set(1);
+      this.paginaProximas.set(1);
     } catch (e) {
       this.error.set(mensajeError(e));
     } finally {
@@ -151,6 +195,15 @@ export class MisResidentes {
     this.paginaActual.set(pagina);
   }
 
+  protected buscarProximas(termino: string): void {
+    this.terminoProximas.set(termino);
+    this.paginaProximas.set(1);
+  }
+
+  protected cambiarPaginaProximas(pagina: number): void {
+    this.paginaProximas.set(pagina);
+  }
+
   /** `yyyy-MM-dd` → `dd/MM/yyyy`, el formato de fechas del resto del panel. */
   protected fecha(iso: string): string {
     const [anio, mes, dia] = iso.split('-');
@@ -161,5 +214,10 @@ export class MisResidentes {
     if (dias === 0) return 'Termina hoy';
     if (dias === 1) return 'Termina mañana';
     return `Faltan ${dias} días`;
+  }
+
+  protected textoInicio(dias: number): string {
+    if (dias === 1) return 'Empieza mañana';
+    return `Empieza en ${dias} días`;
   }
 }

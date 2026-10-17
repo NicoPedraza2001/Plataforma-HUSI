@@ -1,5 +1,5 @@
 <form #form="ngForm" (ngSubmit)="form.valid && enviar()">
-  <label for="usuario-nombre">Nombre</label
+  <label for="usuario-nombre">Nombre <span aria-hidden="true">*</span></label
   ><input
     id="usuario-nombre"
     name="nombre"
@@ -9,7 +9,7 @@
     [disabled]="guardando()"
     [(ngModel)]="datos().nombre"
   />
-  <label for="usuario-apellido">Apellido</label
+  <label for="usuario-apellido">Apellido <span aria-hidden="true">*</span></label
   ><input
     id="usuario-apellido"
     name="apellido"
@@ -19,7 +19,7 @@
     [disabled]="guardando()"
     [(ngModel)]="datos().apellido"
   />
-  <label for="usuario-correo">Correo</label
+  <label for="usuario-correo">Correo <span aria-hidden="true">*</span></label
   ><input
     id="usuario-correo"
     name="correo"
@@ -31,7 +31,7 @@
     [(ngModel)]="datos().correo"
   />
   @if (!edicion()) {
-    <label for="usuario-contrasena">Contraseña sugerida</label>
+    <label for="usuario-contrasena">Contraseña sugerida <span aria-hidden="true">*</span></label>
     <div class="clave">
       <input
         id="usuario-contrasena"
@@ -66,7 +66,7 @@
       editarla: al menos 8 caracteres y hasta 72 bytes.
     </p>
   }
-  <label for="usuario-rolId">Rol</label
+  <label for="usuario-rolId">Rol <span aria-hidden="true">*</span></label
   ><select
     id="usuario-rolId"
     name="rolId"
@@ -80,7 +80,7 @@
     }
   </select>
   @if (esCoordinador()) {
-    <label for="usuario-servicioId">Servicio que coordina</label
+    <label for="usuario-servicioId">Servicio que coordina <span aria-hidden="true">*</span></label
     ><select
       id="usuario-servicioId"
       name="servicioId"

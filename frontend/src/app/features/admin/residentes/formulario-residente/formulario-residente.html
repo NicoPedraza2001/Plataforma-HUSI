@@ -1,5 +1,5 @@
 <form #form="ngForm" (ngSubmit)="form.valid && guardar.emit()">
-  <label for="residente-nombre">Nombre completo</label
+  <label for="residente-nombre">Nombre completo <span aria-hidden="true">*</span></label
   ><input
     id="residente-nombre"
     name="nombre"
@@ -9,7 +9,7 @@
     [disabled]="guardando()"
     [(ngModel)]="datos().nombre"
   />
-  <label for="residente-tipoDocumento">Tipo de documento</label
+  <label for="residente-tipoDocumento">Tipo de documento <span aria-hidden="true">*</span></label
   ><select
     id="residente-tipoDocumento"
     name="tipoDocumento"
@@ -21,7 +21,8 @@
       <option [ngValue]="tipo.codigo">{{ tipo.codigo }} — {{ tipo.nombre }}</option>
     }
   </select>
-  <label for="residente-numeroDocumento">Número de documento</label
+  <label for="residente-numeroDocumento"
+    >Número de documento <span aria-hidden="true">*</span></label
   ><input
     id="residente-numeroDocumento"
     name="numeroDocumento"
@@ -43,7 +44,7 @@
       <option [ngValue]="perfil.nombre">{{ perfil.nombre }}</option>
     }
   </select>
-  <label for="residente-programaId">Programa</label
+  <label for="residente-programaId">Programa <span aria-hidden="true">*</span></label
   ><select
     id="residente-programaId"
     name="programaId"

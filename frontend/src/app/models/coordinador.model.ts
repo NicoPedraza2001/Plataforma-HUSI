@@ -11,11 +11,13 @@ export interface ResidenteACargo {
 }
 
 /**
- * Backend: dto/response/ResidentesACargoResponse. Solo trae las rotaciones en curso a `fecha`
- * (hoy en Bogotá); las finalizadas y las futuras no llegan.
+ * Backend: dto/response/ResidentesACargoResponse. `residentes` son las rotaciones en curso a
+ * `fecha` (hoy en Bogotá) y `proximos` las que empiezan después, ordenadas por fecha de inicio.
+ * Las finalizadas no llegan.
  */
 export interface ResidentesACargo {
   servicio: string;
   fecha: string;
   residentes: ResidenteACargo[];
+  proximos: ResidenteACargo[];
 }

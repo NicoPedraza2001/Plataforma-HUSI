@@ -99,10 +99,6 @@
           <p class="login__hint" role="alert">{{ error() }}</p>
         }
 
-        <a class="login__link" href="#" (click)="$event.preventDefault()">
-          ¿Olvidaste la contraseña?
-        </a>
-
         <button class="login__submit" type="submit" [disabled]="enviando()">
           {{ enviando() ? 'Verificando…' : 'Inicia Sesión' }}
         </button>

@@ -1,5 +1,5 @@
 <form #form="ngForm" (ngSubmit)="form.valid && puedeGuardar() && guardar.emit()">
-  <label for="asignatura">Asignatura *</label
+  <label for="asignatura">Asignatura <span aria-hidden="true">*</span></label
   ><select
     id="asignatura"
     name="asignatura"
@@ -26,10 +26,10 @@
   @if (errorCatalogos()) {
     <p class="mensaje error" role="alert">
       {{ errorCatalogos() }}
-      <button type="button" class="btn btn--outline" (click)="reintentar.emit()">Reintentar</button>
+      <button type="button" class="btn btn--navy" (click)="reintentar.emit()">Reintentar</button>
     </p>
   }
-  <label for="inicio">Fecha de inicio *</label
+  <label for="inicio">Fecha de inicio <span aria-hidden="true">*</span></label
   ><input
     id="inicio"
     type="date"
@@ -40,7 +40,7 @@
     required
     [disabled]="guardando() || !!edicion()?.relaciones"
   />
-  <label for="fin">Fecha de fin *</label
+  <label for="fin">Fecha de fin <span aria-hidden="true">*</span></label
   ><input
     id="fin"
     type="date"

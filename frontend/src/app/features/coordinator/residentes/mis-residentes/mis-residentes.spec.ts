@@ -42,6 +42,21 @@ const DATOS: ResidentesACargo = {
       asignatura: 'Urgencias II',
     }),
   ],
+  proximos: [
+    residente({
+      residenteId: 3,
+      nombre: 'Laura Restrepo',
+      inicio: '2026-10-15',
+      fin: '2026-11-15',
+    }),
+    residente({
+      residenteId: 4,
+      nombre: 'Andrés Gómez',
+      asignatura: 'Urgencias II',
+      inicio: '2026-11-01',
+      fin: '2026-11-30',
+    }),
+  ],
 };
 
 describe('MisResidentes', () => {
@@ -61,6 +76,12 @@ describe('MisResidentes', () => {
     component = fixture.componentInstance;
     await fixture.whenStable();
     fixture.detectChanges();
+  }
+
+  /** Tabla de una de las dos tarjetas: 0 = en curso, 1 = próximas rotaciones. */
+  function filasDe(tarjeta: number): HTMLTableRowElement[] {
+    const card = fixture.nativeElement.querySelectorAll('section.card')[tarjeta];
+    return [...card.querySelectorAll('tbody tr')];
   }
 
   beforeEach(() => {
@@ -99,15 +120,49 @@ describe('MisResidentes', () => {
     input.value = 'JULIAN';
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    const filas = fixture.nativeElement.querySelectorAll('tbody tr');
+    const filas = filasDe(0);
     expect(filas.length).toBe(1);
     expect(filas[0].textContent).toContain('Julián Camilo Zapata');
   });
 
   it('informa cuando no hay residentes rotando hoy', async () => {
-    coordinadorService.listarResidentes.mockReturnValue(of({ ...DATOS, residentes: [] }));
+    coordinadorService.listarResidentes.mockReturnValue(
+      of({ ...DATOS, residentes: [], proximos: [] }),
+    );
     await crear();
     expect(fixture.nativeElement.textContent).toContain('No tienes residentes rotando hoy');
+    expect(fixture.nativeElement.textContent).toContain('No hay rotaciones programadas');
+  });
+
+  it('lista las próximas rotaciones con los días que faltan para su inicio', async () => {
+    await crear();
+    const filas = filasDe(1);
+    expect(filas.length).toBe(2);
+    expect(filas[0].textContent).toContain('Laura Restrepo');
+    expect(filas[0].textContent).toContain('15/10/2026');
+    expect(filas[0].querySelector('.llegada--pronto')?.textContent).toContain('Empieza mañana');
+    expect(filas[1].textContent).toContain('Andrés Gómez');
+    expect(filas[1].textContent).toContain('Empieza en 18 días');
+    expect(filas[1].querySelector('.llegada--pronto')).toBeNull();
+    // Los indicadores siguen contando solo las rotaciones en curso.
+    expect(fixture.nativeElement.querySelector('.kpi__valor').textContent.trim()).toBe('2');
+  });
+
+  it('busca en las próximas rotaciones sin afectar las rotaciones en curso', async () => {
+    await crear();
+    const buscador: HTMLInputElement = fixture.nativeElement.querySelectorAll('.search__input')[1];
+    buscador.value = 'andres';
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(filasDe(1).length).toBe(1);
+    expect(filasDe(1)[0].textContent).toContain('Andrés Gómez');
+    expect(filasDe(0).length).toBe(2);
+  });
+
+  it('sin residentes hoy, anuncia cuándo empieza la próxima rotación', async () => {
+    coordinadorService.listarResidentes.mockReturnValue(of({ ...DATOS, residentes: [] }));
+    await crear();
+    expect(filasDe(0)[0].textContent).toContain('La próxima rotación empieza el 15/10/2026');
   });
 
   it('muestra el error del backend y permite reintentar', async () => {

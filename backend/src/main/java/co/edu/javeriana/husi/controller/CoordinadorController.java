@@ -13,7 +13,7 @@ public class CoordinadorController {
 
   private final CoordinadorService coordinadorService;
 
-  /** Residentes con rotación en curso hoy en el servicio del coordinador en sesión. */
+  /** Rotaciones en curso hoy y próximas en el servicio del coordinador en sesión. */
   @GetMapping("/residentes")
   public ResidentesACargoResponse listarResidentes() {
     return coordinadorService.listarResidentes();

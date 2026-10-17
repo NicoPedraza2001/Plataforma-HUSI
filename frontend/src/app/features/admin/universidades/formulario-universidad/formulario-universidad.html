@@ -1,5 +1,5 @@
 <form (ngSubmit)="form.valid && guardar.emit()" #form="ngForm">
-  <label for="nombre-universidad">Nombre de la universidad *</label
+  <label for="nombre-universidad">Nombre de la universidad <span aria-hidden="true">*</span></label
   ><input
     id="nombre-universidad"
     name="nombre"
@@ -9,7 +9,7 @@
     [disabled]="guardando()"
     autofocus
   />
-  <label for="pais-universidad">País *</label
+  <label for="pais-universidad">País <span aria-hidden="true">*</span></label
   ><input
     id="pais-universidad"
     name="pais"

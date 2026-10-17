@@ -329,6 +329,24 @@
   color: var(--estado-alerta);
 }
 
+/* ===================== LLEGADA DE PRÓXIMAS ROTACIONES ===================== */
+.llegada {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--husi-surface);
+  border: 1px solid var(--husi-border);
+  font-size: 0.74rem;
+  color: var(--husi-muted);
+  white-space: nowrap;
+}
+
+.llegada--pronto {
+  font-weight: 600;
+  color: var(--husi-teal-dark);
+  border-color: currentColor;
+}
+
 /* ===================== ESTADOS VACÍO Y CARGA ===================== */
 .vacio {
   display: flex;
