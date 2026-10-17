@@ -14,6 +14,7 @@ import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Paginacion } from '../../../../shared/paginacion/paginacion';
 import { FormularioUsuario } from '../formulario-usuario/formulario-usuario';
+import { generarContrasena } from '../formulario-usuario/generar-contrasena';
 
 @Component({
   selector: 'app-listado-usuarios',
@@ -139,7 +140,7 @@ export class ListadoUsuarios {
           nombre: '',
           apellido: '',
           correo: '',
-          contrasena: '',
+          contrasena: generarContrasena(),
           rolId: null,
           servicioId: null,
         };

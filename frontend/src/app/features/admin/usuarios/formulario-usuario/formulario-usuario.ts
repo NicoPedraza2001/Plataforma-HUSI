@@ -1,4 +1,4 @@
-import { Component, input, model, output } from '@angular/core';
+import { Component, input, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { OpcionCatalogo } from '../../../../models/opcion-catalogo.model';
 import { ROL_COORDINADOR } from '../../../../models/sesion.model';
@@ -7,6 +7,7 @@ import {
   ClaveBcrypt,
   TextoObligatorio,
 } from '../../../../shared/formularios/restricciones-entrada';
+import { generarContrasena } from './generar-contrasena';
 
 @Component({
   selector: 'app-formulario-usuario',
@@ -29,6 +30,22 @@ export class FormularioUsuario {
   protected esCoordinador(): boolean {
     const rolElegido = this.opciones().find((opcion) => opcion.id === this.datos().rolId);
     return rolElegido?.nombre === ROL_COORDINADOR;
+  }
+
+  protected readonly copiada = signal(false);
+
+  protected regenerarContrasena() {
+    this.datos().contrasena = generarContrasena();
+    this.copiada.set(false);
+  }
+
+  protected async copiarContrasena() {
+    try {
+      await navigator.clipboard.writeText(this.datos().contrasena);
+      this.copiada.set(true);
+    } catch {
+      this.copiada.set(false);
+    }
   }
 
   /** Un servicio elegido no se envía si el rol final no es Coordinador. */

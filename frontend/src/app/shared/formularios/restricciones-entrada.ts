@@ -27,7 +27,7 @@ export class EnteroBaseDatos implements Validator {
 }
 
 @Directive({
-  selector: 'input[type=password][ngModel]',
+  selector: 'input[type=password][ngModel],input[claveBcrypt][ngModel]',
   providers: [{ provide: NG_VALIDATORS, useExisting: forwardRef(() => ClaveBcrypt), multi: true }],
 })
 export class ClaveBcrypt implements Validator {

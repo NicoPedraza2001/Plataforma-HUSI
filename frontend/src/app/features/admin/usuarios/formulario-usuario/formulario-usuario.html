@@ -30,22 +30,42 @@
     [disabled]="guardando()"
     [(ngModel)]="datos().correo"
   />
-  <label for="usuario-contrasena">Contraseña</label
-  ><input
-    id="usuario-contrasena"
-    name="contrasena"
-    type="password"
-    maxlength="72"
-    [required]="!edicion()"
-    minlength="8"
-    autocomplete="new-password"
-    [disabled]="guardando()"
-    [(ngModel)]="datos().contrasena"
-  />
-  <p class="ayuda">
-    Al menos 8 caracteres y hasta 72 bytes (acentos y símbolos pueden ocupar más de un byte). Al
-    editar, déjala vacía para conservar la contraseña actual.
-  </p>
+  @if (!edicion()) {
+    <label for="usuario-contrasena">Contraseña sugerida</label>
+    <div class="clave">
+      <input
+        id="usuario-contrasena"
+        name="contrasena"
+        type="text"
+        claveBcrypt
+        maxlength="72"
+        required
+        minlength="8"
+        autocomplete="off"
+        spellcheck="false"
+        [disabled]="guardando()"
+        [(ngModel)]="datos().contrasena"
+      /><button
+        type="button"
+        class="btn btn--outline"
+        [disabled]="guardando()"
+        (click)="regenerarContrasena()"
+      >
+        Generar otra</button
+      ><button
+        type="button"
+        class="btn btn--outline"
+        [disabled]="guardando()"
+        (click)="copiarContrasena()"
+      >
+        {{ copiada() ? 'Copiada' : 'Copiar' }}
+      </button>
+    </div>
+    <p class="ayuda">
+      Generada automáticamente; compártela con el usuario para que la cambie al ingresar. Puedes
+      editarla: al menos 8 caracteres y hasta 72 bytes.
+    </p>
+  }
   <label for="usuario-rolId">Rol</label
   ><select
     id="usuario-rolId"

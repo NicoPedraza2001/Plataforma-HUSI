@@ -2,3 +2,17 @@
 :host {
   display: contents;
 }
+.clave {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.clave input {
+  flex: 1 1 220px;
+  width: auto;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+.clave .btn {
+  white-space: nowrap;
+}
