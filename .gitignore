@@ -40,3 +40,5 @@ target/
 # Build
 # =========================
 build/
+# Enlace local con el proyecto de Vercel
+.vercel
