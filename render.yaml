@@ -1,0 +1,35 @@
+# ============================================================
+# Backend en Render (Blueprint). El frontend vive en Vercel
+# (frontend/vercel.json), que reenvia /api/* a este servicio.
+# Los valores con sync: false se escriben en el panel de Render;
+# ninguno queda en el repositorio.
+# ============================================================
+services:
+  - type: web
+    name: husi-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    branch: main
+    autoDeploy: true
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 8080
+      # El plan gratis tiene 512 MB: la JVM no debe pedir mas de lo que hay.
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=75 -XX:+UseSerialGC
+      # jdbc:postgresql://<host-de-neon>/<base>?sslmode=require
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # URL publica del frontend en Vercel, p. ej. https://plataforma-husi.vercel.app
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: HUSI_ADMIN_CONTRASENA_INICIAL
+        sync: false

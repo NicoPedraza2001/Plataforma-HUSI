@@ -42,7 +42,8 @@ spring:
     default-property-inclusion: non_null
 
 server:
-  port: 8080
+  # Render asigna el puerto en PORT; en local queda 8080.
+  port: ${PORT:8080}
   servlet:
     # Todos los endpoints quedan bajo /api  ->  http://localhost:8080/api/usuarios
     context-path: /api
