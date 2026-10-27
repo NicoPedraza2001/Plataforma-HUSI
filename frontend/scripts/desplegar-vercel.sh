@@ -15,7 +15,7 @@ set -e
 
 FRONTEND="$(cd "$(dirname "$0")/.." && pwd)"
 COPIA="$(mktemp -d)"
-trap 'cd / && rm -rf "$COPIA"' EXIT
+trap 'cd / && rm -rf "$COPIA" 2>/dev/null || true' EXIT
 
 if [ ! -f "$FRONTEND/.vercel/project.json" ]; then
   echo "Falta frontend/.vercel: ejecuta 'npx vercel link --project plataforma-husi' en frontend/." >&2
