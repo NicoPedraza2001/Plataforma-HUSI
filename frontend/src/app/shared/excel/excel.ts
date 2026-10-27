@@ -5,6 +5,16 @@
  */
 import type { Workbook } from 'exceljs';
 
+/**
+ * Constructor de `Workbook`. ExcelJS es CommonJS: con `ng serve` llega como export con nombre,
+ * pero en el build de producción solo existe dentro de `default` (el export con nombre queda
+ * `undefined` y `new` falla con «e is not a constructor»).
+ */
+async function cargarWorkbook(): Promise<typeof Workbook> {
+  const modulo = await import('exceljs');
+  return modulo.Workbook ?? (modulo as unknown as { default: typeof modulo }).default.Workbook;
+}
+
 export interface HojaExcel {
   nombre: string;
   /** Celdas como texto; `filas[0]` es la fila 1 del Excel. */
@@ -37,8 +47,8 @@ export async function leerExcel(archivo: File, maxFilas = 1100): Promise<HojaExc
     );
   if (archivo.size > 5 * 1024 * 1024)
     throw new Error('El archivo supera 5 MB. Divide los datos en archivos más pequeños.');
-  const { Workbook } = await import('exceljs');
-  const libro = new Workbook();
+  const Libro = await cargarWorkbook();
+  const libro = new Libro();
   try {
     await libro.xlsx.load(await archivo.arrayBuffer());
   } catch {
@@ -93,8 +103,8 @@ export async function descargarLibro(
 
 /** Genera un .xlsx con varias hojas (encabezados en negrita) y lo descarga. */
 export async function descargarHojas(nombreArchivo: string, hojas: HojaDescarga[]): Promise<void> {
-  const { Workbook } = await import('exceljs');
-  const libro: Workbook = new Workbook();
+  const Libro = await cargarWorkbook();
+  const libro: Workbook = new Libro();
   hojas.forEach(({ nombre, columnas, filas, ancho }) => {
     const hoja = libro.addWorksheet(nombre);
     hoja.addRow(columnas);
