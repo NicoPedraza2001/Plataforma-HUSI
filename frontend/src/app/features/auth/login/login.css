@@ -185,15 +185,40 @@
     min-height: 0;
   }
 
-  /* Apilado: la decoración solo cubre la mitad superior. */
+  /* Apilado: el SVG se deformaba y su mancha no cubría el texto (quedaba blanco sobre
+     blanco). Aquí el panel de bienvenida lleva su propio degradado, del mismo tono, y
+     una curva inferior que mantiene el aire del diseño de escritorio. */
   .login__deco {
-    height: 300px;
-    inset: 0 0 auto 0;
+    display: none;
   }
 
   .login__aside {
-    min-height: 300px;
-    padding: 40px 32px;
+    overflow: hidden;
+    padding: 44px 32px 64px;
+    background: linear-gradient(135deg, #2e8ef2 0%, #0b57b3 55%, #08417f 100%);
+    border-bottom-right-radius: 100% 72px;
+  }
+
+  .login__aside::after {
+    content: '';
+    position: absolute;
+    right: -46px;
+    bottom: -58px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #3396f7 0%, #0a4ea6 100%);
+    opacity: 0.85;
+  }
+
+  .login__welcome-title,
+  .login__welcome-text {
+    position: relative;
+    z-index: 1;
+  }
+
+  .login__welcome-text {
+    max-width: 420px;
   }
 
   .login__panel {
