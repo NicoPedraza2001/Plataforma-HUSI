@@ -27,7 +27,6 @@ describe('ImportarRotaciones (asistente)', () => {
     asistente.aplicarColumnas({
       configuracion,
       filas: [crearFilaDePrueba()],
-      reconstruir: false,
     });
     return configuracion;
   }
@@ -57,14 +56,50 @@ describe('ImportarRotaciones (asistente)', () => {
     expect(asistente.estaDisponible('confirmacion')).toBe(false);
   });
 
-  it('conserva las correcciones al confirmar las mismas columnas y las descarta al reconstruir', () => {
+  it('conserva las correcciones al confirmar las mismas columnas y las descarta si cambian', () => {
     const asistente = crearAsistente();
     const configuracion = prepararFilas(asistente);
     asistente.actualizarFilas([crearFilaDePrueba({ residente: 'Corregido' })]);
-    asistente.aplicarColumnas({ configuracion, filas: [crearFilaDePrueba()], reconstruir: false });
+    asistente.aplicarColumnas({ configuracion, filas: [crearFilaDePrueba()] });
     expect(asistente.filas()[0].residente).toBe('Corregido');
-    asistente.aplicarColumnas({ configuracion, filas: [crearFilaDePrueba()], reconstruir: true });
+    asistente.aplicarColumnas({
+      configuracion: { ...configuracion, filaEncabezados: 2 },
+      filas: [crearFilaDePrueba()],
+    });
     expect(asistente.filas()[0].residente).toBe('Ana Pérez');
+  });
+
+  it('guarda las filas excluidas tal como estaban y las restaura en su paso', () => {
+    const asistente = crearAsistente();
+    asistente.registrarArchivo(LIBRO_DE_PRUEBA);
+    asistente.aplicarColumnas({
+      configuracion: asistente.configuracionColumnas(),
+      filas: [crearFilaDePrueba({ fila: 2 }), crearFilaDePrueba({ fila: 3 })],
+    });
+    asistente.registrarPendientes('universidades', 0);
+    asistente.irAPaso('programas');
+    asistente.actualizarFilas([
+      crearFilaDePrueba({ fila: 2 }),
+      crearFilaDePrueba({ fila: 3, programa: 'Corregido' }),
+    ]);
+    asistente.actualizarFilas([crearFilaDePrueba({ fila: 2 })]);
+    expect(asistente.filasExcluidas().map((fila: any) => fila.programa)).toEqual(['Corregido']);
+    expect(asistente.excluidas()[0].paso).toBe('programas');
+    expect(asistente.mostrarExcluidas()).toBe(true);
+
+    asistente.registrarPendientes('programas', 0);
+    asistente.registrarPendientes('servicios', 0);
+    asistente.irAPaso('servicios');
+    asistente.registrarValidacion({ validos: 1, filas: [] });
+    asistente.restaurarFilas([3]);
+
+    expect(asistente.filas().map((fila: any) => fila.fila)).toEqual([2, 3]);
+    expect(asistente.filas()[1].programa).toBe('Corregido');
+    expect(asistente.excluidas()).toEqual([]);
+    expect(asistente.pasoActual()).toBe('programas');
+    expect(asistente.pendientesPorPaso()).toEqual({ universidades: 0 });
+    expect(asistente.estaDisponible('servicios')).toBe(false);
+    expect(asistente.resultadoValidacion()).toBeNull();
   });
 
   it('cualquier corrección invalida la validación anterior', () => {

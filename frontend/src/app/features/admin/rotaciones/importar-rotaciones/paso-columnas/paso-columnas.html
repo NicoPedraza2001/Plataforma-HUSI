@@ -70,14 +70,5 @@
 </fieldset>
 <footer class="acciones-paso">
   <button class="btn btn--outline" (click)="anterior.emit()">Atrás</button>
-  @if (hayCorrecciones()) {
-    <button
-      class="btn btn--outline"
-      title="Descarta las correcciones y exclusiones hechas en los pasos siguientes"
-      (click)="confirmarColumnas(true)"
-    >
-      Reconstruir desde el Excel
-    </button>
-  }
   <button class="btn btn--navy" (click)="confirmarColumnas()">Continuar: universidades</button>
 </footer>

@@ -39,6 +39,10 @@
     <p class="mensaje error" role="alert">{{ error() }}</p>
   }
 
+  @if (mostrarExcluidas()) {
+    <app-filas-excluidas [filas]="excluidas()" (restaurar)="restaurarFilas($event)" />
+  }
+
   @switch (pasoActual()) {
     @case ('archivo') {
       <app-paso-archivo
@@ -53,7 +57,6 @@
         <app-paso-columnas
           [libroExcel]="libro"
           [configuracionGuardada]="configuracionColumnas()"
-          [hayCorrecciones]="hayCorrecciones()"
           (columnasConfirmadas)="aplicarColumnas($event)"
           (anterior)="irAlPasoAnterior()"
         />

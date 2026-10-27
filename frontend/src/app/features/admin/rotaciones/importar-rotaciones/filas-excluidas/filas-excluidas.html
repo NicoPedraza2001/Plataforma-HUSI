@@ -1,0 +1,53 @@
+<details class="filas-excluidas">
+  <summary>
+    {{ filas().length }} {{ filas().length === 1 ? 'fila excluida' : 'filas excluidas' }} de la
+    importación
+  </summary>
+  <p class="ayuda">
+    No se guardarán. Al restaurar una fila vuelve tal como estaba al excluirla y el asistente te
+    lleva al paso donde se excluyó para revisarla de nuevo.
+  </p>
+  <div class="table-wrap">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Fila del Excel</th>
+          <th>Residente</th>
+          <th>Servicio</th>
+          <th>Fechas</th>
+          <th>Excluida en</th>
+          <th class="col-acciones">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (excluida of filas(); track excluida.fila.fila) {
+          <tr>
+            <td>{{ excluida.fila.fila }}</td>
+            <td>{{ excluida.fila.residente || '—' }}</td>
+            <td>{{ excluida.fila.servicio || '—' }}</td>
+            <td class="fechas">
+              {{ excluida.fila.inicio || '—' }} a {{ excluida.fila.fin || '—' }}
+            </td>
+            <td>{{ tituloDelPaso(excluida.paso) }}</td>
+            <td>
+              <button
+                type="button"
+                class="btn btn--outline"
+                (click)="restaurar.emit([excluida.fila.fila])"
+              >
+                Restaurar
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (filas().length > 1) {
+    <div class="restaurar-todas">
+      <button type="button" class="btn btn--outline" (click)="restaurarTodas()">
+        Restaurar todas
+      </button>
+    </div>
+  }
+</details>

@@ -10,6 +10,7 @@ import {
 } from './campos-carga';
 import { PasoArchivo } from './paso-archivo/paso-archivo';
 import { PasoAsignaturas } from './paso-asignaturas/paso-asignaturas';
+import { FilaExcluida, FilasExcluidas } from './filas-excluidas/filas-excluidas';
 import { ColumnasConfirmadas, PasoColumnas } from './paso-columnas/paso-columnas';
 import { PasoConfirmacion } from './paso-confirmacion/paso-confirmacion';
 import { PasoProgramas } from './paso-programas/paso-programas';
@@ -29,6 +30,7 @@ type PendientesPorPaso = Partial<Record<IdPasoImportacion, number>>;
 @Component({
   selector: 'app-importar-rotaciones',
   imports: [
+    FilasExcluidas,
     PasoArchivo,
     PasoColumnas,
     PasoUniversidades,
@@ -60,6 +62,8 @@ export class ImportarRotaciones {
   protected readonly filasOriginales = signal<FilaCargaInicial[]>([]);
   /** Filas con las correcciones de cada paso: es lo que se valida y se guarda. */
   protected readonly filas = signal<FilaCargaInicial[]>([]);
+  /** Filas quitadas en los pasos de emparejamiento; se pueden restaurar. */
+  protected readonly excluidas = signal<FilaExcluida[]>([]);
 
   // Progreso
   protected readonly pendientesPorPaso = signal<PendientesPorPaso>({});
@@ -69,12 +73,14 @@ export class ImportarRotaciones {
   protected readonly pasoTrabajando = signal(false);
   protected readonly error = signal('');
 
-  protected readonly hayCorrecciones = computed(() => this.filas() !== this.filasOriginales());
   /** Filas que el administrador excluyó en algún paso; no llegan al backend. */
-  protected readonly filasExcluidas = computed(() => {
-    const enviadas = new Set(this.filas().map((fila) => fila.fila));
-    return this.filasOriginales().filter((fila) => !enviadas.has(fila.fila));
-  });
+  protected readonly filasExcluidas = computed(() => this.excluidas().map(({ fila }) => fila));
+  /** La lista de excluidas se muestra en los pasos que revisan filas. */
+  protected readonly mostrarExcluidas = computed(
+    () =>
+      this.excluidas().length > 0 &&
+      !['archivo', 'columnas', 'confirmacion'].includes(this.pasoActual()),
+  );
   protected readonly numeroPasoActual = computed(
     () => this.pasos.findIndex((paso) => paso.id === this.pasoActual()) + 1,
   );
@@ -147,27 +153,69 @@ export class ImportarRotaciones {
 
   /**
    * Con la misma configuración se conservan las correcciones hechas en los pasos
-   * siguientes; si cambió (o se pidió reconstruir) las filas se vuelven a leer del Excel.
+   * siguientes; si cambió, las filas se vuelven a leer del Excel.
    */
-  protected aplicarColumnas({ configuracion, filas, reconstruir }: ColumnasConfirmadas) {
+  protected aplicarColumnas({ configuracion, filas }: ColumnasConfirmadas) {
     const configuracionSinCambios = sonConfiguracionesIguales(
       configuracion,
       this.configuracionColumnas(),
     );
-    if (reconstruir || !configuracionSinCambios || !this.filas().length) {
+    if (!configuracionSinCambios || !this.filas().length) {
       this.configuracionColumnas.set(configuracion);
       this.filasOriginales.set(filas);
       this.filas.set(filas);
+      this.excluidas.set([]);
       this.pendientesPorPaso.set({});
       this.resultadoValidacion.set(null);
     }
     this.irAPaso('universidades');
   }
 
-  /** Cualquier cambio en las filas invalida la validación anterior. */
+  /**
+   * Cualquier cambio en las filas invalida la validación anterior. Las que desaparecen las
+   * excluyó el paso actual: se guardan como estaban para poder restaurarlas.
+   */
   protected actualizarFilas(filasCorregidas: FilaCargaInicial[]) {
+    const quedan = new Set(filasCorregidas.map((fila) => fila.fila));
+    const quitadas = this.filas().filter((fila) => !quedan.has(fila.fila));
+    if (quitadas.length) {
+      const paso = this.pasoActual();
+      this.excluidas.update((excluidas) => [
+        ...excluidas,
+        ...quitadas.map((fila) => ({ fila, paso })),
+      ]);
+    }
     this.filas.set(filasCorregidas);
     this.resultadoValidacion.set(null);
+  }
+
+  /**
+   * Devuelve filas excluidas a la importación y lleva al primer paso donde se excluyó alguna:
+   * desde ahí sus pendientes se vuelven a calcular, así que los pasos siguientes quedan
+   * bloqueados hasta revisarlos otra vez.
+   */
+  protected restaurarFilas(numerosFila: number[]) {
+    const aRestaurar = new Set(numerosFila);
+    const restauradas = this.excluidas().filter(({ fila }) => aRestaurar.has(fila.fila));
+    if (!restauradas.length) return;
+    this.excluidas.update((excluidas) =>
+      excluidas.filter(({ fila }) => !aRestaurar.has(fila.fila)),
+    );
+    this.filas.update((filas) =>
+      [...filas, ...restauradas.map(({ fila }) => fila)].sort((a, b) => a.fila - b.fila),
+    );
+    this.resultadoValidacion.set(null);
+    const indiceDelPaso = (idPaso: IdPasoImportacion) =>
+      this.pasos.findIndex((paso) => paso.id === idPaso);
+    const primerPaso = Math.min(...restauradas.map(({ paso }) => indiceDelPaso(paso)));
+    this.pendientesPorPaso.update((pendientes) =>
+      Object.fromEntries(
+        Object.entries(pendientes).filter(
+          ([idPaso]) => indiceDelPaso(idPaso as IdPasoImportacion) < primerPaso,
+        ),
+      ),
+    );
+    this.irAPaso(this.pasos[primerPaso].id);
   }
 
   protected registrarPendientes(idPaso: IdPasoImportacion, cantidad: number) {
@@ -199,6 +247,7 @@ export class ImportarRotaciones {
     this.configuracionColumnas.set(null);
     this.filasOriginales.set([]);
     this.filas.set([]);
+    this.excluidas.set([]);
     this.pendientesPorPaso.set({});
     this.resultadoValidacion.set(null);
     this.resultadoFinal.set(null);

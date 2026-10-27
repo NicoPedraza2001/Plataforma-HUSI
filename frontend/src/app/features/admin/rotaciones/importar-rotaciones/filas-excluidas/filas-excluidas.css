@@ -1,0 +1,37 @@
+@import '../pasos.css';
+
+.filas-excluidas {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  background: var(--husi-surface);
+}
+summary {
+  cursor: pointer;
+  color: var(--husi-navy);
+  font-weight: 600;
+}
+summary:focus-visible {
+  outline: 3px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+.ayuda {
+  margin: 10px 0 0;
+}
+.tabla {
+  background: var(--husi-bg);
+}
+.tabla .btn--outline {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.restaurar-todas {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.fechas {
+  white-space: nowrap;
+}

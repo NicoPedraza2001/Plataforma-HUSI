@@ -17,8 +17,6 @@ import {
 export interface ColumnasConfirmadas {
   configuracion: ConfiguracionColumnas;
   filas: FilaCargaInicial[];
-  /** Verdadero si el administrador pidió descartar sus correcciones y releer el Excel. */
-  reconstruir: boolean;
 }
 
 /** Paso 2: relaciona cada campo de la carga con una columna del Excel o un valor común. */
@@ -32,8 +30,6 @@ export class PasoColumnas implements OnInit {
   readonly libroExcel = input.required<LibroExcel>();
   /** Última configuración aplicada; al volver a este paso se recupera tal cual. */
   readonly configuracionGuardada = input<ConfiguracionColumnas | null>(null);
-  /** Hay correcciones hechas en pasos posteriores que se perderían al reconstruir. */
-  readonly hayCorrecciones = input(false);
   readonly columnasConfirmadas = output<ColumnasConfirmadas>();
   readonly anterior = output<void>();
 
@@ -75,7 +71,7 @@ export class PasoColumnas implements OnInit {
     this.columnaPorCampo = detectarColumnas(this.encabezados());
   }
 
-  protected confirmarColumnas(reconstruir = false) {
+  protected confirmarColumnas() {
     this.error.set('');
     const errorDeConfiguracion = this.validarConfiguracion();
     if (errorDeConfiguracion) {
@@ -101,7 +97,6 @@ export class PasoColumnas implements OnInit {
         valorComunPorCampo: [...this.valorComunPorCampo],
       },
       filas,
-      reconstruir,
     });
   }
 
