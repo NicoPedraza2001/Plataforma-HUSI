@@ -14,13 +14,21 @@ final class ProgramasDeConvenio {
   static final String PAIS_NACIONAL = "Colombia";
   static final String CONVENIO_NACIONAL = "Convenio Nacional";
   static final String CONVENIO_INTERNACIONAL = "Convenio Internacional";
+
+  /**
+   * Nombre que ve el usuario para cada convenio. Es solo de presentación: lo que se guarda en
+   * programa.nombre_programa y las comparaciones de esta clase siguen usando el nombre de arriba.
+   */
+  static final String ETIQUETA_CONVENIO_NACIONAL = "Movilidad Nacional";
+  static final String ETIQUETA_CONVENIO_INTERNACIONAL = "Observador Internacional";
+
   static final String MENSAJE_SOLO_CONVENIOS =
     "Las universidades externas a la " +
     UNIVERSIDAD_PROPIA +
     " solo admiten los programas «" +
-    CONVENIO_NACIONAL +
+    ETIQUETA_CONVENIO_NACIONAL +
     "» o «" +
-    CONVENIO_INTERNACIONAL +
+    ETIQUETA_CONVENIO_INTERNACIONAL +
     "».";
 
   private ProgramasDeConvenio() {}
@@ -65,14 +73,14 @@ final class ProgramasDeConvenio {
           "» es nacional (" +
           paisMostrado +
           "), por ende su convenio no puede ser internacional. Usa «" +
-          CONVENIO_NACIONAL +
+          ETIQUETA_CONVENIO_NACIONAL +
           "»."
         : "La universidad «" +
           nombreUniversidad +
           "» es internacional (" +
           paisMostrado +
           "), por ende su convenio no puede ser nacional. Usa «" +
-          CONVENIO_INTERNACIONAL +
+          ETIQUETA_CONVENIO_INTERNACIONAL +
           "»."
     );
   }

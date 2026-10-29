@@ -27,6 +27,7 @@ export class CoordinatorLayout {
 
   protected readonly navItems: readonly CoordinatorNavItem[] = [
     { label: 'Mis residentes', link: '/coordinador/residentes' },
+    { label: 'Dashboards', link: '/coordinador/dashboards' },
     { label: 'Ajustes', link: '/coordinador/ajustes' },
   ];
 

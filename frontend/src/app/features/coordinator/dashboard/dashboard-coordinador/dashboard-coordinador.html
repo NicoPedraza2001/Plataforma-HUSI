@@ -1,0 +1,80 @@
+<!-- ===================== ENCABEZADO ===================== -->
+<header class="page-head">
+  <div class="page-head__titles">
+    <h1 class="page-head__title">Dashboards</h1>
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <span>Inicio</span><span class="breadcrumb__sep">&gt;</span><span>Dashboards</span>
+    </nav>
+  </div>
+  <button type="button" class="btn btn--refrescar" [disabled]="cargando()" (click)="cargar()">
+    <svg viewBox="0 0 24 24" aria-hidden="true" [class.girando]="cargando()">
+      <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" />
+    </svg>
+    Actualizar
+  </button>
+</header>
+
+@if (servicio()) {
+  <p class="servicio-actual">
+    Cupos y ocupación de <strong>{{ servicio() }}</strong>
+  </p>
+}
+
+@if (cargando() && !panel.datos() && !residentes.datos()) {
+  <p role="status">Cargando datos…</p>
+}
+@if (error()) {
+  <div class="mensaje error" role="alert">
+    <span>{{ error() }}</span>
+    <button class="btn btn--navy" type="button" (click)="cargar()">Reintentar</button>
+  </div>
+}
+
+@if (!error() && panel.datos() && residentes.datos()) {
+  <!-- ===================== OCUPACIÓN ===================== -->
+  <section class="card panel panel--tabla" [attr.aria-busy]="cargando()">
+    <h2 class="panel__titulo">Mapa de ocupación de {{ servicio() }}</h2>
+    <app-mapa-ocupacion [datos]="mapaOcupacion()" />
+  </section>
+
+  <!-- ===================== TENDENCIAS ===================== -->
+  <div class="rejilla">
+    <section class="card panel" [attr.aria-busy]="cargando()">
+      <h2 class="panel__titulo">Rotaciones iniciadas por mes</h2>
+      <p class="panel__nota">{{ totalInicios() }} rotaciones iniciadas en el periodo</p>
+      <app-grafico-tendencia [datos]="tendenciaInicios()" />
+    </section>
+
+    <section class="card panel" [attr.aria-busy]="cargando()">
+      <h2 class="panel__titulo">Rotaciones por asignatura</h2>
+      @if (rotacionesPorAsignatura().length) {
+        <app-grafico-barras [datos]="asignaturasVisibles()" />
+        @if (rotacionesPorAsignatura().length > asignaturasIniciales) {
+          <button
+            type="button"
+            class="chip ver-mas"
+            (click)="todasLasAsignaturas.set(!todasLasAsignaturas())"
+          >
+            {{
+              todasLasAsignaturas()
+                ? 'Ver solo las ' + asignaturasIniciales + ' con más residentes'
+                : 'Ver las ' + rotacionesPorAsignatura().length + ' asignaturas'
+            }}
+          </button>
+        }
+      } @else {
+        <p class="vacio-panel">Sin rotaciones registradas para contar por asignatura.</p>
+      }
+    </section>
+  </div>
+
+  <!-- ===================== A REVISAR ===================== -->
+  <section class="card panel panel--tabla" [attr.aria-busy]="cargando()">
+    <h2 class="panel__titulo">Residentes a revisar</h2>
+    @if (revisar().length) {
+      <app-tabla-revisar [residentes]="revisar()" periodo="todo-el-historico" />
+    } @else {
+      <p class="vacio-panel">Sin cruces de fechas ni residentes en lista de espera.</p>
+    }
+  </section>
+}

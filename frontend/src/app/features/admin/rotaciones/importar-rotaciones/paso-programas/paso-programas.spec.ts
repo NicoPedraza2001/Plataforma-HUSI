@@ -46,7 +46,7 @@ describe('emparejarProgramas', () => {
     ];
     const [grupo] = emparejarProgramas(filas, new Map(), [UNIVERSIDAD_ANDES], []);
     expect(grupo.estado).toBe('nuevo');
-    expect(grupo.observaciones[0]).toContain('Convenio Nacional');
+    expect(grupo.observaciones[0]).toContain('Movilidad Nacional');
   });
 
   it('no deja usar el convenio internacional en una universidad nacional', () => {

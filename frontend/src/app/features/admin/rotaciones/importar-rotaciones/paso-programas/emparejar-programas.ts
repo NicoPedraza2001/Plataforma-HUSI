@@ -16,6 +16,7 @@ import {
   buscarErrorDeConvenioSegunPais,
   convenioSegunPais,
   esUniversidadPropia,
+  etiquetaConvenio,
 } from '../../../programas/programas-de-convenio';
 
 function convertirEnRegistro(programa: Programa): RegistroDelSistema {
@@ -122,7 +123,7 @@ export function emparejarProgramas(
         ...grupo,
         estado: 'nuevo',
         observaciones: [
-          `«${universidad.nombre}» es externa a la Javeriana: sus filas se registran como «${convenioSugerido}».`,
+          `«${universidad.nombre}» es externa a la Javeriana: sus filas se registran como «${etiquetaConvenio(convenioSugerido)}».`,
         ],
         sugerencias: programasActivos
           .filter((programa) => buscarConvenio(programa.nombre) !== null)

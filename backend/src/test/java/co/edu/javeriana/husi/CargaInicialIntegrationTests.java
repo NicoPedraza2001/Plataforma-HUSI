@@ -165,7 +165,7 @@ class CargaInicialIntegrationTests {
     );
     var resultado = carga.validar(request(List.of(filaConProgramaPropio)));
     assertThat(resultado.errores()).isEqualTo(1);
-    assertThat(resultado.filas().getFirst().mensaje()).contains("Convenio Nacional");
+    assertThat(resultado.filas().getFirst().mensaje()).contains("Movilidad Nacional");
   }
 
   @Test

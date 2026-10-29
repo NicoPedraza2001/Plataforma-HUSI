@@ -18,4 +18,9 @@ export class DashboardService {
   relaciones(): Observable<RelacionFiltros[]> {
     return this.http.get<RelacionFiltros[]>(`${API_URL}/dashboard/relaciones`);
   }
+
+  /** GET /api/coordinador/dashboard: igual forma que /dashboard, acotado a su propio servicio. */
+  consultarCoordinador(): Observable<DashboardDatos> {
+    return this.http.get<DashboardDatos>(`${API_URL}/coordinador/dashboard`);
+  }
 }

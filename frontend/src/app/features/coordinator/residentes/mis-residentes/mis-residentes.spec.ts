@@ -125,6 +125,35 @@ describe('MisResidentes', () => {
     expect(filas[0].textContent).toContain('Julián Camilo Zapata');
   });
 
+  it('filtra cada tabla por su propio mes, sin afectar a la otra', async () => {
+    await crear();
+    const [mesEnCurso, mesProximas]: HTMLInputElement[] = [
+      ...fixture.nativeElement.querySelectorAll('.filtro-mes__input'),
+    ];
+    const botones: HTMLButtonElement[] = [
+      ...fixture.nativeElement.querySelectorAll('.filtro-mes__boton'),
+    ];
+
+    // Los residentes en curso solo tienen rango en octubre; noviembre los deja fuera.
+    mesEnCurso.value = '2026-11';
+    mesEnCurso.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    // Sin coincidencias queda la única fila del estado vacío.
+    expect(filasDe(0).length).toBe(1);
+    expect(filasDe(0)[0].textContent).not.toContain('María José Osorio');
+    expect(botones[0].textContent).toContain('Noviembre de 2026');
+    // La tabla de próximas no se tocó: sigue el filtro independiente, vacío.
+    expect(filasDe(1).length).toBe(2);
+    expect(mesProximas.value).toBe('');
+    expect(botones[1].textContent).toContain('Filtrar por mes');
+
+    // Quitar el filtro de la primera tarjeta no afecta el de la segunda ni viceversa.
+    const quitar: HTMLButtonElement = fixture.nativeElement.querySelector('.filtro-mes__quitar');
+    quitar.click();
+    fixture.detectChanges();
+    expect(filasDe(0).length).toBe(2);
+  });
+
   it('informa cuando no hay residentes rotando hoy', async () => {
     coordinadorService.listarResidentes.mockReturnValue(
       of({ ...DATOS, residentes: [], proximos: [] }),

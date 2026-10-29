@@ -7,6 +7,7 @@ import {
   buscarErrorDeConvenioSegunPais,
   convenioSegunPais,
   esUniversidadPropia,
+  etiquetaConvenio,
   PROGRAMAS_DE_CONVENIO,
 } from '../programas-de-convenio';
 
@@ -28,6 +29,7 @@ export class FormularioPrograma {
   readonly cancelar = output<void>();
 
   protected readonly programasDeConvenio = PROGRAMAS_DE_CONVENIO;
+  protected readonly etiquetaConvenio = etiquetaConvenio;
   protected readonly universidadSeleccionada = computed(
     () =>
       this.universidades().find((universidad) => universidad.id === this.universidadId()) ?? null,

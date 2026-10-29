@@ -43,8 +43,8 @@ describe('Programas de una universidad', () => {
     ) as HTMLSelectElement;
     expect(tipoDeConvenio.tagName).toBe('SELECT');
     expect([...tipoDeConvenio.options].map((opcion) => opcion.text.trim())).toEqual([
-      'Convenio Nacional',
-      'Convenio Internacional',
+      'Movilidad Nacional',
+      'Observador Internacional',
     ]);
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
     const post = http.expectOne(
