@@ -11,6 +11,19 @@ export const CONVENIO_NACIONAL = 'Convenio Nacional';
 export const CONVENIO_INTERNACIONAL = 'Convenio Internacional';
 export const PROGRAMAS_DE_CONVENIO = [CONVENIO_NACIONAL, CONVENIO_INTERNACIONAL];
 
+/**
+ * Nombre que ve el usuario para cada convenio. Es solo de presentación: lo que se guarda en
+ * `programa.nombre_programa` y las comparaciones del código siguen usando el nombre de arriba.
+ */
+const ETIQUETAS_CONVENIO: Readonly<Record<string, string>> = {
+  [CONVENIO_NACIONAL]: 'Movilidad Nacional',
+  [CONVENIO_INTERNACIONAL]: 'Observador Internacional',
+};
+
+export function etiquetaConvenio(convenio: string): string {
+  return ETIQUETAS_CONVENIO[convenio] ?? convenio;
+}
+
 /** Igualdad que aplica el backend: ignora mayúsculas y espacios extremos. */
 function claveDeComparacion(texto: string | null | undefined): string {
   return (texto ?? '').trim().toLowerCase();
@@ -53,6 +66,6 @@ export function buscarErrorDeConvenioSegunPais(
   const pais = universidad.pais?.trim();
   if (!convenioEscrito || !pais || convenioEscrito === convenioSegunPais(pais)) return null;
   return esPaisNacional(pais)
-    ? `La universidad «${universidad.nombre}» es nacional (${pais}), por ende su convenio no puede ser internacional. Usa «${CONVENIO_NACIONAL}».`
-    : `La universidad «${universidad.nombre}» es internacional (${pais}), por ende su convenio no puede ser nacional. Usa «${CONVENIO_INTERNACIONAL}».`;
+    ? `La universidad «${universidad.nombre}» es nacional (${pais}), por ende su convenio no puede ser internacional. Usa «${etiquetaConvenio(CONVENIO_NACIONAL)}».`
+    : `La universidad «${universidad.nombre}» es internacional (${pais}), por ende su convenio no puede ser nacional. Usa «${etiquetaConvenio(CONVENIO_INTERNACIONAL)}».`;
 }

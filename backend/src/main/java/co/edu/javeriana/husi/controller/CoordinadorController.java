@@ -1,5 +1,6 @@
 package co.edu.javeriana.husi.controller;
 
+import co.edu.javeriana.husi.dto.response.DashboardResponse;
 import co.edu.javeriana.husi.dto.response.ResidentesACargoResponse;
 import co.edu.javeriana.husi.service.CoordinadorService;
 import lombok.RequiredArgsConstructor;
@@ -17,5 +18,11 @@ public class CoordinadorController {
   @GetMapping("/residentes")
   public ResidentesACargoResponse listarResidentes() {
     return coordinadorService.listarResidentes();
+  }
+
+  /** Panel de dashboard, acotado siempre al servicio del coordinador en sesión. */
+  @GetMapping("/dashboard")
+  public DashboardResponse dashboard() {
+    return coordinadorService.dashboardPropio();
   }
 }

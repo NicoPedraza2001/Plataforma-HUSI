@@ -1,0 +1,173 @@
+/* .page-head, .card, .search, .btn y .btn--navy vienen de src/styles/admin.css. */
+
+:host {
+  display: block;
+  padding: 26px 34px 44px;
+}
+
+:host .card {
+  padding: 18px 22px 22px;
+}
+
+/* ===================== ENCABEZADO ===================== */
+.btn--refrescar {
+  padding: 10px 18px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  background: var(--husi-bg);
+  color: var(--husi-navy);
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--refrescar:hover:not(:disabled) {
+  border-color: var(--husi-teal-dark);
+  background: var(--husi-surface);
+}
+
+.btn--refrescar:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+
+.btn--refrescar svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.girando {
+  animation: girar 0.9s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.servicio-actual {
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: var(--husi-muted);
+}
+
+.servicio-actual strong {
+  color: var(--husi-navy);
+}
+
+/* ===================== MENSAJES ===================== */
+.mensaje {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+
+.error {
+  color: var(--husi-red-dark);
+}
+
+/* ===================== PANELES ===================== */
+.panel--tabla {
+  margin-top: 22px;
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+:host .rejilla .card {
+  margin-top: 0;
+}
+
+.panel__titulo {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--husi-navy);
+}
+
+.panel__titulo + :not(.panel__nota) {
+  margin-top: 16px;
+}
+
+.panel__nota {
+  margin: 4px 0 18px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--husi-muted);
+}
+
+.vacio-panel {
+  margin-top: 16px;
+  font-size: 0.82rem;
+  color: var(--husi-muted);
+}
+
+/* Botón secundario «Ver las N asignaturas». */
+.chip {
+  padding: 6px 12px;
+  border: 1px solid var(--husi-border);
+  border-radius: 999px;
+  background: var(--husi-bg);
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--husi-text);
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--husi-surface);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+
+.ver-mas {
+  margin-top: 16px;
+}
+
+/* Elementos propios: en bloque para que el aire bajo el título se aplique. */
+app-grafico-barras,
+app-grafico-tendencia,
+app-mapa-ocupacion,
+app-tabla-revisar {
+  display: block;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 1080px) {
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 22px 16px;
+  }
+
+  .btn--refrescar {
+    align-self: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .girando {
+    animation: none;
+  }
+}

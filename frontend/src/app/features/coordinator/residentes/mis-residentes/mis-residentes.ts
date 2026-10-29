@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ResidenteACargo, ResidentesACargo } from '../../../../models/coordinador.model';
 import { mensajeError } from '../../../../services/api-error';
@@ -55,6 +55,25 @@ function filtrar<T extends ResidenteACargo>(filas: T[], termino: string): T[] {
   );
 }
 
+/** `yyyy-MM-dd` → `yyyy-MM`, para comparar contra el valor de un `<input type="month">`. */
+function mesIso(fecha: string): string {
+  return fecha.slice(0, 7);
+}
+
+/** Filas cuyo rango [inicio, fin] toca el mes elegido (vacío = sin filtro). */
+function porMes<T extends ResidenteACargo>(filas: T[], mes: string): T[] {
+  if (!mes) return filas;
+  return filas.filter((fila) => mesIso(fila.inicio) <= mes && mesIso(fila.fin) >= mes);
+}
+
+/** `yyyy-MM` → «Octubre 2026», para el botón del filtro. */
+function etiquetaMes(mes: string): string {
+  const [anio, numeroMes] = mes.split('-').map(Number);
+  const texto = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(Date.UTC(anio, numeroMes - 1, 1));
+  return texto.charAt(0).toLocaleUpperCase('es') + texto.slice(1);
+}
+
 @Component({
   selector: 'app-mis-residentes',
   imports: [Paginacion],
@@ -72,6 +91,11 @@ export class MisResidentes {
   protected readonly error = signal('');
   protected readonly terminoBusqueda = signal('');
   protected readonly paginaActual = signal(1);
+  /** `yyyy-MM` del filtro de esta tarjeta; vacío = sin filtro. Independiente del de próximas. */
+  protected readonly mesFiltroEnCurso = signal('');
+  protected readonly etiquetaMes = etiquetaMes;
+  private readonly inputMesEnCurso = viewChild<ElementRef<HTMLInputElement>>('inputMesEnCurso');
+  private readonly inputMesProximas = viewChild<ElementRef<HTMLInputElement>>('inputMesProximas');
 
   protected readonly iniciales = computed(() => {
     const perfil = this.perfil();
@@ -128,7 +152,9 @@ export class MisResidentes {
     () => this.filas().filter((fila) => fila.finalizaPronto).length,
   );
 
-  protected readonly filasFiltradas = computed(() => filtrar(this.filas(), this.terminoBusqueda()));
+  protected readonly filasFiltradas = computed(() =>
+    filtrar(porMes(this.filas(), this.mesFiltroEnCurso()), this.terminoBusqueda()),
+  );
 
   protected readonly totalPaginas = computed(() =>
     Math.max(1, Math.ceil(this.filasFiltradas().length / TAMANO_PAGINA)),
@@ -141,6 +167,7 @@ export class MisResidentes {
   // Próximas rotaciones: las que empiezan después de la fecha de corte.
   protected readonly terminoProximas = signal('');
   protected readonly paginaProximas = signal(1);
+  protected readonly mesFiltroProximas = signal('');
 
   protected readonly proximas = computed<FilaProxima[]>(() => {
     const datos = this.datos();
@@ -153,7 +180,7 @@ export class MisResidentes {
   });
 
   protected readonly proximasFiltradas = computed(() =>
-    filtrar(this.proximas(), this.terminoProximas()),
+    filtrar(porMes(this.proximas(), this.mesFiltroProximas()), this.terminoProximas()),
   );
   protected readonly totalPaginasProximas = computed(() =>
     Math.max(1, Math.ceil(this.proximasFiltradas().length / TAMANO_PAGINA)),
@@ -189,6 +216,26 @@ export class MisResidentes {
   protected buscar(termino: string): void {
     this.terminoBusqueda.set(termino);
     this.paginaActual.set(1);
+  }
+
+  protected filtrarEnCursoPorMes(mes: string): void {
+    this.mesFiltroEnCurso.set(mes);
+    this.paginaActual.set(1);
+  }
+
+  protected filtrarProximasPorMes(mes: string): void {
+    this.mesFiltroProximas.set(mes);
+    this.paginaProximas.set(1);
+  }
+
+  /** El botón solo muestra icono y texto; el selector nativo del navegador hace el trabajo. */
+  protected abrirSelectorMes(tarjeta: 'en-curso' | 'proximas'): void {
+    const referencia =
+      tarjeta === 'en-curso' ? this.inputMesEnCurso() : this.inputMesProximas();
+    const elemento = referencia?.nativeElement;
+    if (!elemento) return;
+    if (typeof elemento.showPicker === 'function') elemento.showPicker();
+    else elemento.focus();
   }
 
   protected cambiarPagina(pagina: number): void {

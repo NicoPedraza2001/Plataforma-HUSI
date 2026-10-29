@@ -11,6 +11,7 @@ import { ListadoServicios } from './features/admin/servicios/listado-servicios/l
 import { ListadoUniversidades } from './features/admin/universidades/listado-universidades/listado-universidades';
 import { ListadoUsuarios } from './features/admin/usuarios/listado-usuarios/listado-usuarios';
 import { Login } from './features/auth/login/login';
+import { DashboardCoordinador } from './features/coordinator/dashboard/dashboard-coordinador/dashboard-coordinador';
 import { MisResidentes } from './features/coordinator/residentes/mis-residentes/mis-residentes';
 import { ROL_ADMINISTRADOR, ROL_COORDINADOR } from './models/sesion.model';
 import { Landing } from './features/public/landing/pages/landing/landing';
@@ -86,6 +87,7 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'residentes', pathMatch: 'full' },
       { path: 'residentes', component: MisResidentes },
+      { path: 'dashboards', component: DashboardCoordinador },
       // Ajustes de la cuenta propia: misma pantalla del administrador, solo usa /sesion.
       { path: 'ajustes', component: Ajustes },
     ],

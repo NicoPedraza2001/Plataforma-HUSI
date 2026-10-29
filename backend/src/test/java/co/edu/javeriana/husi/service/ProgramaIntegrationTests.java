@@ -104,7 +104,7 @@ class ProgramaIntegrationTests {
   void universidadExternaSoloAdmiteConvenioNacionalOInternacional() {
     assertThatThrownBy(() ->
       programas.crear(new ProgramaRequest("Pediatría", universidadId))
-    ).hasMessageContaining("Convenio Nacional");
+    ).hasMessageContaining("Movilidad Nacional");
     var lote = new ImportacionProgramasRequest(
       List.of(new ImportacionProgramasRequest.Fila(2, "Pediatría", universidad))
     );

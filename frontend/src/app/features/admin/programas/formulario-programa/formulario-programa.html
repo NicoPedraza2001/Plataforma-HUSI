@@ -24,7 +24,7 @@
       autofocus
     >
       @for (convenio of programasDeConvenio; track convenio) {
-        <option [ngValue]="convenio">{{ convenio }}</option>
+        <option [ngValue]="convenio">{{ etiquetaConvenio(convenio) }}</option>
       }
     </select>
   } @else {
@@ -43,7 +43,7 @@
   <p class="ayuda">
     @if (soloAdmiteConvenios()) {
       Las universidades externas a la Pontificia Universidad Javeriana no registran programas
-      propios: se manejan como Convenio Nacional (universidades de Colombia) o Convenio
+      propios: se manejan como Movilidad Nacional (universidades de Colombia) o Observador
       Internacional.
     } @else {
       Los dos campos son obligatorios. Solo se muestran universidades activas. Al entrar desde una

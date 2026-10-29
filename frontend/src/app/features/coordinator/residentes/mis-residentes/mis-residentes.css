@@ -223,6 +223,72 @@
 }
 
 /* ===================== LISTADO ===================== */
+/* Dentro de la cabecera de cada tarjeta, junto al buscador. El <input type="month"> real queda
+   oculto (el navegador lo pinta con "mm/yyyy" aunque esté vacío); el botón muestra solo el
+   icono hasta que hay un mes elegido, y ahí sí el nombre del mes y el año. */
+.filtro-mes {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filtro-mes__boton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid var(--husi-border);
+  border-radius: var(--radius-sm);
+  background: var(--husi-bg);
+  color: var(--husi-navy);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.filtro-mes__boton:hover:not(:disabled) {
+  border-color: var(--husi-teal-dark);
+  background: var(--husi-surface);
+}
+
+.filtro-mes__boton:focus-visible {
+  outline: 2px solid var(--husi-teal-dark);
+  outline-offset: 2px;
+}
+
+.filtro-mes__icono {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--husi-muted);
+}
+
+.filtro-mes__quitar {
+  padding: 6px 12px;
+  border: 1px solid var(--husi-border);
+  border-radius: 999px;
+  background: var(--husi-surface);
+  color: var(--husi-navy);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.filtro-mes__quitar:hover {
+  border-color: var(--husi-teal-dark);
+}
+
+/* El input real: invisible pero presente, para que showPicker() tenga de dónde abrir. */
+.filtro-mes__input {
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
 .card__cabecera {
   display: flex;
   flex-wrap: wrap;
@@ -262,7 +328,13 @@
 }
 
 .tabla thead th:nth-child(2),
-.tabla thead th:nth-child(3) {
+.tabla thead th:nth-child(3),
+.tabla thead th:nth-child(4) {
+  text-align: left;
+}
+
+.tabla tbody td:nth-child(3),
+.tabla tbody td:nth-child(4) {
   text-align: left;
 }
 

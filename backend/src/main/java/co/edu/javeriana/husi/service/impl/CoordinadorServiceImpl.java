@@ -1,5 +1,6 @@
 package co.edu.javeriana.husi.service.impl;
 
+import co.edu.javeriana.husi.dto.response.DashboardResponse;
 import co.edu.javeriana.husi.dto.response.ResidentesACargoResponse;
 import co.edu.javeriana.husi.exception.NegocioException;
 import co.edu.javeriana.husi.model.entity.Coordinador;
@@ -7,8 +8,10 @@ import co.edu.javeriana.husi.repository.CoordinadorRepository;
 import co.edu.javeriana.husi.repository.ResidenteACargoRepository;
 import co.edu.javeriana.husi.security.UsuarioEnSesion;
 import co.edu.javeriana.husi.service.CoordinadorService;
+import co.edu.javeriana.husi.service.DashboardService;
 import co.edu.javeriana.husi.util.Calendario;
 import java.time.LocalDate;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ public class CoordinadorServiceImpl implements CoordinadorService {
   private final UsuarioEnSesion usuarioEnSesion;
   private final CoordinadorRepository coordinadorRepository;
   private final ResidenteACargoRepository residenteACargoRepository;
+  private final DashboardService dashboardService;
 
   @Override
   public ResidentesACargoResponse listarResidentes() {
@@ -34,6 +38,13 @@ public class CoordinadorServiceImpl implements CoordinadorService {
       residenteACargoRepository.listarEnCurso(servicioId, hoy),
       residenteACargoRepository.listarProximas(servicioId, hoy)
     );
+  }
+
+  @Override
+  public DashboardResponse dashboardPropio() {
+    Coordinador coordinador = coordinacionActiva();
+    // El servicio sale de la sesión, igual que en listarResidentes(): nunca lo elige el cliente.
+    return dashboardService.consultar(Map.of("servicio", coordinador.getServicio().getNombre()));
   }
 
   /** El servicio sale siempre de la sesión: un coordinador nunca elige qué servicio consulta. */

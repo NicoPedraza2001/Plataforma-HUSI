@@ -28,4 +28,10 @@ describe('DashboardService', () => {
     expect(solicitud.request.method).toBe('GET');
     solicitud.flush([]);
   });
+  it('pide el dashboard del coordinador sin enviar filtros', () => {
+    servicio.consultarCoordinador().subscribe();
+    const solicitud = http.expectOne('/api/coordinador/dashboard');
+    expect(solicitud.request.method).toBe('GET');
+    solicitud.flush({});
+  });
 });
