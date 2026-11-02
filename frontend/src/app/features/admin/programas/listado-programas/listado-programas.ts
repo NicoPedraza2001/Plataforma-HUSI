@@ -13,6 +13,7 @@ import { FocoModal } from '../../../../shared/foco-modal/foco-modal';
 import { IconoPapelera } from '../../../../shared/icono-papelera/icono-papelera';
 import { Paginacion } from '../../../../shared/paginacion/paginacion';
 import { FormularioPrograma } from '../formulario-programa/formulario-programa';
+import { etiquetaConvenio } from '../programas-de-convenio';
 
 @Component({
   selector: 'app-listado-programas',
@@ -72,6 +73,8 @@ export class ListadoProgramas {
   );
   protected readonly indicePrimeraFila = computed(() => (this.paginaVisible() - 1) * 10);
   protected readonly programasPagina = computed(() => this.consulta.datos()?.contenido ?? []);
+  /** Los convenios se guardan como «Convenio …» pero se muestran con su etiqueta actual. */
+  protected readonly etiquetaConvenio = etiquetaConvenio;
 
   constructor() {
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {

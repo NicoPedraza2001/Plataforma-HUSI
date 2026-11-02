@@ -69,7 +69,7 @@
           @for (programa of programasPagina(); track programa.id; let indice = $index) {
             <tr>
               <td>{{ indicePrimeraFila() + indice + 1 }}</td>
-              <td>{{ programa.nombre }}</td>
+              <td>{{ etiquetaConvenio(programa.nombre) }}</td>
               <td>{{ programa.universidad }}</td>
               <td>
                 <div class="acciones-registro">
@@ -80,7 +80,8 @@
                     [disabled]="guardando()"
                     [attr.aria-pressed]="programa.estado === 'Activo'"
                     [attr.aria-label]="
-                      (programa.estado === 'Activo' ? 'Desactivar ' : 'Activar ') + programa.nombre
+                      (programa.estado === 'Activo' ? 'Desactivar ' : 'Activar ') +
+                      etiquetaConvenio(programa.nombre)
                     "
                     [title]="
                       programa.estado === 'Activo' ? 'Desactivar programa' : 'Activar programa'
@@ -94,7 +95,7 @@
                     type="button"
                     [disabled]="guardando() || contextoInactivo()"
                     (click)="abrirFormulario(programa)"
-                    [attr.aria-label]="'Editar ' + programa.nombre"
+                    [attr.aria-label]="'Editar ' + etiquetaConvenio(programa.nombre)"
                   >
                     Editar
                   </button>
@@ -103,7 +104,9 @@
                     type="button"
                     [disabled]="guardando()"
                     (click)="solicitarEliminar(programa)"
-                    [attr.aria-label]="'Eliminar definitivamente ' + programa.nombre"
+                    [attr.aria-label]="
+                      'Eliminar definitivamente ' + etiquetaConvenio(programa.nombre)
+                    "
                     title="Eliminar definitivamente"
                   >
                     <app-icono-papelera />
@@ -171,7 +174,7 @@
     >
       <h2 id="titulo-eliminar">¿Eliminar definitivamente este programa?</h2>
       <p>
-        <strong>{{ programa.nombre }}</strong
+        <strong>{{ etiquetaConvenio(programa.nombre) }}</strong
         ><br />{{ programa.universidad }}
       </p>
       <p>
