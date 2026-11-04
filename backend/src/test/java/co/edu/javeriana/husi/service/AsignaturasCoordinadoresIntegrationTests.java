@@ -260,12 +260,31 @@ class AsignaturasCoordinadoresIntegrationTests {
   }
 
   @Test
-  void eliminarElUsuarioRetiraSuCoordinacionPeroNoElServicio() {
+  void noSeEliminaAUnUsuarioQueCoordinaUnServicio() {
     var servicioCreado = servicio();
     var creado = coordinador(servicioCreado.id());
+    assertThatThrownBy(() -> usuarios.eliminarDefinitivamente(creado.id()))
+      .isInstanceOf(NegocioException.class)
+      .hasMessageContaining(servicioCreado.nombre());
+    assertThat(servicioCoordinado(creado.id())).isEqualTo(servicioCreado.id());
+  }
+
+  @Test
+  void alRetirarleElServicioElUsuarioSePuedeEliminar() {
+    var servicioCreado = servicio();
+    var creado = coordinador(servicioCreado.id());
+    usuarios.actualizar(creado.id(), datosUsuario(creado.correo(), "Administrador", null));
+
     usuarios.eliminarDefinitivamente(creado.id());
-    assertThat(servicioCoordinado(creado.id())).isNull();
+
     assertThat(servicios.consultar(servicioCreado.id()).id()).isEqualTo(servicioCreado.id());
+    assertThat(
+      jdbc.queryForObject(
+        "select count(*) from usuario where id_usuario=?",
+        Integer.class,
+        creado.id()
+      )
+    ).isZero();
   }
 
   @Test

@@ -47,11 +47,18 @@ public class SesionController {
     return sesionService.actualizarPerfil(request);
   }
 
-  /** Pantalla de ajustes: correo y/o contraseña; exige la contraseña actual. */
+  /**
+   * Pantalla de ajustes: correo y/o contraseña; exige la contraseña actual. La sesión se cierra
+   * una vez guardado el cambio, para que el usuario ingrese con sus datos nuevos.
+   */
   @PatchMapping("/credenciales")
-  public PerfilResponse actualizarCredenciales(
-    @Valid @RequestBody ActualizacionCredencialesRequest request
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void actualizarCredenciales(
+    @Valid @RequestBody ActualizacionCredencialesRequest cambio,
+    HttpServletRequest request,
+    HttpServletResponse response
   ) {
-    return sesionService.actualizarCredenciales(request);
+    sesionService.actualizarCredenciales(cambio);
+    sesionService.cerrarSesion(request, response);
   }
 }

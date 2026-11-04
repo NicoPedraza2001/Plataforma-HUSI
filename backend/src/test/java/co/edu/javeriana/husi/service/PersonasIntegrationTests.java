@@ -219,16 +219,43 @@ class PersonasIntegrationTests {
   }
 
   @Test
-  void usuarioConAuditoriaNoSeBorra() {
-    var registroCreado = usuarios.crear(
-      usuario("crud-" + UUID.randomUUID() + "@example.test", clave)
-    );
+  void eliminarUsuarioConMovimientosConservaSuHistorial() {
+    String correo = "crud-" + UUID.randomUUID() + "@example.test";
+    var registroCreado = usuarios.crear(usuario(correo, clave));
+    String marcaDelMovimiento = "Movimiento " + UUID.randomUUID();
     jdbc.update(
-      "insert into historial_auditoria(id_usuario,accion_realizada,entidad_modificada) values (?, 'Prueba','Usuario')",
-      registroCreado.id()
+      "insert into historial_auditoria(id_usuario,nombre_responsable,correo_responsable,accion_realizada,entidad_modificada,registro) values (?,'Prueba Integración',?,'Prueba','Usuario',?)",
+      registroCreado.id(),
+      correo,
+      marcaDelMovimiento
     );
-    assertThatThrownBy(() -> usuarios.eliminarDefinitivamente(registroCreado.id()))
+
+    usuarios.eliminarDefinitivamente(registroCreado.id());
+
+    var movimiento = jdbc.queryForMap(
+      "select id_usuario,nombre_responsable,correo_responsable from historial_auditoria where registro=?",
+      marcaDelMovimiento
+    );
+    assertThat(movimiento.get("id_usuario")).isNull();
+    assertThat(movimiento.get("nombre_responsable")).isEqualTo("Prueba Integración");
+    assertThat(movimiento.get("correo_responsable")).isEqualTo(correo);
+    assertThat(
+      jdbc.queryForObject(
+        "select count(*) from usuario where id_usuario=?",
+        Integer.class,
+        registroCreado.id()
+      )
+    ).isZero();
+  }
+
+  @Test
+  void unUsuarioNoPuedeEliminarSuPropiaCuenta() {
+    Integer idAdministradorEnSesion = jdbc.queryForObject(
+      "select id_usuario from usuario where correo='admin@husi.com'",
+      Integer.class
+    );
+    assertThatThrownBy(() -> usuarios.eliminarDefinitivamente(idAdministradorEnSesion))
       .isInstanceOf(NegocioException.class)
-      .hasMessageContaining("auditoría");
+      .hasMessageContaining("tu propia cuenta");
   }
 }

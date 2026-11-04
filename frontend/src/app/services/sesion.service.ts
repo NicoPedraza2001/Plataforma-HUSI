@@ -38,7 +38,7 @@ export class SesionService {
   }
 
   /** PATCH /api/sesion/credenciales */
-  actualizarCredenciales(request: ActualizacionCredencialesRequest): Observable<Perfil> {
-    return this.http.patch<Perfil>(`${API_URL}/sesion/credenciales`, request);
+  actualizarCredenciales(request: ActualizacionCredencialesRequest): Observable<void> {
+    return this.http.patch<void>(`${API_URL}/sesion/credenciales`, request);
   }
 }

@@ -13,11 +13,4 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select e from Usuario e where e.id=:id")
   Optional<Usuario> bloquearPorId(Integer id);
-
-  /** Movimientos del historial firmados por el usuario: impiden borrarlo definitivamente. */
-  @Query(
-    value = "select count(*) from historial_auditoria where id_usuario=:id",
-    nativeQuery = true
-  )
-  long contarReferencias(Integer id);
 }

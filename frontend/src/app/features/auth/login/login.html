@@ -97,6 +97,8 @@
           </p>
         } @else if (error()) {
           <p class="login__hint" role="alert">{{ error() }}</p>
+        } @else if (aviso()) {
+          <p class="login__hint" role="status">{{ aviso() }}</p>
         }
 
         <button class="login__submit" type="submit" [disabled]="enviando()">

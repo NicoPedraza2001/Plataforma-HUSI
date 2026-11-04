@@ -230,7 +230,12 @@ CREATE INDEX idx_rr_residente ON rotacion_residente (id_residente);
 CREATE TABLE historial_auditoria (
     id_historial        SERIAL PRIMARY KEY,
 
-    id_usuario          INTEGER NOT NULL,
+    -- Queda en NULL si el usuario se elimina; el movimiento se conserva.
+    id_usuario          INTEGER,
+    -- Quien hizo el cambio, tal como se llamaba en ese momento. No depende de
+    -- que la cuenta siga existiendo.
+    nombre_responsable  VARCHAR(201) NOT NULL,
+    correo_responsable  VARCHAR(150) NOT NULL,
 
     accion_realizada    VARCHAR(100) NOT NULL,
     entidad_modificada  VARCHAR(100) NOT NULL,
@@ -250,7 +255,7 @@ CREATE TABLE historial_auditoria (
     lote_importacion    VARCHAR(36) UNIQUE,
 
     CONSTRAINT fk_historial_usuario
-        FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+        FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario) ON DELETE SET NULL
 );
 
 CREATE INDEX idx_historial_usuario_fecha

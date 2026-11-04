@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   ActualizacionCredencialesRequest,
@@ -9,6 +10,10 @@ import {
 } from '../../../models/sesion.model';
 import { mensajeError } from '../../../services/api-error';
 import { SesionActual } from '../../../services/sesion-actual';
+import {
+  MOTIVO_CREDENCIALES_ACTUALIZADAS,
+  PARAMETRO_MOTIVO,
+} from '../../../services/sesion-expirada.interceptor';
 import { SesionService } from '../../../services/sesion.service';
 import { FocoModal } from '../../../shared/foco-modal/foco-modal';
 import { esClaveBcryptValida } from '../../../shared/formularios/validadores';
@@ -39,6 +44,7 @@ export class Ajustes {
   // Dependencias
   private readonly sesionService = inject(SesionService);
   private readonly sesionActual = inject(SesionActual);
+  private readonly router = inject(Router);
 
   // Estado de la pantalla
   protected readonly perfil = signal<Perfil | null>(null);
@@ -191,12 +197,17 @@ export class Ajustes {
     this.guardando.set(true);
     this.errorConfirmacion.set('');
     try {
+      if (bloque === 'credenciales') {
+        await firstValueFrom(
+          this.sesionService.actualizarCredenciales(this.solicitudCredenciales()),
+        );
+        await this.pedirNuevoIngreso();
+        return;
+      }
       const perfil = await firstValueFrom(
-        bloque === 'perfil'
-          ? this.sesionService.actualizarPerfil(this.solicitudPerfil())
-          : this.sesionService.actualizarCredenciales(this.solicitudCredenciales()),
+        this.sesionService.actualizarPerfil(this.solicitudPerfil()),
       );
-      this.exito.set({ bloque, mensaje: this.mensajeExito(bloque) });
+      this.exito.set({ bloque, mensaje: 'Tus nombres y apellidos se actualizaron.' });
       this.perfil.set(perfil);
       // El nombre del sidebar sale de la sesión compartida: se refresca sin recargar.
       this.sesionActual.reemplazarPerfil(perfil);
@@ -239,12 +250,12 @@ export class Ajustes {
     };
   }
 
-  private mensajeExito(bloque: BloqueAjustes): string {
-    if (bloque === 'perfil') return 'Tus nombres y apellidos se actualizaron.';
-    if (this.cambiaCorreo() && this.cambiaContrasena())
-      return 'Listo. Desde ahora inicia sesión con tu nuevo correo y tu nueva contraseña.';
-    if (this.cambiaCorreo()) return 'Listo. Desde ahora inicia sesión con tu nuevo correo.';
-    return 'Listo. Usa tu nueva contraseña la próxima vez que inicies sesión.';
+  /** El backend ya cerró la sesión: los datos nuevos se estrenan en el login. */
+  private async pedirNuevoIngreso() {
+    this.sesionActual.olvidar();
+    await this.router.navigate(['/login'], {
+      queryParams: { [PARAMETRO_MOTIVO]: MOTIVO_CREDENCIALES_ACTUALIZADAS },
+    });
   }
 
   /** Vuelve a mostrar los datos guardados y vacía las contraseñas escritas. */

@@ -9,6 +9,7 @@ import { PARAMETRO_VOLVER } from './sesion.guard';
 /** Parámetro de `/login` que indica por qué se llegó ahí. */
 export const PARAMETRO_MOTIVO = 'motivo';
 export const MOTIVO_SESION_EXPIRADA = 'expirada';
+export const MOTIVO_CREDENCIALES_ACTUALIZADAS = 'credenciales-actualizadas';
 
 /**
  * Si el backend responde 401 en medio del trabajo (la sesión expiró por inactividad o se cerró

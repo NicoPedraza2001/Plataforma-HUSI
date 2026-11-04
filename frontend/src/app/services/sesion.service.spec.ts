@@ -49,6 +49,6 @@ describe('SesionService', () => {
     expect(solicitud.request.method).toBe('PATCH');
     expect(solicitud.request.body).toEqual(cambio);
     expect(solicitud.request.urlWithParams).not.toContain('actual-123');
-    solicitud.flush({});
+    solicitud.flush(null, { status: 204, statusText: 'No Content' });
   });
 });

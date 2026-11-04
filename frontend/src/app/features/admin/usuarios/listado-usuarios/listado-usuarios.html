@@ -225,9 +225,8 @@
         <strong>{{ fila.nombre }}</strong>
       </p>
       <p>
-        Se eliminará completamente de la base de datos. Esta acción no se puede deshacer. Si tiene
-        registros asociados, se bloqueará la eliminación; puedes desactivarlo para conservar su
-        historial.
+        Se eliminará completamente de la base de datos. Esta acción no se puede deshacer. Si coordina
+        un servicio, se bloqueará la eliminación. Sus movimientos en el historial se conservan.
       </p>
       @if (errorFormulario()) {
         <p class="mensaje error" role="alert">{{ errorFormulario() }}</p>

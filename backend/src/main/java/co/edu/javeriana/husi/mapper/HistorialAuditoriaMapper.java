@@ -2,7 +2,6 @@ package co.edu.javeriana.husi.mapper;
 
 import co.edu.javeriana.husi.dto.response.HistorialDetalleResponse;
 import co.edu.javeriana.husi.model.entity.HistorialAuditoria;
-import co.edu.javeriana.husi.model.entity.Usuario;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +29,11 @@ public class HistorialAuditoriaMapper {
   }
 
   public HistorialDetalleResponse toResponse(HistorialAuditoria historial) {
-    Usuario usuario = historial.getUsuario();
     return new HistorialDetalleResponse(
       historial.getId(),
       historial.getFecha(),
-      usuario.getNombre() + " " + usuario.getApellido(),
-      usuario.getCorreo(),
+      historial.getNombreResponsable(),
+      historial.getCorreoResponsable(),
       historial.getModulo(),
       historial.getAccion(),
       historial.getRegistro(),

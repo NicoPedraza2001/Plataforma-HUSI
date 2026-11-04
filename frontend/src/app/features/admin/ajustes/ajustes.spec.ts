@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { Perfil } from '../../../models/sesion.model';
+import { SesionActual } from '../../../services/sesion-actual';
 import { SesionService } from '../../../services/sesion.service';
 import { Ajustes } from './ajustes';
 
@@ -15,6 +17,7 @@ describe('Ajustes', () => {
   let component: Ajustes;
   let fixture: ComponentFixture<Ajustes>;
   let pagina: HTMLElement;
+  let router: Router;
   let sesionService: {
     perfil: ReturnType<typeof vi.fn>;
     actualizarPerfil: ReturnType<typeof vi.fn>;
@@ -37,13 +40,15 @@ describe('Ajustes', () => {
     sesionService = {
       perfil: vi.fn(() => of(PERFIL)),
       actualizarPerfil: vi.fn(() => of({ ...PERFIL, apellidos: 'Gómez' })),
-      actualizarCredenciales: vi.fn(() => of(PERFIL)),
+      actualizarCredenciales: vi.fn(() => of(undefined)),
     };
     await TestBed.configureTestingModule({
-      providers: [{ provide: SesionService, useValue: sesionService }],
+      providers: [provideRouter([]), { provide: SesionService, useValue: sesionService }],
       imports: [Ajustes],
     }).compileComponents();
 
+    router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(Ajustes);
     component = fixture.componentInstance;
     pagina = fixture.nativeElement;
@@ -92,6 +97,10 @@ describe('Ajustes', () => {
     expect(sesionService.actualizarCredenciales).toHaveBeenCalledWith({
       contrasenaActual: 'ClaveActual-1',
       contrasenaNueva: 'NuevaClave-1',
+    });
+    expect(TestBed.inject(SesionActual).perfil()).toBeNull();
+    expect(router.navigate).toHaveBeenCalledWith(['/login'], {
+      queryParams: { motivo: 'credenciales-actualizadas' },
     });
   });
 });

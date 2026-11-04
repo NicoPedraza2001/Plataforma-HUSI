@@ -19,7 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = {
-    "spring.datasource.url=jdbc:h2:mem:sesion;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+    "spring.datasource.url=jdbc:h2:mem:sesion;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;OPTIMIZE_REUSE_RESULTS=0;DB_CLOSE_DELAY=-1",
     "husi.seguridad.administrador-inicial.contrasena=" + CONTRASENA_ADMINISTRADOR,
   }
 )
@@ -27,7 +27,9 @@ import org.springframework.test.context.ActiveProfiles;
 class SesionH2IntegrationTests {
 
   private static final String CONTRASENA_COORDINADOR = "Coordinador-Prueba-1";
+  private static final int ID_ROL_ADMINISTRADOR = 1;
   private static final int ID_ROL_COORDINADOR = 2;
+  private static final String CONTRASENA_ADMINISTRADOR_SECUNDARIO = "Administrador-Prueba-2";
 
   @LocalServerPort
   int puerto;
@@ -244,9 +246,8 @@ class SesionH2IntegrationTests {
         correoNuevo.toUpperCase() +
         "\",\"contrasenaNueva\":\"Otra-Clave-2\"}"
     );
-    assertThat(respuesta.statusCode()).as(respuesta.body()).isEqualTo(200);
-    assertThat(respuesta.body()).contains(correoNuevo).doesNotContain("Otra-Clave-2");
-    assertThat(coordinador.get("sesion/perfil").statusCode()).isEqualTo(200);
+    assertThat(respuesta.statusCode()).as(respuesta.body()).isEqualTo(204);
+    assertThat(coordinador.get("sesion/perfil").statusCode()).isEqualTo(401);
 
     var sesionNueva = new ClienteApiDePrueba(puerto);
     assertThat(sesionNueva.iniciarSesion(correo, CONTRASENA_COORDINADOR).statusCode()).isEqualTo(401);
@@ -340,5 +341,185 @@ class SesionH2IntegrationTests {
       inicio,
       fin
     );
+  }
+
+  // ---------- Sesión vigente: la cuenta cambió mientras la sesión seguía abierta ----------
+
+  /** Otro administrador con sesión iniciada; {@code id} es el de su cuenta. */
+  private record AdministradorConSesion(String id, String correo, ClienteApiDePrueba sesion) {}
+
+  private AdministradorConSesion crearAdministradorConSesion() throws Exception {
+    String correo = "administrador-" + UUID.randomUUID() + "@example.test";
+    var respuesta = ClienteApiDePrueba.conSesionDeAdministrador(puerto).enviar(
+      "POST",
+      "usuarios",
+      datosDeCuenta(correo, ID_ROL_ADMINISTRADOR, null, CONTRASENA_ADMINISTRADOR_SECUNDARIO)
+    );
+    assertThat(respuesta.statusCode()).as(respuesta.body()).isEqualTo(201);
+    String id = String.valueOf(
+      jdbc.queryForObject("select id_usuario from usuario where correo=?", Integer.class, correo)
+    );
+    var sesion = new ClienteApiDePrueba(puerto);
+    assertThat(
+      sesion.iniciarSesion(correo, CONTRASENA_ADMINISTRADOR_SECUNDARIO).statusCode()
+    ).isEqualTo(200);
+    assertThat(sesion.get("usuarios").statusCode()).isEqualTo(200);
+    return new AdministradorConSesion(id, correo, sesion);
+  }
+
+  /** Cuerpo de POST y PUT /usuarios; al editar, sin contraseña se conserva la actual. */
+  private String datosDeCuenta(String correo, int rolId, String idServicio, String contrasena) {
+    return (
+      "{\"nombre\":\"Segundo\",\"apellido\":\"Administrador\",\"correo\":\"" +
+      correo +
+      "\",\"rolId\":" +
+      rolId +
+      (idServicio == null ? "" : ",\"servicioId\":" + idServicio) +
+      (contrasena == null ? "" : ",\"contrasena\":\"" + contrasena + "\"") +
+      "}"
+    );
+  }
+
+  @Test
+  void cambiarLasCredencialesCierraTambienLasOtrasSesionesDeLaCuenta() throws Exception {
+    String correo = crearCoordinador();
+    var sesionQueCambia = new ClienteApiDePrueba(puerto);
+    var otraSesion = new ClienteApiDePrueba(puerto);
+    sesionQueCambia.iniciarSesion(correo, CONTRASENA_COORDINADOR);
+    otraSesion.iniciarSesion(correo, CONTRASENA_COORDINADOR);
+
+    var cambio = sesionQueCambia.enviar(
+      "PATCH",
+      "sesion/credenciales",
+      "{\"contrasenaActual\":\"" +
+        CONTRASENA_COORDINADOR +
+        "\",\"contrasenaNueva\":\"Otra-Clave-3\"}"
+    );
+
+    assertThat(cambio.statusCode()).as(cambio.body()).isEqualTo(204);
+    assertThat(otraSesion.get("sesion/perfil").statusCode()).isEqualTo(401);
+  }
+
+  @Test
+  void cambiarDatosQueNoDanAccesoNoTerminaLaSesion() throws Exception {
+    var cuenta = crearAdministradorConSesion();
+    var edicion = ClienteApiDePrueba.conSesionDeAdministrador(puerto).enviar(
+      "PUT",
+      "usuarios/" + cuenta.id(),
+      datosDeCuenta(cuenta.correo(), ID_ROL_ADMINISTRADOR, null, null).replace("Segundo", "Otro")
+    );
+    assertThat(edicion.statusCode()).as(edicion.body()).isEqualTo(200);
+    assertThat(cuenta.sesion().get("usuarios").statusCode()).isEqualTo(200);
+  }
+
+  @Test
+  void desactivarUnaCuentaTerminaSuSesionAbierta() throws Exception {
+    var cuenta = crearAdministradorConSesion();
+    var desactivacion = ClienteApiDePrueba.conSesionDeAdministrador(puerto).enviar(
+      "PATCH",
+      "usuarios/" + cuenta.id() + "/estado",
+      "{\"estado\":\"Inactivo\"}"
+    );
+    assertThat(desactivacion.statusCode()).as(desactivacion.body()).isEqualTo(200);
+
+    assertThat(cuenta.sesion().get("usuarios").statusCode()).isEqualTo(401);
+    assertThat(
+      new ClienteApiDePrueba(puerto)
+        .iniciarSesion(cuenta.correo(), CONTRASENA_ADMINISTRADOR_SECUNDARIO)
+        .statusCode()
+    ).isEqualTo(401);
+  }
+
+  @Test
+  void quitarElRolDeAdministradorTerminaSuSesionYElNuevoRolNoTieneEsosPermisos() throws Exception {
+    var cuenta = crearAdministradorConSesion();
+    var cambioDeRol = ClienteApiDePrueba.conSesionDeAdministrador(puerto).enviar(
+      "PUT",
+      "usuarios/" + cuenta.id(),
+      datosDeCuenta(
+        cuenta.correo(),
+        ID_ROL_COORDINADOR,
+        crearServicio("Servicio " + UUID.randomUUID()),
+        null
+      )
+    );
+    assertThat(cambioDeRol.statusCode()).as(cambioDeRol.body()).isEqualTo(200);
+
+    assertThat(cuenta.sesion().get("usuarios").statusCode()).isEqualTo(401);
+
+    var nuevaSesion = new ClienteApiDePrueba(puerto);
+    nuevaSesion.iniciarSesion(cuenta.correo(), CONTRASENA_ADMINISTRADOR_SECUNDARIO);
+    assertThat(nuevaSesion.get("usuarios").statusCode()).isEqualTo(403);
+    assertThat(nuevaSesion.get("coordinador/residentes").statusCode()).isEqualTo(200);
+  }
+
+  @Test
+  void conUnaSesionTerminadaSePuedeVolverAIngresar() throws Exception {
+    var cuenta = crearAdministradorConSesion();
+    String contrasenaNueva = "Nueva-Clave-4";
+    var cambio = ClienteApiDePrueba.conSesionDeAdministrador(puerto).enviar(
+      "PUT",
+      "usuarios/" + cuenta.id(),
+      datosDeCuenta(cuenta.correo(), ID_ROL_ADMINISTRADOR, null, contrasenaNueva)
+    );
+    assertThat(cambio.statusCode()).as(cambio.body()).isEqualTo(200);
+
+    // Inicia sesión llevando todavía la cookie de la sesión que ya no es válida.
+    assertThat(
+      cuenta.sesion().iniciarSesion(cuenta.correo(), contrasenaNueva).statusCode()
+    ).isEqualTo(200);
+    assertThat(cuenta.sesion().get("usuarios").statusCode()).isEqualTo(200);
+  }
+
+  @Test
+  void eliminarUnaCuentaTerminaSuSesionYConservaSusMovimientos() throws Exception {
+    var cuenta = crearAdministradorConSesion();
+    String nombreServicio = "Servicio-" + UUID.randomUUID();
+    var creacion = cuenta.sesion().enviar(
+      "POST",
+      "servicios",
+      "{\"nombre\":\"" + nombreServicio + "\",\"cupoSimultaneo\":1,\"cupoMaximoInstalado\":1}"
+    );
+    assertThat(creacion.statusCode()).as(creacion.body()).isEqualTo(201);
+
+    var administrador = ClienteApiDePrueba.conSesionDeAdministrador(puerto);
+    var eliminacion = administrador.enviar(
+      "DELETE",
+      "usuarios/" + cuenta.id() + "/definitivo",
+      ""
+    );
+    assertThat(eliminacion.statusCode()).as(eliminacion.body()).isEqualTo(204);
+
+    assertThat(cuenta.sesion().get("usuarios").statusCode()).isEqualTo(401);
+
+    var listado = administrador.get("historial?q=" + nombreServicio);
+    assertThat(listado.statusCode()).as(listado.body()).isEqualTo(200);
+    assertThat(listado.body()).contains("Segundo Administrador");
+
+    Integer idMovimiento = jdbc.queryForObject(
+      "select id_historial from historial_auditoria where registro=?",
+      Integer.class,
+      nombreServicio
+    );
+    var detalle = administrador.get("historial/" + idMovimiento);
+    assertThat(detalle.statusCode()).as(detalle.body()).isEqualTo(200);
+    assertThat(detalle.body()).contains("Segundo Administrador", cuenta.correo());
+  }
+
+  @Test
+  void noSeEliminaUnaCuentaQueCoordinaUnServicio() throws Exception {
+    String correo = crearCoordinador();
+    Integer id = jdbc.queryForObject(
+      "select id_usuario from usuario where correo=?",
+      Integer.class,
+      correo
+    );
+    var eliminacion = ClienteApiDePrueba.conSesionDeAdministrador(puerto).enviar(
+      "DELETE",
+      "usuarios/" + id + "/definitivo",
+      ""
+    );
+    assertThat(eliminacion.statusCode()).isEqualTo(409);
+    assertThat(eliminacion.body()).contains("coordina el servicio");
   }
 }

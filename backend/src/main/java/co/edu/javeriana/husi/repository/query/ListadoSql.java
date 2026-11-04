@@ -30,7 +30,7 @@ public final class ListadoSql {
         ", ', ' order by " +
         PERIODO +
         ") from rotacion_residente where id_residente=res.id_residente and estado<>'Cancelado'),'—') as periodo from residente res join tipo_documento td on td.id_tipo_documento=res.id_tipo_documento join programa p on p.id_programa=res.id_programa join universidad u on u.id_universidad=p.id_universidad where res.estado<>'Eliminado'";
-      case "historial" -> "select h.id_historial as id,to_char(h.fecha at time zone 'America/Bogota','YYYY-MM-DD\"T\"HH24:MI:SS') || '-05:00' as fecha,concat(u.nombre,' ',u.apellido) as usuario,h.entidad_modificada as modulo,h.accion_realizada as accion,coalesce(h.registro,'—') as registro,h.detalle,h.lote_importacion is not null as \"esImportacion\" from historial_auditoria h join usuario u using(id_usuario)";
+      case "historial" -> "select h.id_historial as id,to_char(h.fecha at time zone 'America/Bogota','YYYY-MM-DD\"T\"HH24:MI:SS') || '-05:00' as fecha,h.nombre_responsable as usuario,h.entidad_modificada as modulo,h.accion_realizada as accion,coalesce(h.registro,'—') as registro,h.detalle,h.lote_importacion is not null as \"esImportacion\" from historial_auditoria h";
       case "rotaciones" -> ROTACIONES;
       default -> throw new IllegalArgumentException("Dominio no disponible");
     };

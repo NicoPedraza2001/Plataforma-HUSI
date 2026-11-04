@@ -132,7 +132,7 @@ class ConsultaIntegrationTests {
     assertThat(dashboard.consultar(Map.of()))
       .hasFieldOrProperty("indicadores")
       .hasFieldOrProperty("rotacionesPorServicio")
-      .hasFieldOrProperty("ocupacionPorServicio");
+      .hasFieldOrProperty("mapaOcupacion");
   }
 
   @Test
@@ -144,7 +144,7 @@ class ConsultaIntegrationTests {
     ).intValue();
     String marca = UUID.randomUUID().toString();
     em.createNativeQuery(
-      "insert into historial_auditoria(id_usuario,accion_realizada,entidad_modificada,fecha,detalle) values(:id,'PRUEBA','Pruebas','2026-08-02T04:59:00Z',:marca)"
+      "insert into historial_auditoria(id_usuario,nombre_responsable,correo_responsable,accion_realizada,entidad_modificada,fecha,detalle) values(:id,'Responsable Prueba','responsable@example.test','PRUEBA','Pruebas','2026-08-02T04:59:00Z',:marca)"
     )
       .setParameter("id", usuario)
       .setParameter("marca", marca)

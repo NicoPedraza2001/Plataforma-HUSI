@@ -212,6 +212,16 @@ class LocalH2IntegrationTests {
     }
     assertThat(
       enviar("DELETE", "usuarios/" + user + "/definitivo", "").statusCode()
+    ).isEqualTo(409);
+    assertThat(
+      enviar(
+        "PUT",
+        "usuarios/" + user,
+        "{\"nombre\":\"Usuario\",\"apellido\":\"Local\",\"correo\":\"local-test@example.test\",\"rolId\":1}"
+      ).statusCode()
+    ).isEqualTo(200);
+    assertThat(
+      enviar("DELETE", "usuarios/" + user + "/definitivo", "").statusCode()
     ).isEqualTo(204);
   }
 

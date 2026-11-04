@@ -25,7 +25,8 @@ public interface SesionService {
 
   /**
    * Cambia el correo y/o la contraseña tras comprobar la contraseña actual. Los fallos cuentan
-   * para el bloqueo por intentos, igual que en el inicio de sesión.
+   * para el bloqueo por intentos, igual que en el inicio de sesión. Quien llama debe cerrar la
+   * sesión después: los datos nuevos solo valen tras ingresar otra vez.
    */
-  PerfilResponse actualizarCredenciales(ActualizacionCredencialesRequest request);
+  void actualizarCredenciales(ActualizacionCredencialesRequest request);
 }

@@ -2,6 +2,7 @@ package co.edu.javeriana.husi.service;
 
 import static org.assertj.core.api.Assertions.*;
 
+import co.edu.javeriana.husi.InsercionDePrueba;
 import co.edu.javeriana.husi.dto.request.ServicioRequest;
 import co.edu.javeriana.husi.exception.NegocioException;
 import java.util.*;
@@ -108,9 +109,10 @@ class ServicioIntegrationTests {
   @Test
   void coordinadoresBloqueanBorrado() {
     var servicioCreado = servicios.crear(datos("SERVICIO-" + UUID.randomUUID(), 2, 5));
-    Integer usuarioId = jdbc.queryForObject(
-      "insert into usuario(id_rol,nombre,apellido,correo,contrasena) values ((select min(id_rol) from rol),'Prueba','Servicio',?, 'hash-test-no-login') returning id_usuario",
-      Integer.class,
+    Integer usuarioId = InsercionDePrueba.insertarYObtenerId(
+      jdbc,
+      "id_usuario",
+      "insert into usuario(id_rol,nombre,apellido,correo,contrasena) values ((select min(id_rol) from rol),'Prueba','Servicio',?, 'hash-test-no-login')",
       UUID.randomUUID() + "@example.test"
     );
     jdbc.update(
@@ -125,29 +127,33 @@ class ServicioIntegrationTests {
 
   /** Crea una rotación del servicio con {@code asignados} residentes en estado Asignado. */
   private Integer rotacionConAsignados(Integer servicio, int asignados) {
-    Integer asignaturaId = jdbc.queryForObject(
-      "insert into asignatura(id_servicio,nombre_asignatura) values (?,'Prueba') returning id_asignatura",
-      Integer.class,
+    Integer asignaturaId = InsercionDePrueba.insertarYObtenerId(
+      jdbc,
+      "id_asignatura",
+      "insert into asignatura(id_servicio,nombre_asignatura) values (?,'Prueba')",
       servicio
     );
     jdbc.update(
       "insert into rotacion(id_asignatura,fecha_inicio,fecha_fin) values (?,'2099-01-01','2099-01-02')",
       asignaturaId
     );
-    int universidadId = jdbc.queryForObject(
-      "insert into universidad(nombre_universidad,pais) values(?,'Colombia') returning id_universidad",
-      Integer.class,
+    int universidadId = InsercionDePrueba.insertarYObtenerId(
+      jdbc,
+      "id_universidad",
+      "insert into universidad(nombre_universidad,pais) values(?,'Colombia')",
       "TEST-SERV-U-" + UUID.randomUUID()
     );
-    int programaId = jdbc.queryForObject(
-      "insert into programa(id_universidad,nombre_programa) values(?,'TEST SERV') returning id_programa",
-      Integer.class,
+    int programaId = InsercionDePrueba.insertarYObtenerId(
+      jdbc,
+      "id_programa",
+      "insert into programa(id_universidad,nombre_programa) values(?,'TEST SERV')",
       universidadId
     );
     for (int i = 0; i < asignados; i++) {
-      Integer residenteId = jdbc.queryForObject(
-        "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values(?,1,'Residente ficticio',?) returning id_residente",
-        Integer.class,
+      Integer residenteId = InsercionDePrueba.insertarYObtenerId(
+        jdbc,
+        "id_residente",
+        "insert into residente(id_programa,id_tipo_documento,nombre_completo,numero_documento) values(?,1,'Residente ficticio',?)",
         programaId,
         UUID.randomUUID().toString()
       );

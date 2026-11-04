@@ -20,9 +20,18 @@ public class HistorialAuditoria {
   @Column(name = "id_historial")
   private Integer id;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "id_usuario", nullable = false)
+  /** Cuenta que hizo el cambio; queda en null si después se elimina el usuario. */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "id_usuario")
   private Usuario usuario;
+
+  /** Nombre de quien hizo el cambio, tal como se llamaba en ese momento. */
+  @Column(name = "nombre_responsable", nullable = false, length = 201)
+  private String nombreResponsable;
+
+  /** Correo de quien hizo el cambio, tal como lo tenía en ese momento. */
+  @Column(name = "correo_responsable", nullable = false, length = 150)
+  private String correoResponsable;
 
   @Column(name = "accion_realizada", nullable = false, length = 100)
   private String accion;

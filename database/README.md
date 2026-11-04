@@ -104,3 +104,7 @@ Para bases ya creadas, aplicar `migrations/20260914_rotacion_activa.sql` antes d
 Para bases ya creadas, aplicar `migrations/20261003_recalcular_cupo_servicio.sql`. Crea `trg_servicio_recalcular_cupo`: al cambiar `servicio.cupo_simultaneo` se recalcula `cupo_disponible` de todas sus rotaciones y se rechaza bajarlo por debajo de los residentes `Asignado` de cualquiera de ellas. También resincroniza una vez las rotaciones existentes y avisa (NOTICE) de servicios cuyo cupo ya es menor que sus asignados. Las bases nuevas ejecutan `init/13_recalcular_cupo_servicio.sql` automáticamente.
 
 Después, aplicar `migrations/20261003_lista_espera.sql` (en ese orden). Agrega `rotacion_residente.fecha_registro` y la promoción automática de la lista de espera por orden de llegada. A las filas existentes les pone la hora de la migración, así que entre ellas el orden lo decide `id_residente`. Al final promueve una vez a quienes ya esperaban en rotaciones con cupo libre e informa cuántos con un NOTICE. Las bases nuevas ejecutan `init/14_lista_espera.sql`.
+
+## Historial conserva al responsable (2026-11-04)
+
+Para bases ya creadas, aplicar `migrations/20261104_historial_conserva_responsable.sql` antes de iniciar el nuevo backend. Agrega `nombre_responsable` y `correo_responsable` a `historial_auditoria`, los llena con los datos actuales de cada usuario y hace opcional `id_usuario` (`ON DELETE SET NULL`), de modo que eliminar un usuario conserva sus movimientos.

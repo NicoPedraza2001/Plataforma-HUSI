@@ -6,6 +6,7 @@ import { Perfil } from '../../../models/sesion.model';
 import { mensajeError } from '../../../services/api-error';
 import { panelDelRol, SesionActual } from '../../../services/sesion-actual';
 import {
+  MOTIVO_CREDENCIALES_ACTUALIZADAS,
   MOTIVO_SESION_EXPIRADA,
   PARAMETRO_MOTIVO,
 } from '../../../services/sesion-expirada.interceptor';
@@ -35,6 +36,11 @@ export class Login {
       ? 'Tu sesión expiró. Inicia sesión de nuevo para continuar.'
       : '',
   );
+  protected readonly aviso = signal(
+    this.parametros.get(PARAMETRO_MOTIVO) === MOTIVO_CREDENCIALES_ACTUALIZADAS
+      ? 'Tus datos de acceso cambiaron. Inicia sesión con ellos para continuar.'
+      : '',
+  );
 
   constructor() {
     this.entrarSiYaHaySesion();
@@ -52,6 +58,7 @@ export class Login {
 
     this.mostrarErrores.set(false);
     this.error.set('');
+    this.aviso.set('');
     this.enviando.set(true);
     try {
       const perfil = await this.sesionActual.iniciar(this.formularioLogin.getRawValue());

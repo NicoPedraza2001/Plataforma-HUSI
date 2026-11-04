@@ -12,6 +12,7 @@ import co.edu.javeriana.husi.model.entity.Usuario;
 import co.edu.javeriana.husi.model.enums.AccionAuditoria;
 import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.*;
+import co.edu.javeriana.husi.security.UsuarioEnSesion;
 import co.edu.javeriana.husi.service.HistorialAuditoriaService;
 import co.edu.javeriana.husi.service.UsuarioService;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +36,7 @@ public class UsuarioServiceImpl implements UsuarioService {
   private final HistorialAuditoriaService historialAuditoria;
   private final FotografiaAuditoriaMapper fotografias;
   private final PasswordEncoder codificadorContrasena;
+  private final UsuarioEnSesion usuarioEnSesion;
 
   private Usuario buscarUsuarioBloqueado(Integer id) {
     return usuarioRepository
@@ -198,13 +200,10 @@ public class UsuarioServiceImpl implements UsuarioService {
   @Transactional
   public void eliminarDefinitivamente(Integer id) {
     var usuario = buscarUsuarioBloqueado(id);
-    if (usuarioRepository.contarReferencias(id) > 0) throw new NegocioException(
-      HttpStatus.CONFLICT,
-      "El usuario tiene movimientos en el historial de auditoría. Puedes desactivarlo para conservar su historial."
-    );
+    validarQueSePuedeEliminar(usuario);
     FotografiaRegistro antes = fotografias.deUsuario(usuario);
-    // Su asignación de servicio no es historia propia: se va con el usuario.
-    sincronizarCoordinacion(usuario, null);
+    // Sus movimientos en el historial se conservan: la base deja id_usuario en null y cada
+    // movimiento guarda el nombre y el correo de su responsable.
     usuarioRepository.delete(usuario);
     usuarioRepository.flush();
     historialAuditoria.registrar(
@@ -213,5 +212,23 @@ public class UsuarioServiceImpl implements UsuarioService {
       antes,
       null
     );
+  }
+
+  /** Lo único que se le puede asignar a un usuario es el servicio que coordina. */
+  private void validarQueSePuedeEliminar(Usuario usuario) {
+    if (usuario.getId().equals(usuarioEnSesion.consultar().getId())) throw new NegocioException(
+      HttpStatus.CONFLICT,
+      "No puedes eliminar tu propia cuenta."
+    );
+    coordinadorRepository
+      .findByUsuarioId(usuario.getId())
+      .ifPresent(coordinacion -> {
+        throw new NegocioException(
+          HttpStatus.CONFLICT,
+          "El usuario coordina el servicio «" +
+            coordinacion.getServicio().getNombre() +
+            "». Quítale esa asignación antes de eliminarlo, o desactívalo."
+        );
+      });
   }
 }

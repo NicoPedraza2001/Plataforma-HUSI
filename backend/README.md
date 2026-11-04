@@ -97,6 +97,19 @@ Al terminar, el endpoint queda visible en Swagger UI para probarlo.
 
 Para forzar un perfil: `mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=prod"`.
 
+## Pruebas
+
+Las clases `*IntegrationTests` corren contra PostgreSQL, con sus triggers reales. Las
+`*H2IntegrationTests` corren contra H2 con el perfil `local`; `RotacionH2IntegrationTests` y
+`ServicioH2IntegrationTests` repiten las mismas pruebas de cupos y lista de espera para comprobar
+que los triggers Java de `config/local` se comportan igual que los de PostgreSQL.
+
+```
+docker compose up -d postgres
+mvnw.cmd test                                      # Toda la suite
+mvnw.cmd test "-Dtest=*H2IntegrationTests"         # Solo H2, sin Docker
+```
+
 ## Dependencias pendientes
 
 En `pom.xml` quedan comentadas, listas para activarse cuando llegue su caso de uso:

@@ -5,6 +5,7 @@ import co.edu.javeriana.husi.exception.NegocioException;
 import co.edu.javeriana.husi.mapper.FotografiaRegistro;
 import co.edu.javeriana.husi.mapper.HistorialAuditoriaMapper;
 import co.edu.javeriana.husi.model.entity.HistorialAuditoria;
+import co.edu.javeriana.husi.model.entity.Usuario;
 import co.edu.javeriana.husi.model.enums.AccionAuditoria;
 import co.edu.javeriana.husi.model.enums.ModuloAuditoria;
 import co.edu.javeriana.husi.repository.HistorialAuditoriaRepository;
@@ -115,7 +116,7 @@ public class HistorialAuditoriaServiceImpl implements HistorialAuditoriaService 
   @Transactional(readOnly = true)
   public HistorialDetalleResponse consultar(Integer id) {
     return historialRepository
-      .findWithUsuarioById(id)
+      .findById(id)
       .map(historialMapper::toResponse)
       .orElseThrow(() ->
         new NegocioException(HttpStatus.NOT_FOUND, "No se encontró el movimiento.")
@@ -176,7 +177,10 @@ public class HistorialAuditoriaServiceImpl implements HistorialAuditoriaService 
 
   private HistorialAuditoria crearFila(AccionAuditoria accion, ModuloAuditoria modulo) {
     HistorialAuditoria historial = new HistorialAuditoria();
-    historial.setUsuario(usuarioEnSesion.consultar());
+    Usuario responsable = usuarioEnSesion.consultar();
+    historial.setUsuario(responsable);
+    historial.setNombreResponsable(responsable.getNombre() + " " + responsable.getApellido());
+    historial.setCorreoResponsable(responsable.getCorreo());
     historial.setAccion(accion.etiqueta());
     historial.setModulo(modulo.etiqueta());
     historial.setFecha(OffsetDateTime.now());

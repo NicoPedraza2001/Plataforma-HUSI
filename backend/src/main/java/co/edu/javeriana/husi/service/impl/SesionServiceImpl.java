@@ -145,7 +145,7 @@ public class SesionServiceImpl implements SesionService {
 
   @Override
   @Transactional
-  public PerfilResponse actualizarCredenciales(ActualizacionCredencialesRequest request) {
+  public void actualizarCredenciales(ActualizacionCredencialesRequest request) {
     String correoNuevo = request.correo() == null
       ? null
       : request.correo().strip().toLowerCase(Locale.ROOT);
@@ -185,7 +185,6 @@ public class SesionServiceImpl implements SesionService {
       usuario.setContrasena(codificadorContrasena.encode(contrasenaNueva));
     }
     registrarCambio(antes, usuarioRepository.saveAndFlush(usuario), contrasenaNueva != null);
-    return perfil();
   }
 
   /** El usuario en sesión, bloqueado para que dos ajustes simultáneos no se pisen. */

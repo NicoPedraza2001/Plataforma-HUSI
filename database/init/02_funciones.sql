@@ -272,9 +272,13 @@ BEGIN
     END IF;
 
     INSERT INTO historial_auditoria (
-        id_usuario, accion_realizada, entidad_modificada, detalle)
-    VALUES (
-        v_id_usuario, p_accion, p_entidad, p_detalle);
+        id_usuario, nombre_responsable, correo_responsable,
+        accion_realizada, entidad_modificada, detalle)
+    SELECT
+        v_id_usuario, concat(nombre, ' ', apellido), correo,
+        p_accion, p_entidad, p_detalle
+    FROM usuario
+    WHERE id_usuario = v_id_usuario;
 END;
 $$ LANGUAGE plpgsql;
 

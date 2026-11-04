@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 
 import { Perfil } from '../../../models/sesion.model';
 import { SesionActual } from '../../../services/sesion-actual';
@@ -115,5 +115,33 @@ describe('Login', () => {
     expect(sesionActual.cerrar).toHaveBeenCalled();
     expect(router.navigateByUrl).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Auditor aún no está disponible');
+  });
+
+  it('avisa que hay que ingresar con los datos nuevos tras cambiar las credenciales', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [Login],
+      providers: [
+        provideRouter([]),
+        { provide: SesionActual, useValue: sesionActual },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              queryParamMap: convertToParamMap({ motivo: 'credenciales-actualizadas' }),
+            },
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const conAviso = TestBed.createComponent(Login);
+    await conAviso.whenStable();
+
+    const elemento: HTMLElement = conAviso.nativeElement;
+    expect(elemento.querySelector('[role="status"]')?.textContent).toContain(
+      'Tus datos de acceso cambiaron',
+    );
+    expect(elemento.querySelector('[role="alert"]')).toBeNull();
   });
 });

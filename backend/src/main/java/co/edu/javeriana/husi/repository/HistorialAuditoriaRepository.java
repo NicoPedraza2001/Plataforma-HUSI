@@ -12,7 +12,4 @@ public interface HistorialAuditoriaRepository
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select h from HistorialAuditoria h where h.loteImportacion = :lote")
   Optional<HistorialAuditoria> bloquearPorLote(String lote);
-
-  @EntityGraph(attributePaths = "usuario")
-  Optional<HistorialAuditoria> findWithUsuarioById(Integer id);
 }

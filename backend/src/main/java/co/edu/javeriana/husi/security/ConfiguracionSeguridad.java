@@ -15,6 +15,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -32,6 +33,8 @@ import org.springframework.security.web.csrf.CsrfFilter;
  *   <li><b>Roles</b>: {@code /sesion/**} es para cualquier usuario autenticado;
  *       {@code /coordinador/**}, solo para {@link RolUsuario#COORDINADOR} (su panel); el resto de
  *       la API, solo para {@link RolUsuario#ADMINISTRADOR}.
+ *   <li><b>Sesión vigente</b>: {@link SesionVigenteFiltro} termina la sesión de una cuenta que ya
+ *       no conserva el acceso con el que ingresó.
  * </ul>
  */
 @Configuration
@@ -46,6 +49,7 @@ public class ConfiguracionSeguridad {
     HttpSecurity http,
     RespuestaErrorSeguridad respuestaError,
     SecurityContextRepository repositorioSesion,
+    CargadorUsuarioAutenticado cargadorUsuario,
     @Value("${husi.seguridad.documentacion-publica}") boolean documentacionPublica
   ) throws Exception {
     http
@@ -53,6 +57,11 @@ public class ConfiguracionSeguridad {
       .csrf(csrf -> csrf.spa().csrfTokenRepository(repositorioTokenCsrf()))
       .addFilterAfter(new CsrfCookieFiltro(), CsrfFilter.class)
       .securityContext(contexto -> contexto.securityContextRepository(repositorioSesion))
+      // Antes del filtro anónimo: una sesión terminada aquí sigue como petición sin sesión.
+      .addFilterBefore(
+        new SesionVigenteFiltro(cargadorUsuario),
+        AnonymousAuthenticationFilter.class
+      )
       // Una petición rechazada no abre sesión: solo POST /sesion/iniciar crea una.
       .requestCache(cache -> cache.disable())
       // El inicio y el cierre de sesión los atiende SesionController con respuestas JSON.
