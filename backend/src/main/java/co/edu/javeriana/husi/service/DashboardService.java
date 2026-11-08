@@ -7,5 +7,9 @@ import java.util.Map;
 
 public interface DashboardService {
   DashboardResponse consultar(Map<String, String> filtros);
+
+  /** Tablero del coordinador: ninguna cifra incluye residentes ni datos de otros servicios. */
+  DashboardResponse consultarDelServicio(String servicio);
+
   List<RelacionFiltrosResponse> relaciones();
 }

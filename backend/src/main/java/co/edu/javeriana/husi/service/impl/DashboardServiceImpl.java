@@ -46,7 +46,14 @@ public class DashboardServiceImpl implements DashboardService {
 
   public DashboardResponse consultar(Map<String, String> parametros) {
     consultaService.validar("rotaciones", parametros);
-    var filtros = DashboardFiltros.de(parametros);
+    return armarPanel(DashboardFiltros.de(parametros));
+  }
+
+  public DashboardResponse consultarDelServicio(String servicio) {
+    return armarPanel(DashboardFiltros.soloDelServicio(servicio));
+  }
+
+  private DashboardResponse armarPanel(DashboardFiltros filtros) {
     String alcance =
       filtros.periodo() == null
         ? "en todo el histórico"
@@ -70,7 +77,7 @@ public class DashboardServiceImpl implements DashboardService {
       barras(dashboardRepository.rotacionesPorServicio(filtros)),
       distribucion(dashboardRepository.residentesPorUniversidad(filtros)),
       valores(dashboardRepository.iniciosPorMes(filtros)),
-      alertas(cruces, enEspera, mapa, alcance),
+      alertas(cruces, enEspera, mapa, alcance, filtros),
       revisar,
       totales.total()
     );
@@ -199,15 +206,18 @@ public class DashboardServiceImpl implements DashboardService {
     List<ResidenteRevisar> cruces,
     List<ResidenteRevisar> enEspera,
     MapaOcupacion mapa,
-    String alcance
+    String alcance,
+    DashboardFiltros filtros
   ) {
     long serviciosSobreCupo = mapa
       .filas()
       .stream()
       .filter(fila -> fila.diasExceso() > 0)
       .count();
-    long serviciosSinCoordinador =
-      dashboardRepository.serviciosSinCoordinador();
+    // Es una cifra de todo el hospital: al coordinador no le corresponde.
+    long serviciosSinCoordinador = filtros.soloResidentesDelServicio()
+      ? 0
+      : dashboardRepository.serviciosSinCoordinador();
 
     List<Alerta> alertas = new ArrayList<>();
     if (!cruces.isEmpty()) alertas.add(

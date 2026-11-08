@@ -99,16 +99,26 @@ Para forzar un perfil: `mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=pro
 
 ## Pruebas
 
-Las clases `*IntegrationTests` corren contra PostgreSQL, con sus triggers reales. Las
-`*H2IntegrationTests` corren contra H2 con el perfil `local`; `RotacionH2IntegrationTests` y
-`ServicioH2IntegrationTests` repiten las mismas pruebas de cupos y lista de espera para comprobar
-que los triggers Java de `config/local` se comportan igual que los de PostgreSQL.
+Las pruebas por caso de uso están en `src/test/java/.../casosdeuso`. Su nombre visible empieza por
+el flujo de `docs/pruebas/plan-pruebas-junit.md` (por ejemplo, `CU07-EX6`).
+
+| Clases                 | Dónde corren                                                          |
+|------------------------|-----------------------------------------------------------------------|
+| `*IntegrationTests`    | PostgreSQL, con sus triggers reales. Cada prueba revierte sus datos.  |
+| `*H2IntegrationTests`  | H2 con el perfil `local`. Comprueban que los triggers Java de `config/local` se comportan igual, y la seguridad por HTTP. |
+| `*Test`                | Unitarias, sin Spring ni base de datos.                               |
 
 ```
 docker compose up -d postgres
-mvnw.cmd test                                      # Toda la suite
+mvnw.cmd clean test                                # Toda la suite, unos 10 minutos
 mvnw.cmd test "-Dtest=*H2IntegrationTests"         # Solo H2, sin Docker
+mvnw.cmd test "-Dtest=*Test"                       # Solo unitarias, sin Docker
+mvnw.cmd test "-Dtest=CU07*"                       # Un caso de uso
 ```
+
+Los resultados quedan en `target/surefire-reports` y la cobertura de JaCoCo en
+`target/site/jacoco/index.html`. No fuerces el perfil `local` ni `SPRING_DATASOURCE_URL` para toda
+la suite: cada clase ya elige su base.
 
 ## Dependencias pendientes
 

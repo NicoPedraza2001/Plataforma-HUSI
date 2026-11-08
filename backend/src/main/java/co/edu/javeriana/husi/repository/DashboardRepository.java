@@ -79,14 +79,16 @@ public class DashboardRepository {
 
   /**
    * Solo cuenta residentes del periodo: los que tienen alguna rotación no cancelada que inicia
-   * en él. No responde al servicio ni a la asignatura, porque mide al residente.
+   * en él. En el panel del administrador no responde al servicio ni a la asignatura, porque mide
+   * al residente; en el del coordinador sí se limita a su servicio.
    */
   public List<SituacionPrograma> situacionPorPrograma(
     DashboardFiltros filtros
   ) {
     var parametros = new ParametrosSql();
     String sql = SITUACION_POR_PROGRAMA.formatted(
-      periodo("rr.fecha_inicio", filtros, parametros),
+      periodo("rr.fecha_inicio", filtros, parametros) +
+        soloDelServicio("rr.id_asignatura", filtros, parametros),
       delResidente(filtros, parametros)
     );
     return consultar(sql, parametros)
@@ -109,7 +111,8 @@ public class DashboardRepository {
     String sql = CARGA_POR_RESIDENTE.formatted(
       periodo("rr.fecha_inicio", filtros, parametros) +
         deLaRotacion("s.nombre", "rr.id_asignatura", filtros, parametros),
-      periodo("x.fecha_inicio", filtros, parametros),
+      periodo("x.fecha_inicio", filtros, parametros) +
+        soloDelServicio("x.id_asignatura", filtros, parametros),
       delResidente(filtros, parametros)
     );
     Map<Integer, Long> residentes = new HashMap<>();
@@ -296,6 +299,21 @@ public class DashboardRepository {
         "programa",
         filtros.programa()
       )
+    );
+  }
+
+  /** Alcance del coordinador: deja solo las asignaciones en asignaturas de su servicio. */
+  private String soloDelServicio(
+    String columnaAsignatura,
+    DashboardFiltros filtros,
+    ParametrosSql parametros
+  ) {
+    if (!filtros.soloResidentesDelServicio()) return "";
+    return parametros.y(
+      columnaAsignatura +
+        " in (select a2.id_asignatura from asignatura a2 join servicio s2 on s2.id_servicio = a2.id_servicio where s2.nombre = :servicio)",
+      "servicio",
+      filtros.servicio()
     );
   }
 

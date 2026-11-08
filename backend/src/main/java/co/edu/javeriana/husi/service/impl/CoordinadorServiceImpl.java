@@ -11,7 +11,6 @@ import co.edu.javeriana.husi.service.CoordinadorService;
 import co.edu.javeriana.husi.service.DashboardService;
 import co.edu.javeriana.husi.util.Calendario;
 import java.time.LocalDate;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -44,7 +43,7 @@ public class CoordinadorServiceImpl implements CoordinadorService {
   public DashboardResponse dashboardPropio() {
     Coordinador coordinador = coordinacionActiva();
     // El servicio sale de la sesión, igual que en listarResidentes(): nunca lo elige el cliente.
-    return dashboardService.consultar(Map.of("servicio", coordinador.getServicio().getNombre()));
+    return dashboardService.consultarDelServicio(coordinador.getServicio().getNombre());
   }
 
   /** El servicio sale siempre de la sesión: un coordinador nunca elige qué servicio consulta. */
