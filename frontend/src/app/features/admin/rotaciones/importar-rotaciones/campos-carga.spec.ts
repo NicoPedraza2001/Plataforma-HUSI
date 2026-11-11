@@ -53,7 +53,7 @@ describe('campos de la carga inicial', () => {
 });
 
 describe('Plantilla institucional definitiva', () => {
-  it('reconoce las doce columnas y preserva perfil, documento y campos presentes', () => {
+  it('reconoce las trece columnas y preserva perfil, documento y campos presentes', () => {
     const columnas = detectarColumnas(PLANTILLA_FINAL);
     const valoresComunes = CAMPOS_CARGA.map(() => '');
     valoresComunes[0] = 'Universidad común';
@@ -64,6 +64,7 @@ describe('Plantilla institucional definitiva', () => {
         [
           'Docencia Servicio',
           'Medicina',
+          'CE',
           '00123',
           'Residente ficticio',
           'Posgrado',
@@ -78,6 +79,7 @@ describe('Plantilla institucional definitiva', () => {
         [
           '',
           'Medicina',
+          '',
           '00456',
           'Otro residente',
           '',
@@ -102,5 +104,25 @@ describe('Plantilla institucional definitiva', () => {
     expect(filas[0].universidad).toBe('Universidad específica');
     expect(filas[1].universidad).toBe('Universidad común');
     expect(filas[1].inicio).toBe('');
+    expect(filas[0].tipoDocumento).toBe('CE');
+    expect(filas[1].tipoDocumento).toBe('CC');
+  });
+
+  it('sigue reconociendo el archivo institucional sin la columna Tipo de documento', () => {
+    const sinTipo = PLANTILLA_FINAL.filter((encabezado) => encabezado !== 'Tipo de documento');
+    expect(esPlantillaFinal(sinTipo)).toBe(true);
+    expect(esPlantillaFinal(sinTipo.filter((encabezado) => encabezado !== 'Documento'))).toBe(
+      false,
+    );
+  });
+
+  it('la plantilla no pide cupos: salen del servicio, no del Excel', () => {
+    const columnas = detectarColumnas(PLANTILLA_FINAL);
+    const indice = (clave: string) => CAMPOS_CARGA.findIndex((campo) => campo.clave === clave);
+    expect(columnas[indice('cupoMaximo')]).toBe(-1);
+    expect(columnas[indice('cupoSimultaneo')]).toBe(-1);
+    CAMPOS_CARGA.filter((campo) => !campo.clave.startsWith('cupo')).forEach((campo) =>
+      expect(columnas[indice(campo.clave)]).toBeGreaterThanOrEqual(0),
+    );
   });
 });

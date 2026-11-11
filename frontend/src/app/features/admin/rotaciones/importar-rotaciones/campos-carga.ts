@@ -188,10 +188,14 @@ export function prepararCarga(
     });
 }
 
-/** Encabezados de la plantilla institucional recibida; categoría y sede son informativos. */
+/**
+ * Encabezados de la plantilla que se descarga; categoría y sede son informativos. Los cupos no
+ * van en el Excel: salen del servicio registrado (o se escriben en el paso Servicios).
+ */
 export const PLANTILLA_FINAL = [
   'Categoría',
   'Programa',
+  'Tipo de documento',
   'Documento',
   'Name',
   'Perfil',
@@ -204,7 +208,12 @@ export const PLANTILLA_FINAL = [
   'Fecha final',
 ];
 
+/** Columnas de la plantilla que el archivo institucional original no traía. */
+const COLUMNAS_OPCIONALES_PLANTILLA = new Set(['tipo de documento']);
+
 export function esPlantillaFinal(encabezados: string[]): boolean {
   const encabezadosDisponibles = new Set(encabezados.map(normalizar));
-  return PLANTILLA_FINAL.every((encabezado) => encabezadosDisponibles.has(normalizar(encabezado)));
+  return PLANTILLA_FINAL.map(normalizar)
+    .filter((encabezado) => !COLUMNAS_OPCIONALES_PLANTILLA.has(encabezado))
+    .every((encabezado) => encabezadosDisponibles.has(encabezado));
 }
