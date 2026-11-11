@@ -42,3 +42,6 @@ target/
 build/
 # Enlace local con el proyecto de Vercel
 .vercel
+
+# Configuracion local de Claude Code
+.claude/
