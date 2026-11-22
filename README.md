@@ -53,11 +53,12 @@ render.yaml          Blueprint del backend en Render
 Requisitos: Docker, Node.js + npm y, opcionalmente, Java 21 para correr el backend fuera de
 Docker.
 
-1. Crear `.env` con la contraseña inicial del administrador `admin@husi.com`
-   (mínimo 8 caracteres; el backend guarda solo su hash BCrypt):
+1. Crear en la raíz un archivo `.env` (ignorado por git) con la contraseña inicial del
+   administrador `admin@husi.com` (mínimo 8 caracteres; el backend guarda solo su hash
+   BCrypt). Debe contener una sola línea:
 
    ```bash
-   copy .env.example .env
+   HUSI_ADMIN_CONTRASENA_INICIAL=tu-contraseña
    ```
 
 2. Levantar base de datos, pgAdmin y backend:

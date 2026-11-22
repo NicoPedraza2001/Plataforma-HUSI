@@ -10,7 +10,7 @@ La primera vez, crea el archivo `.env` (ignorado por git) con la contraseña del
 administrador `admin@husi.com`:
 
 ```bash
-copy .env.example .env      # luego edita .env y escribe HUSI_ADMIN_CONTRASENA_INICIAL
+HUSI_ADMIN_CONTRASENA_INICIAL=tu-contraseña
 ```
 
 ```bash
